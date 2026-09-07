@@ -1,0 +1,986 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+enum AuthTokenPurpose {
+  PASSWORD_RESET
+}
+
+enum Channel {
+  SMS
+  WHATSAPP
+  EMAIL
+}
+
+enum ChannelProvider {
+  TEST
+  MSG91
+  TWILIO
+  CUSTOM_HTTP
+  META
+  RESEND
+}
+
+enum QueueStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+  SKIPPED
+  DELIVERED
+}
+
+enum DeliveryStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+  READ
+  UNDELIVERED
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PRO
+  CUSTOM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
+/// What a BillingCheckout / Razorpay payment is purchasing.
+enum BillingCheckoutKind {
+  PLAN
+  CREDITS
+  PAYMENT_LINK
+}
+
+enum ContactImportJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ContactImportFileFormat {
+  CSV
+  XLSX
+}
+
+enum ContactFieldType {
+  TEXT
+  NUMBER
+  DATE
+  EMAIL
+  PHONE
+  BOOLEAN
+  SELECT
+}
+
+enum VendorOnboardingStatus {
+  DRAFT
+  INVITED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VendorRegistrationInviteDeliveryStatus {
+  PENDING
+  SENT
+  AMBIGUOUS
+  FAILED
+}
+
+model Organization {
+  id                                 String   @id @default(cuid())
+  name                               String
+  slug                               String   @unique
+  timezone                           String   @default("Asia/Kolkata")
+  isActive                           Boolean  @default(true)
+  /// Platform Admin may approve live CUSTOM_HTTP for FREE/unpaid orgs.
+  liveChannelsApproved               Boolean  @default(false)
+  /// Vendor who referred this org at signup (optional attribution).
+  referredByVendorId                 String?
+  referredAt                         DateTime?
+  createdAt                          DateTime @default(now())
+  updatedAt                          DateTime @updatedAt
+
+  users                       User[]
+  sessions                    Session[]
+  contacts                    Contact[]
+  contactFieldDefinitions     ContactFieldDefinition[]
+  contactCategories           ContactCategoryDefinition[]
+  occasions                   Occasion[]
+  categoryAutomationRules     CategoryAutomationRule[]
+  messageTemplates            MessageTemplate[]
+  channelConfigs              ChannelConfig[]
+  whatsappMediaAssets         WhatsAppMediaAsset[]
+  sendQueues                  SendQueue[]
+  deliveryLogs                DeliveryLog[]
+  apiKeys                     ApiKey[]
+  subscription                Subscription?
+  billingCheckouts            BillingCheckout[]
+  billingEvents               BillingEvent[]
+  planDeals                   PlanDeal[]
+  planPayments                PlanPayment[]
+  customPlanTopUps            CustomPlanTopUp[]
+  contactImportJobs           ContactImportJob[]
+  documentTemplates           DocumentTemplate[]
+  generatedDocuments          GeneratedDocument[]
+  referredByVendor            Vendor?           @relation("VendorReferrals", fields: [referredByVendorId], references: [id], onDelete: SetNull)
+  platformAdminAuditEvents    PlatformAdminAuditEvent[]
+
+  @@index([isActive])
+  @@index([referredByVendorId])
+}
+
+model User {
+  id              String    @id @default(cuid())
+  organizationId  String
+  email           String    @unique
+  passwordHash    String
+  name            String
+  role            UserRole  @default(STAFF)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sessions       Session[]
+  authTokens     AuthToken[]
+  createdApiKeys ApiKey[]     @relation("ApiKeyCreatedBy")
+  skippedQueues  SendQueue[]  @relation("SendQueueSkippedBy")
+
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+}
+
+model Session {
+  id             String   @id
+  userId         String
+  organizationId String
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([expiresAt])
+}
+
+model AuthToken {
+  id        String           @id @default(cuid())
+  userId    String
+  purpose   AuthTokenPurpose
+  tokenHash String           @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+  @@index([expiresAt])
+}
+
+/// Login / register throttle counters (IP+email or IP buckets).
+model AuthRateLimit {
+  id          String    @id @default(cuid())
+  bucketKey   String    @unique
+  hitCount    Int       @default(0)
+  windowStart DateTime
+  lockedUntil DateTime?
+  updatedAt   DateTime  @updatedAt
+}
+
+model Contact {
+  id                  String    @id @default(cuid())
+  organizationId      String
+  name                String
+  mobile              String
+  email               String?
+  categoryId          String?
+  address             String?
+  note                String?
+  attributes          Json     @default("{}")
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  organization  Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category      ContactCategoryDefinition? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  occasionDates ContactOccasionDate[]
+  sendQueues    SendQueue[]
+
+  @@unique([organizationId, mobile])
+  @@unique([organizationId, email])
+  @@index([organizationId, isActive])
+  @@index([organizationId, categoryId])
+}
+
+model ContactFieldDefinition {
+  id             String           @id @default(cuid())
+  organizationId String
+  key            String
+  label          String
+  type           ContactFieldType @default(TEXT)
+  options        Json?
+  sortOrder      Int              @default(0)
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, key])
+  @@index([organizationId, isActive])
+  @@index([organizationId, sortOrder])
+}
+
+model ContactImportJob {
+  id               String                   @id @default(cuid())
+  organizationId   String
+  createdByUserId  String
+  fileName         String
+  fileFormat       ContactImportFileFormat
+  status           ContactImportJobStatus   @default(PENDING)
+  fileBytes        Bytes
+  fieldMappings    Json?
+  parsedCache      Bytes?
+  totalRows        Int                      @default(0)
+  processedRows    Int                      @default(0)
+  nextRowIndex     Int                      @default(0)
+  created          Int                      @default(0)
+  updated          Int                      @default(0)
+  skippedDuplicate Int                      @default(0)
+  skippedLimit     Int                      @default(0)
+  invalid          Int                      @default(0)
+  claimedAt        DateTime?
+  leaseExpiresAt   DateTime?
+  attemptCount     Int                      @default(0)
+  errorMessage     String?
+  completedAt      DateTime?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  organization Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  errors       ContactImportJobError[]
+
+  @@index([organizationId, status])
+  @@index([status, leaseExpiresAt])
+}
+
+model ContactImportJobError {
+  id        String   @id @default(cuid())
+  jobId     String
+  row       Int
+  message   String
+  createdAt DateTime @default(now())
+
+  job ContactImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, row])
+}
+
+/// Org-managed occasion (Birthday, Anniversary, Diwali, ...). Birthday is the
+/// only permanent isSystem row, seeded per org; every other occasion is
+/// created/renamed/deleted by the org admin via Occasion Management.
+model Occasion {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  /// True only for the per-org Birthday row. Blocks deletion.
+  isSystem       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization    Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contactDates    ContactOccasionDate[]
+  messageTemplates MessageTemplate[]
+  automationRules CategoryAutomationRule[]
+  sendQueues      SendQueue[]
+  documentTemplates DocumentTemplate[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([organizationId, isSystem])
+}
+
+/// A contact's date for a given occasion (at most one row per contact per
+/// occasion). Replaces the old fixed dateOfBirth/anniversaryDate/
+/// customOccasionDate column triples on Contact.
+model ContactOccasionDate {
+  id             String   @id @default(cuid())
+  organizationId String
+  contactId      String
+  occasionId     String
+  date           DateTime @db.Date
+  month          Int
+  day            Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  contact  Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  occasion Occasion @relation(fields: [occasionId], references: [id], onDelete: Restrict)
+
+  @@unique([contactId, occasionId])
+  @@index([organizationId, occasionId, month, day])
+}
+
+/// Tenant-defined contact category (org-managed vocabulary).
+model ContactCategoryDefinition {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization      Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contacts          Contact[]
+  automationRules   CategoryAutomationRule[]
+  messageTemplates  MessageTemplate[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+/// Per-occasion, per-category routing for automatic greetings (time +
+/// template + channels). categoryId = null means "applies to contacts with
+/// no matching category-specific rule for this occasion" (the "all
+/// contacts" row - this is what used to be Organization's scalar
+/// autoSendEnabled/birthdayTemplateId-style fields, folded in here).
+///
+/// NOTE: uniqueness is enforced by two PARTIAL unique indexes created by raw
+/// SQL in prisma/migrations/20260805130000_occasions_fk_cutover, not by a
+/// `@@unique` here - Postgres treats NULL as distinct in a plain composite
+/// unique, which would otherwise allow multiple categoryId=null rows per
+/// org+occasion. These indexes are invisible to `prisma db pull`/`validate`.
+model CategoryAutomationRule {
+  id                 String    @id @default(cuid())
+  organizationId     String
+  occasionId         String
+  categoryId         String?
+  /// IST send hour (0-23). Null = not set; automation for this rule does not run.
+  sendHour           Int?
+  /// IST send minute (0-59). Null when send hour is unset.
+  sendMinute         Int?
+  smsEnabled         Boolean   @default(false)
+  smsTemplateId      String?
+  whatsappEnabled    Boolean   @default(false)
+  whatsappTemplateId String?
+  emailEnabled       Boolean   @default(false)
+  emailTemplateId    String?
+  callEnabled        Boolean   @default(false)
+  aiAssistEnabled    Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  organization     Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  occasion         Occasion                  @relation(fields: [occasionId], references: [id], onDelete: Restrict)
+  category         ContactCategoryDefinition? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  smsTemplate      MessageTemplate?          @relation("CategoryRuleSmsTemplate", fields: [smsTemplateId], references: [id], onDelete: SetNull)
+  whatsappTemplate MessageTemplate?          @relation("CategoryRuleWhatsAppTemplate", fields: [whatsappTemplateId], references: [id], onDelete: SetNull)
+  emailTemplate    MessageTemplate?          @relation("CategoryRuleEmailTemplate", fields: [emailTemplateId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, occasionId])
+  @@index([categoryId])
+}
+
+model MessageTemplate {
+  id                     String       @id @default(cuid())
+  organizationId         String
+  name                   String
+  occasionId              String
+  channel                Channel
+  body                   String
+  /// Required for EMAIL templates; ignored for SMS/WhatsApp.
+  emailSubject           String?
+  /// Optional contact group this message is for. Null = All groups.
+  categoryId             String?
+  variables              String[]     @default([])
+  whatsappProviderTemplateId String?
+  whatsappTemplateName   String?
+  whatsappLanguage       String?
+  whatsappParameterOrder String[]     @default([])
+  whatsappMediaAssetId   String?
+  dltTemplateId          String?
+  dltApprovedContent     String?
+  isActive               Boolean      @default(true)
+  /// Phase 6 step 1: optional personalized PDF attachment configuration.
+  /// The PDF itself is not generated here - only the template's reference
+  /// to a reusable DocumentTemplate is stored (config only, no generation).
+  includePersonalizedPdf Boolean      @default(false)
+  documentTemplateId     String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  organization        Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  occasion             Occasion       @relation(fields: [occasionId], references: [id], onDelete: Restrict)
+  category             ContactCategoryDefinition? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  whatsappMediaAsset   WhatsAppMediaAsset? @relation("TemplateWhatsAppMedia", fields: [whatsappMediaAssetId], references: [id], onDelete: SetNull)
+  documentTemplate     DocumentTemplate? @relation("MessageTemplateDocumentAttachment", fields: [documentTemplateId], references: [id], onDelete: SetNull)
+  categoryRuleSmsFor      CategoryAutomationRule[] @relation("CategoryRuleSmsTemplate")
+  categoryRuleWhatsAppFor CategoryAutomationRule[] @relation("CategoryRuleWhatsAppTemplate")
+  categoryRuleEmailFor    CategoryAutomationRule[] @relation("CategoryRuleEmailTemplate")
+  sendQueues              SendQueue[]
+
+  @@index([organizationId, isActive])
+  @@index([organizationId, occasionId, channel, isActive])
+  @@index([occasionId])
+  @@index([organizationId, categoryId])
+  @@index([whatsappMediaAssetId])
+  @@index([categoryId])
+  @@index([documentTemplateId])
+}
+
+model WhatsAppMediaAsset {
+  id             String   @id @default(cuid())
+  organizationId String
+  bytes          Bytes
+  filename       String
+  contentType    String
+  byteLength     Int
+  checksum       String
+  createdAt      DateTime @default(now())
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  templates    MessageTemplate[] @relation("TemplateWhatsAppMedia")
+  sendQueues   SendQueue[]       @relation("QueueWhatsAppMedia")
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, checksum])
+}
+
+/// Base PDF design uploaded by an org (Phase 1: storage + metadata only).
+/// Later phases lay dynamic text blocks over this file and generate
+/// personalized documents per contact - not implemented yet.
+model DocumentTemplate {
+  id              String   @id @default(cuid())
+  organizationId  String
+  name            String
+  occasionId      String?
+  bytes           Bytes
+  fileName        String
+  contentType     String
+  byteLength      Int
+  /// Audit only - not used for access control (org-scoped, not user-scoped).
+  createdByUserId String
+  isActive        Boolean  @default(true)
+  /// Phase 2: text-overlay design ({ elements: [...] }). Null until first save.
+  layoutJson      Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  occasion             Occasion?          @relation(fields: [occasionId], references: [id], onDelete: SetNull)
+  generatedDocuments   GeneratedDocument[]
+  messageTemplates     MessageTemplate[]  @relation("MessageTemplateDocumentAttachment")
+
+  @@index([organizationId, isActive])
+  @@index([organizationId, createdAt])
+  @@index([occasionId])
+}
+
+/// Phase 4/5 output: a personalized PDF rendered from a DocumentTemplate +
+/// variable data, stored in object storage (see src/lib/storage) and kept
+/// only until expiresAt. The PDF bytes live in storage, never here - this
+/// row is metadata + the retention/authorization business rule.
+model GeneratedDocument {
+  id              String   @id @default(cuid())
+  organizationId  String
+  templateId      String?
+  fileName        String
+  /// Opaque locator handed to the storage abstraction - never a provider URL.
+  storageKey      String
+  fileSize        Int
+  /// Audit only - not used for access control (org-scoped, not user-scoped).
+  createdByUserId String
+  createdAt       DateTime @default(now())
+  /// Authoritative retention boundary - checked on every access, not just used for cleanup.
+  expiresAt       DateTime
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  template     DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  sendQueues   SendQueue[]
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, expiresAt])
+  @@index([templateId])
+}
+
+model ChannelConfig {
+  id                   String          @id @default(cuid())
+  organizationId       String
+  channel              Channel
+  provider             ChannelProvider
+  encryptedCredentials String
+  settings             Json?
+  isActive             Boolean         @default(true)
+  /// Optional channel partner that routes this org's traffic (vendor portal).
+  vendorId             String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vendor       Vendor?      @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, channel])
+  @@index([organizationId, isActive])
+  @@index([vendorId, isActive])
+}
+
+model SendQueue {
+  id                       String       @id @default(cuid())
+  organizationId           String
+  contactId                String?
+  recipientName            String
+  recipientMobile          String
+  recipientEmail           String?
+  templateId               String
+  channel                  Channel
+  occasionId               String
+  scheduledDate            DateTime     @db.Date
+  renderedBody             String
+  /// Rendered email subject snapshot (EMAIL channel only).
+  emailSubject             String?
+  whatsappTemplateName     String?
+  whatsappLanguage         String?
+  whatsappParameterValues  Json?
+  whatsappMediaAssetId     String?
+  status                   QueueStatus  @default(PENDING)
+  idempotencyKey           String
+  attemptCount             Int          @default(0)
+  lastError                String?
+  lastErrorCode            String?
+  claimedAt                DateTime?
+  leaseExpiresAt           DateTime?
+  nextAttemptAt            DateTime?
+  providerAttemptStartedAt DateTime?
+  sentAt                   DateTime?
+  skippedAt                DateTime?
+  skippedByUserId          String?
+  /// Phase 6 step 2: optional personalized PDF prepared for this delivery.
+  /// Reference only - PDF bytes live in DocumentStorage/B2, never here.
+  /// SetNull (not Restrict) because GeneratedDocument has its own 7-day
+  /// expiry/cleanup lifecycle that must not be blocked by historical queue rows.
+  generatedDocumentId      String?
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact?        @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  template     MessageTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  occasion     Occasion        @relation(fields: [occasionId], references: [id], onDelete: Restrict)
+  whatsappMediaAsset WhatsAppMediaAsset? @relation("QueueWhatsAppMedia", fields: [whatsappMediaAssetId], references: [id], onDelete: Restrict)
+  skippedBy    User?           @relation("SendQueueSkippedBy", fields: [skippedByUserId], references: [id], onDelete: SetNull)
+  generatedDocument GeneratedDocument? @relation(fields: [generatedDocumentId], references: [id], onDelete: SetNull)
+  deliveryLogs DeliveryLog[]
+
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId, scheduledDate, status])
+  @@index([organizationId, contactId])
+  @@index([organizationId, status])
+  @@index([organizationId, occasionId])
+  @@index([status, nextAttemptAt, organizationId, createdAt])
+  @@index([status, leaseExpiresAt])
+  @@index([organizationId, status, nextAttemptAt, createdAt])
+  @@index([whatsappMediaAssetId])
+  @@index([generatedDocumentId])
+}
+
+model DeliveryLog {
+  id                String         @id @default(cuid())
+  organizationId    String
+  sendQueueId       String
+  attemptNumber     Int
+  status            DeliveryStatus @default(QUEUED)
+  providerMessageId String?
+  providerResponse  Json?
+  errorCode         String?
+  errorMessage      String?
+  createdAt         DateTime       @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sendQueue    SendQueue    @relation(fields: [sendQueueId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, sendQueueId])
+  @@index([organizationId, createdAt])
+  @@index([providerMessageId])
+}
+
+model ApiKey {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  keyPrefix      String
+  keyHash        String    @unique
+  lastUsedAt     DateTime?
+  revokedAt      DateTime?
+  createdById    String
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation("ApiKeyCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([organizationId])
+  @@index([organizationId, revokedAt])
+}
+
+model Subscription {
+  id                      String             @id @default(cuid())
+  organizationId          String             @unique
+  plan                    SubscriptionPlan   @default(FREE)
+  status                  SubscriptionStatus @default(ACTIVE)
+  contactLimit            Int                @default(500)
+  /// Plan catalogue base monthly send limit (not including bonus packs).
+  monthlyMessageLimit     Int                @default(500)
+  /// Extra messages purchased this usage month; cleared on IST month rollover.
+  bonusMessageCredits     Int                @default(0)
+  messagesSentThisMonth   Int                @default(0)
+  billingPeriodStart      DateTime           @default(now())
+  billingPeriodEnd        DateTime?
+  /// End of the paid subscription period (renewal / expiry safety net).
+  paidUntil               DateTime?
+  /// Razorpay Subscriptions API id for STARTER/PRO auto-renewal.
+  razorpaySubscriptionId  String?            @unique
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  organization  Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  channelLimits ChannelMessageLimit[]
+}
+
+/// Per-channel monthly message allocation for CUSTOM plan subscriptions. Absence
+/// of rows for a subscription means it uses the aggregate Subscription limits.
+model ChannelMessageLimit {
+  id                    String   @id @default(cuid())
+  subscriptionId        String
+  channel               Channel
+  monthlyLimit          Int
+  messagesSentThisMonth Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, channel])
+}
+
+/// Razorpay checkout attempt (plan subscribe, credit pack, or Admin payment link).
+model BillingCheckout {
+  id                    String              @id @default(cuid())
+  organizationId        String
+  kind                  BillingCheckoutKind @default(PLAN)
+  /// Set for PLAN / PAYMENT_LINK; null for CREDITS packs.
+  plan                  SubscriptionPlan?
+  /// Messages granted when kind = CREDITS.
+  creditMessages        Int?
+  /// CUSTOM / payment-link deal contact cap (kind = PAYMENT_LINK).
+  dealContactLimit      Int?
+  /// CUSTOM / payment-link deal monthly message cap (kind = PAYMENT_LINK).
+  dealMonthlyMessageLimit Int?
+  /// CUSTOM / payment-link deal per-channel SMS cap (kind = PAYMENT_LINK).
+  dealSmsLimit          Int?
+  /// CUSTOM / payment-link deal per-channel WhatsApp cap (kind = PAYMENT_LINK).
+  dealWhatsappLimit     Int?
+  /// CUSTOM / payment-link deal per-channel Email cap (kind = PAYMENT_LINK).
+  dealEmailLimit        Int?
+  /// Paid period length in days for PLAN / PAYMENT_LINK (default 30).
+  durationDays          Int?
+  razorpayOrderId       String              @unique
+  razorpayPaymentId     String?
+  /// Set when kind = PAYMENT_LINK.
+  razorpayPaymentLinkId String?             @unique
+  /// Razorpay Subscriptions API id when using recurring checkout.
+  razorpaySubscriptionId String?
+  amountPaise           Int
+  currency              String              @default("INR")
+  /// CREATED | PAID | FAILED
+  status                String              @default("CREATED")
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  planDeal        PlanDeal?
+  customPlanTopUp CustomPlanTopUp?
+
+  @@index([organizationId, createdAt])
+  @@index([kind, createdAt])
+  @@index([razorpaySubscriptionId])
+}
+
+enum DealSource {
+  DIRECT
+  RAZORPAY
+}
+
+enum DealPaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+}
+
+/// One activated plan deal (STARTER/PRO/CUSTOM, initial or renewal), for any
+/// direct (no-payment) admin activation and CUSTOM Razorpay deals. Created
+/// exactly once, at the moment access was actually granted -- never a
+/// "pending" placeholder. Activation/expiry/payment are independent: this
+/// row's amountDuePaise vs amountPaidPaise never affects Subscription.status
+/// or paidUntil.
+model PlanDeal {
+  id             String            @id @default(cuid())
+  organizationId String
+  plan           SubscriptionPlan
+  source         DealSource
+  amountDuePaise Int
+  amountPaidPaise Int              @default(0)
+  paymentStatus  DealPaymentStatus @default(UNPAID)
+  durationDays   Int
+  contactLimit   Int
+  /// Aggregate limit for STARTER/PRO deals; null for CUSTOM (uses the per-channel fields below).
+  monthlyMessageLimit  Int?
+  /// Per-channel allocation, CUSTOM only; null for STARTER/PRO.
+  smsMonthlyLimit      Int?
+  whatsappMonthlyLimit Int?
+  emailMonthlyLimit    Int?
+  /// Subscription.paidUntil immediately after this deal was activated (history snapshot).
+  resultingPaidUntil   DateTime
+  billingCheckoutId    String?           @unique
+  createdByAdminId     String?
+  activatedAt          DateTime          @default(now())
+  createdAt            DateTime          @default(now())
+
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  billingCheckout BillingCheckout? @relation(fields: [billingCheckoutId], references: [id])
+  createdByAdmin  PlatformAdmin?   @relation(fields: [createdByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, activatedAt])
+}
+
+/// A payment event recorded against an org's outstanding plan-deal balance.
+/// Never touches Subscription.status/paidUntil/limits -- payment settles the
+/// financial obligation, not access.
+model PlanPayment {
+  id                String   @id @default(cuid())
+  organizationId    String
+  amountPaise       Int
+  note              String?
+  recordedByAdminId String?
+  createdAt         DateTime @default(now())
+
+  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  recordedByAdmin PlatformAdmin? @relation(fields: [recordedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+}
+
+/// A one-off increase to a single channel's monthly ceiling for a CUSTOM
+/// plan's current period. Independent of PlanDeal: never touches
+/// paidUntil, contactLimit, or other channels. Shape mirrors PlanDeal
+/// (source/billingCheckoutId) so a RAZORPAY-sourced top-up can be added later
+/// without a schema change -- only DIRECT is used today.
+model CustomPlanTopUp {
+  id                    String            @id @default(cuid())
+  organizationId        String
+  channel               Channel
+  messagesAdded         Int
+  /// ChannelMessageLimit.monthlyLimit for this channel immediately after this top-up.
+  resultingMonthlyLimit Int
+  amountDuePaise        Int
+  amountPaidPaise       Int               @default(0)
+  paymentStatus         DealPaymentStatus @default(UNPAID)
+  source                DealSource        @default(DIRECT)
+  billingCheckoutId     String?           @unique
+  createdByAdminId      String?
+  createdAt             DateTime          @default(now())
+
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  billingCheckout BillingCheckout? @relation(fields: [billingCheckoutId], references: [id])
+  createdByAdmin  PlatformAdmin?   @relation(fields: [createdByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+}
+
+/// Admin-editable STARTER/PRO pricing and limits. Source of truth read by
+/// getPlanCatalogueEntry/listCheckoutPlans for new checkouts and signups.
+/// Never retroactively changes an existing Subscription row -- those copy
+/// contactLimit/monthlyMessageLimit at apply time (applyCheckoutPlanToOrganization).
+model PlanCatalogueRecord {
+  plan                SubscriptionPlan @id
+  label               String
+  description         String
+  amountPaise         Int
+  contactLimit        Int
+  monthlyMessageLimit Int
+  updatedAt           DateTime         @updatedAt
+  updatedByAdminId    String?
+
+  updatedByAdmin PlatformAdmin? @relation(fields: [updatedByAdminId], references: [id], onDelete: SetNull)
+}
+
+/// Idempotent store for Razorpay webhook events.
+model BillingEvent {
+  id              String   @id @default(cuid())
+  razorpayEventId String   @unique
+  eventType       String
+  organizationId  String?
+  payload         Json
+  processNote     String?
+  processedAt     DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([eventType, processedAt])
+}
+
+/// Platform operator (not tied to a client organization).
+model PlatformAdmin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions                  PlatformAdminSession[]
+  auditEvents               PlatformAdminAuditEvent[]
+  approvedVendors           Vendor[]                   @relation("VendorApprovedByAdmin")
+  vendorRegistrationInvites VendorRegistrationInvite[] @relation("VendorInviteCreatedByAdmin")
+  createdPlanDeals          PlanDeal[]
+  recordedPlanPayments      PlanPayment[]
+  createdCustomPlanTopUps   CustomPlanTopUp[]
+  updatedPlanCatalogueRecords PlanCatalogueRecord[]
+}
+
+model PlatformAdminSession {
+  id        String   @id
+  adminId   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  admin PlatformAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([expiresAt])
+}
+
+/// Append-only record of security-relevant Platform Admin activity.
+model PlatformAdminAuditEvent {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  actorAdminId   String?
+  organizationId String?
+  action         String
+  targetType     String
+  targetId       String
+  before         Json?
+  after          Json?
+  metadata       Json?
+
+  actor        PlatformAdmin? @relation(fields: [actorAdminId], references: [id], onDelete: SetNull)
+  organization Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([actorAdminId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId, createdAt])
+}
+
+/// SMS/WhatsApp channel partner (vendor portal).
+model Vendor {
+  id                      String                 @id @default(cuid())
+  name                    String
+  slug                    String                 @unique
+  mobile                  String?                @unique
+  /// One shareable signup attribution code per vendor (stored uppercase).
+  referralCode            String                 @unique
+  onboardingStatus        VendorOnboardingStatus @default(DRAFT)
+  registrationSubmittedAt DateTime?
+  approvedAt              DateTime?
+  approvedByAdminId       String?
+  isActive                Boolean                @default(true)
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+
+  users                 VendorUser[]
+  channelConfigs        ChannelConfig[]
+  referredOrganizations Organization[]             @relation("VendorReferrals")
+  registrationInvites   VendorRegistrationInvite[]
+  approvedByAdmin       PlatformAdmin?             @relation("VendorApprovedByAdmin", fields: [approvedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([onboardingStatus, createdAt])
+  @@index([approvedByAdminId])
+}
+
+model VendorUser {
+  id           String   @id @default(cuid())
+  vendorId     String
+  email        String?  @unique
+  mobile       String?  @unique
+  passwordHash String
+  name         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  vendor   Vendor          @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  sessions VendorSession[]
+
+  @@index([vendorId])
+  @@index([vendorId, isActive])
+}
+
+model VendorRegistrationInvite {
+  id               String                                 @id @default(cuid())
+  vendorId         String
+  tokenHash        String                                 @unique
+  expiresAt        DateTime
+  usedAt           DateTime?
+  revokedAt        DateTime?
+  sentAt           DateTime?
+  deliveryStatus   VendorRegistrationInviteDeliveryStatus @default(PENDING)
+  deliveryError    String?
+  createdByAdminId String
+  createdAt        DateTime                               @default(now())
+
+  vendor         Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  createdByAdmin PlatformAdmin @relation("VendorInviteCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: Restrict)
+
+  @@index([vendorId, createdAt])
+  @@index([createdByAdminId, createdAt])
+  @@index([expiresAt])
+}
+
+model VendorSession {
+  id           String   @id
+  vendorUserId String
+  vendorId     String
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  vendorUser VendorUser @relation(fields: [vendorUserId], references: [id], onDelete: Cascade)
+
+  @@index([vendorUserId])
+  @@index([vendorId])
+  @@index([expiresAt])
+}

@@ -1,0 +1,61 @@
+# External production cron for Vercel Hobby (built-in crons are once/day only).
+#
+# Primary: cron-job.org hits /api/v1/internal/cron/tick every minute
+#   (set up with: npm run cron:setup-external)
+# Backup: this workflow (~every 5 minutes, GitHub schedule is best-effort)
+#
+# Required repo secrets:
+#   CRON_BASE_URL  - e.g. https://birthday-greeting-saas.vercel.app (no trailing slash)
+#   CRON_SECRET    - same value as Vercel project env CRON_SECRET
+
+name: Production cron
+
+on:
+  schedule:
+    # Odd minutes reduce GitHub peak-load drops. Still best-effort only.
+    - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: production-cron
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify secrets
+        env:
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_BASE_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "Missing CRON_BASE_URL or CRON_SECRET repo secrets."
+            exit 1
+          fi
+
+      - name: Run production cron tick
+        env:
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          BASE="${CRON_BASE_URL%/}"
+          url="${BASE}/api/v1/internal/cron/tick"
+          echo "::group::POST /api/v1/internal/cron/tick"
+          http_code=$(curl -sS -o /tmp/cron-body.txt -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            --max-time 90 \
+            -d '{}' \
+            "$url" || echo "000")
+          echo "HTTP ${http_code}"
+          head -c 4000 /tmp/cron-body.txt || true
+          echo
+          echo "::endgroup::"
+          if [ "$http_code" != "200" ] && [ "$http_code" != "207" ]; then
+            echo "::error::cron tick returned HTTP ${http_code}"
+            exit 1
+          fi

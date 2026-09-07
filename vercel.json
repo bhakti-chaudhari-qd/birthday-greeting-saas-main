@@ -1,0 +1,28 @@
+{
+  "crons": [
+    {
+      "path": "/api/v1/internal/cron/contact-import",
+      "schedule": "30 1 * * *"
+    },
+    {
+      "path": "/api/v1/internal/cron/birthday-automation",
+      "schedule": "15 13 * * *"
+    },
+    {
+      "path": "/api/v1/internal/cron/anniversary-automation",
+      "schedule": "20 13 * * *"
+    },
+    {
+      "path": "/api/v1/internal/cron/custom-automation",
+      "schedule": "25 13 * * *"
+    },
+    {
+      "path": "/api/v1/internal/cron/billing-expiry",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/v1/internal/worker/drain",
+      "schedule": "30 13 * * *"
+    }
+  ]
+}
