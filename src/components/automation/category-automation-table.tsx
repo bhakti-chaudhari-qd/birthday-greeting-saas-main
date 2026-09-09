@@ -530,7 +530,7 @@ export function CategoryAutomationTable() {
   }, [loadAll]);
 
   const activeDraft = drafts[occasionId];
-  const rows = activeDraft?.rows ?? [];
+  const rows = useMemo(() => activeDraft?.rows ?? [], [activeDraft?.rows]);
   const allRow = activeDraft?.allRow ?? emptyAllRow();
   const smsTemplates = activeDraft?.smsTemplates ?? [];
   const whatsappTemplates = activeDraft?.whatsappTemplates ?? [];

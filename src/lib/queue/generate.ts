@@ -580,6 +580,54 @@ export async function generateOccasionQueue(
   return summary;
 }
 
+async function generateLegacyOccasionQueue(
+  organizationId: string,
+  occasionName: string,
+  input: GenerateQueueInput,
+  options: GenerateOccasionQueueOptions = {},
+): Promise<QueueGenerationSummary> {
+  const occasion = await prisma.occasion.findFirst({
+    where: { organizationId, name: occasionName },
+    select: { id: true },
+  });
+
+  if (!occasion) {
+    throw new QueueValidationError("Occasion not found");
+  }
+
+  return generateOccasionQueue(organizationId, occasion.id, input, options);
+}
+
+/** Compatibility wrappers for callers that still use the former fixed occasions. */
+export function generateBirthdayQueue(
+  organizationId: string,
+  input: GenerateQueueInput,
+  options: GenerateOccasionQueueOptions = {},
+) {
+  return generateLegacyOccasionQueue(organizationId, "Birthday", input, options);
+}
+
+export function generateAnniversaryQueue(
+  organizationId: string,
+  input: GenerateQueueInput,
+  options: GenerateOccasionQueueOptions = {},
+) {
+  return generateLegacyOccasionQueue(
+    organizationId,
+    "Anniversary",
+    input,
+    options,
+  );
+}
+
+export function generateCustomQueue(
+  organizationId: string,
+  input: GenerateQueueInput,
+  options: GenerateOccasionQueueOptions = {},
+) {
+  return generateLegacyOccasionQueue(organizationId, "Custom", input, options);
+}
+
 /** Audit-only attribution for automation-triggered document generation (see GeneratedDocument.createdByUserId). */
 async function resolveAutomationCreatedByUserId(
   organizationId: string,

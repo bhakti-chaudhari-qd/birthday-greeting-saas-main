@@ -43,7 +43,6 @@ const emptyApprovedTemplateForm: ApprovedTemplateForm = {
 const APPROVED_DLT_SLOT_PATTERN = /\{\{[^}]+\}\}|\{#[^#]+#\}/g;
 
 function buildLocalTemplateFromDlt(form: ApprovedTemplateForm) {
-  const dltTemplateId = form.dltTemplateId.trim();
   const approvedContent = form.dltApprovedContent.trim();
   const name = form.name.trim();
 

@@ -7,6 +7,9 @@ const allowedDevOrigins = parseAllowedDevOrigins(
 );
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
   // Native binaries must not be bundled by Turbopack/webpack.
   serverExternalPackages: ["@napi-rs/canvas", "ffmpeg-static"],

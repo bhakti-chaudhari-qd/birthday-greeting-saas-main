@@ -16,6 +16,8 @@ const groupedQuerySchema = z.object({
   channel: z.enum(["SMS", "WHATSAPP", "EMAIL"]).optional(),
   occasionId: z.string().trim().min(1).max(100).optional(),
   categoryId: z.string().trim().min(1).max(100).optional(),
+  cursor: z.string().trim().min(1).max(500).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
   date: z
     .string()
     .trim()
@@ -46,6 +48,8 @@ export async function GET(request: Request) {
           : undefined,
       occasionId: searchParams.get("occasionId") ?? undefined,
       categoryId: searchParams.get("categoryId") ?? undefined,
+      cursor: searchParams.get("cursor") ?? undefined,
+      limit: searchParams.get("limit") ?? undefined,
       date: searchParams.get("date") ?? undefined,
     });
 

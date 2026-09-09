@@ -46,6 +46,7 @@ type GroupedActivityResult = {
   targetDate: string;
   summary: { sent: number; failed: number; pending: number; total: number };
   groups: ActivityGroup[];
+  pagination: { nextCursor: string | null; hasMore: boolean };
 };
 
 export type ActivityPageClientProps = {
@@ -430,7 +431,9 @@ export function ActivityPageClient({
   const [date, setDate] = useState(initialDate);
 
   const [result, setResult] = useState<GroupedActivityResult | null>(null);
+  const resultRef = useRef<GroupedActivityResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => new Set());
@@ -442,19 +445,29 @@ export function ActivityPageClient({
   }, [searchInput]);
 
   const loadActivity = useCallback(
-    async (isManualRefresh: boolean) => {
-      if (isManualRefresh) {
+    async (mode: "initial" | "refresh" | "more") => {
+      const isLoadingMore = mode === "more";
+      if (isLoadingMore) {
+        setLoadingMore(true);
+      } else if (mode === "refresh") {
         setRefreshing(true);
       } else {
         setLoading(true);
+        resultRef.current = null;
+        setResult(null);
       }
       setError(null);
       try {
         const params = new URLSearchParams({ status, date });
+        params.set("limit", "25");
         if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
         if (channel) params.set("channel", channel);
         if (occasionId) params.set("occasionId", occasionId);
         if (categoryId) params.set("categoryId", categoryId);
+        const currentResult = resultRef.current;
+        if (isLoadingMore && currentResult?.pagination.nextCursor) {
+          params.set("cursor", currentResult.pagination.nextCursor);
+        }
 
         const response = await fetch(`/api/v1/activity/grouped?${params.toString()}`);
         const body = await response.json();
@@ -462,11 +475,35 @@ export function ActivityPageClient({
           setError(body.error?.message ?? "Could not load activity. Try again.");
           return;
         }
-        setResult(body.data as GroupedActivityResult);
+        const nextResult = body.data as GroupedActivityResult;
+        if (isLoadingMore && currentResult) {
+          const groupsByKey = new Map(currentResult.groups.map((group) => [group.key, group]));
+          for (const incoming of nextResult.groups) {
+            const existing = groupsByKey.get(incoming.key);
+            if (!existing) {
+              groupsByKey.set(incoming.key, incoming);
+              continue;
+            }
+            existing.counts = {
+              sent: existing.counts.sent + incoming.counts.sent,
+              failed: existing.counts.failed + incoming.counts.failed,
+              pending: existing.counts.pending + incoming.counts.pending,
+              total: existing.counts.total + incoming.counts.total,
+            };
+            existing.recipients = [...existing.recipients, ...incoming.recipients];
+          }
+          const mergedResult = { ...nextResult, groups: [...groupsByKey.values()] };
+          resultRef.current = mergedResult;
+          setResult(mergedResult);
+        } else {
+          resultRef.current = nextResult;
+          setResult(nextResult);
+        }
       } catch {
         setError("Could not load activity. Check your connection and try again.");
       } finally {
-        setLoading(false);
+        if (!isLoadingMore) setLoading(false);
+        setLoadingMore(false);
         setRefreshing(false);
       }
     },
@@ -475,7 +512,7 @@ export function ActivityPageClient({
 
   useEffect(() => {
     async function load() {
-      await loadActivity(false);
+      await loadActivity("initial");
     }
     void load();
   }, [loadActivity]);
@@ -524,7 +561,7 @@ export function ActivityPageClient({
         setError(body.error?.message ?? "Could not retry greeting.");
         return;
       }
-      await loadActivity(true);
+      await loadActivity("refresh");
     } catch {
       setError("Could not retry greeting. Check your connection and try again.");
     } finally {
@@ -534,6 +571,7 @@ export function ActivityPageClient({
 
   const summary = result?.summary ?? { sent: 0, failed: 0, pending: 0, total: 0 };
   const groups = result?.groups ?? [];
+  const hasMore = result?.pagination.hasMore ?? false;
   const dateLabel = date === todayDate ? "Today" : formatDisplayDate(date);
   const hasFilters = Boolean(
     searchInput.trim() || status !== "all" || channel || occasionId || categoryId || date !== todayDate,
@@ -588,7 +626,7 @@ export function ActivityPageClient({
             type="button"
             aria-label="Refresh activity"
             className="inline-flex items-center justify-center rounded-full border border-stone-300 bg-white p-2 text-stone-600 outline-none transition-colors hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            onClick={() => void loadActivity(true)}
+            onClick={() => void loadActivity("refresh")}
             disabled={refreshing}
           >
             <RefreshIcon spinning={refreshing} />
@@ -719,6 +757,16 @@ export function ActivityPageClient({
               onRetry={(recipient) => void handleRetry(recipient)}
             />
           ))}
+          {hasMore ? (
+            <button
+              type="button"
+              className={secondaryButtonClass}
+              onClick={() => void loadActivity("more")}
+              disabled={loadingMore}
+            >
+              {loadingMore ? "Loading more…" : "Load more activity"}
+            </button>
+          ) : null}
         </div>
       )}
     </div>

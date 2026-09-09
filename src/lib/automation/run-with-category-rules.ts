@@ -1,11 +1,16 @@
-import {
-  Channel,
-  type MessageTemplate,
-} from "@prisma/client";
+import { Channel } from "@prisma/client";
+import type { OccasionType as OccasionTypeValue } from "./occasion-types";
 
+import {
+  listActiveCategoryChannelRules,
+  organizationHasActiveCategoryRules,
+} from "@/lib/automation/category-settings";
 import { resolveAutomationCreatesPerRun } from "@/lib/automation/caps";
-import type { ActiveCategoryChannelRule } from "@/lib/automation/category-settings";
-import { listActiveCategoryChannelRules } from "@/lib/automation/category-settings";
+import {
+  runOccasionAutomation,
+  type AutomationOrganizationInput,
+  type OccasionAutomationSummary,
+} from "@/lib/automation/run-occasion-automation";
 import { prisma } from "@/lib/db";
 import type { QueueGenerationSummary } from "@/lib/queue/generate";
 import {
@@ -13,55 +18,82 @@ import {
   resolveSmsProviderMode,
 } from "@/lib/queue/provider-send-eligibility";
 import { assertWhatsAppTemplateEligibleForManualSend } from "@/lib/queue/whatsapp-send-eligibility";
-
-export type OccasionAutomationOrganizationSummary = {
-  organizationId: string;
-  status:
-    | "processed"
-    | "skipped_ineligible"
-    | "skipped_before_send_time"
-    | "failed";
-  generation?: QueueGenerationSummary;
-  generations?: Array<QueueGenerationSummary & { channel: Channel }>;
-  channelErrors?: Partial<Record<Channel, string>>;
-  error?: string;
-};
-
-export type OccasionAutomationSummary = {
-  targetDate: string;
-  organizationsConsidered: number;
-  organizationsProcessed: number;
-  organizationsSkippedIneligible: number;
-  organizationsSkippedBeforeSendTime: number;
-  organizationsFailed: number;
-  totalCreated: number;
-  totalSkippedDuplicate: number;
-  totalSkippedLimit: number;
-  totalSkippedIneligible: number;
-  totalUnprocessedByBound: number;
-  processingIncomplete: boolean;
-  organizations: OccasionAutomationOrganizationSummary[];
-};
-
-export type AutomationOrganizationInput = {
-  id: string;
-  automationSendHour?: number | null;
-  automationSendMinute?: number | null;
-  channels?: Array<{
-    channel: Channel;
-    enabled: boolean;
-    templateId: string | null;
-  }>;
-};
+import type { MessageTemplate } from "@prisma/client";
 
 type GenerateWithRules = (
   organizationId: string,
   templateId: string,
   targetDate: string,
   maxCreates: number,
-  categoryRules: ActiveCategoryChannelRule[],
+  categoryRules: Awaited<ReturnType<typeof listActiveCategoryChannelRules>>,
   referenceDate: Date,
 ) => Promise<QueueGenerationSummary>;
+
+/**
+ * When category rules exist for the occasion, run per-category routing
+ * (send time + template per category). Otherwise use org-wide defaults.
+ */
+export async function runOccasionAutomationWithCategoryFallback(input: {
+  reference: Date;
+  targetDate: string;
+  occasionType: OccasionTypeValue;
+  organizations: AutomationOrganizationInput[];
+  validateTemplate: (
+    organizationId: string,
+    templateId: string,
+    channel: Channel,
+  ) => Promise<MessageTemplate>;
+  generateQueue: (
+    organizationId: string,
+    templateId: string,
+    targetDate: string,
+    maxCreates: number,
+  ) => Promise<QueueGenerationSummary>;
+  generateQueueWithCategoryRules: GenerateWithRules;
+}): Promise<OccasionAutomationSummary> {
+  const categoryOrgs: AutomationOrganizationInput[] = [];
+  const legacyOrgs: AutomationOrganizationInput[] = [];
+
+  for (const organization of input.organizations) {
+    const hasRules = await organizationHasActiveCategoryRules(
+      organization.id,
+      input.occasionType,
+    );
+    if (hasRules) {
+      categoryOrgs.push(organization);
+    } else {
+      legacyOrgs.push(organization);
+    }
+  }
+
+  const legacySummary =
+    legacyOrgs.length > 0
+      ? await runOccasionAutomation({
+          reference: input.reference,
+          targetDate: input.targetDate,
+          occasionId: input.occasionType,
+          organizations: legacyOrgs,
+          validateTemplate: input.validateTemplate,
+          generateQueue: input.generateQueue,
+          generateQueueWithCategoryRules: input.generateQueueWithCategoryRules,
+        })
+      : emptySummary(input.targetDate);
+
+  if (categoryOrgs.length === 0) {
+    return legacySummary;
+  }
+
+  const categorySummary = await runCategoryRoutedAutomation({
+    reference: input.reference,
+    targetDate: input.targetDate,
+    occasionType: input.occasionType,
+    organizations: categoryOrgs,
+    validateTemplate: input.validateTemplate,
+    generateQueueWithCategoryRules: input.generateQueueWithCategoryRules,
+  });
+
+  return mergeSummaries(legacySummary, categorySummary);
+}
 
 function emptySummary(targetDate: string): OccasionAutomationSummary {
   return {
@@ -78,6 +110,33 @@ function emptySummary(targetDate: string): OccasionAutomationSummary {
     totalUnprocessedByBound: 0,
     processingIncomplete: false,
     organizations: [],
+  };
+}
+
+function mergeSummaries(
+  a: OccasionAutomationSummary,
+  b: OccasionAutomationSummary,
+): OccasionAutomationSummary {
+  return {
+    targetDate: a.targetDate || b.targetDate,
+    organizationsConsidered:
+      a.organizationsConsidered + b.organizationsConsidered,
+    organizationsProcessed: a.organizationsProcessed + b.organizationsProcessed,
+    organizationsSkippedIneligible:
+      a.organizationsSkippedIneligible + b.organizationsSkippedIneligible,
+    organizationsSkippedBeforeSendTime:
+      a.organizationsSkippedBeforeSendTime +
+      b.organizationsSkippedBeforeSendTime,
+    organizationsFailed: a.organizationsFailed + b.organizationsFailed,
+    totalCreated: a.totalCreated + b.totalCreated,
+    totalSkippedDuplicate: a.totalSkippedDuplicate + b.totalSkippedDuplicate,
+    totalSkippedLimit: a.totalSkippedLimit + b.totalSkippedLimit,
+    totalSkippedIneligible:
+      a.totalSkippedIneligible + b.totalSkippedIneligible,
+    totalUnprocessedByBound:
+      a.totalUnprocessedByBound + b.totalUnprocessedByBound,
+    processingIncomplete: a.processingIncomplete || b.processingIncomplete,
+    organizations: [...a.organizations, ...b.organizations],
   };
 }
 
@@ -106,29 +165,16 @@ async function assertChannelEligible(
   assertTemplateEligibleForProviderSend(template, providerMode);
 }
 
-/**
- * Runs automation for one occasion across the given organizations, routing
- * each contact through its category-specific rule (or the categoryId=null
- * "all contacts" rule when the contact has no matching category rule) - see
- * listActiveCategoryChannelRules. Per-contact send-time gating happens
- * inside generateQueueWithCategoryRules (each rule can have its own time).
- */
-export async function runOccasionAutomation(input: {
+async function runCategoryRoutedAutomation(input: {
   reference: Date;
   targetDate: string;
-  occasionId: string;
+  occasionType: OccasionTypeValue;
   organizations: AutomationOrganizationInput[];
   validateTemplate: (
     organizationId: string,
     templateId: string,
     channel: Channel,
   ) => Promise<MessageTemplate>;
-  generateQueue?: (
-    organizationId: string,
-    templateId: string,
-    targetDate: string,
-    maxCreates: number,
-  ) => Promise<QueueGenerationSummary>;
   generateQueueWithCategoryRules: GenerateWithRules;
 }): Promise<OccasionAutomationSummary> {
   const summary = emptySummary(input.targetDate);
@@ -157,7 +203,7 @@ export async function runOccasionAutomation(input: {
     for (const channel of [Channel.SMS, Channel.WHATSAPP, Channel.EMAIL] as const) {
       const rules = await listActiveCategoryChannelRules(
         organization.id,
-        input.occasionId,
+        input.occasionType,
         channel,
       );
       if (rules.length === 0) {
@@ -187,7 +233,10 @@ export async function runOccasionAutomation(input: {
           ...generation,
           channel,
         });
-        if (!organizationSummary.generation || channel === Channel.SMS) {
+        if (
+          !organizationSummary.generation ||
+          channel === Channel.SMS
+        ) {
           organizationSummary.generation = generation;
         }
 
@@ -221,7 +270,7 @@ export async function runOccasionAutomation(input: {
     } else {
       organizationSummary.status = "failed";
       organizationSummary.error =
-        "No enabled automation channel has a template";
+        "No enabled category automation channel has a template";
       summary.organizationsFailed += 1;
       summary.processingIncomplete = true;
     }
