@@ -1,6 +1,7 @@
 import http from "node:http";
 import https from "node:https";
 import { randomBytes } from "node:crypto";
+import { isIP } from "node:net";
 import { URL } from "node:url";
 
 export type WhatsAppMultipartFile = {
@@ -90,7 +91,11 @@ export async function postWhatsAppMultipart(
         ...(isHttps
           ? {
               rejectUnauthorized: !tlsInsecure,
-              servername: parsed.hostname,
+              // SNI cannot be an IP address (TLS spec) - omit servername
+              // entirely for IP hosts so Node doesn't throw ERR_INVALID_ARG_VALUE.
+              ...(isIP(parsed.hostname) === 0
+                ? { servername: parsed.hostname }
+                : {}),
             }
           : {}),
       },
