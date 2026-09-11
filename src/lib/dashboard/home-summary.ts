@@ -1,5 +1,6 @@
 import { Channel, QueueStatus, UserRole } from "@prisma/client";
 
+import { getActivityUpcoming } from "@/lib/activity/upcoming";
 import { AUTOMATION_TIMEZONE } from "@/lib/automation/constants";
 import {
   formatAutomationSendTimeLabel,
@@ -14,6 +15,7 @@ import {
   parseTargetDate,
 } from "@/lib/queue/dates";
 import { getOccasionsDayView } from "@/lib/queue/occasions-day-view";
+import type { OccasionHumanStatus } from "@/lib/queue/occasions-status";
 
 export type DashboardHomeAlert = {
   message: string;
@@ -41,9 +43,8 @@ export type UpcomingTodayItem = {
   timeLabel: string;
   occasionLabel: string;
   contactName: string;
-  channel: Channel;
   channelLabel: string;
-  status: "PENDING" | "SENDING";
+  status: OccasionHumanStatus;
 };
 
 export type DashboardUpcomingToday = {
@@ -71,14 +72,6 @@ export type DashboardHomeSummary = {
 export type DashboardHomeStatus = Pick<DashboardHomeSummary, "upcomingToday">;
 
 const UPCOMING_TODAY_PREVIEW_LIMIT = 5;
-/**
- * Defensive ceiling on rows fetched for today's pending/sending queue -
- * "today" already bounds this to a single calendar day, this just guards
- * against an unexpectedly large single-day batch. The exact total (for
- * "more than N" detection) comes from a separate count(), unaffected by
- * this cap.
- */
-const UPCOMING_TODAY_SCAN_LIMIT = 200;
 
 const CHANNEL_LABEL: Record<Channel, string> = {
   SMS: "SMS",
@@ -193,133 +186,35 @@ async function loadAutomationState(organizationId: string): Promise<{
   };
 }
 
-/** Category-rule send time for a queue row, keyed by occasion + contact category + channel ("" = the categoryId=null "all contacts" rule). */
-function ruleTimeKey(
-  occasionId: string,
-  categoryId: string | null,
-  channel: Channel,
-): string {
-  return `${occasionId}|${categoryId ?? ""}|${channel}`;
-}
-
 /**
- * Real, already-queued SendQueue rows scheduled for today (PENDING/SENDING
- * only) - never a projection of contacts who merely have an occasion today.
- * Chronological order comes from the row's category automation rule
- * (send-time is configured per rule, not per row); rows with no matching
- * rule (e.g. manual sends) fall back to their own nextAttemptAt/createdAt.
+ * Everyone with an occasion today whose greeting hasn't gone out yet -
+ * covers the whole day (before queue generation, once queued, while
+ * sending), not only the brief window a SendQueue row is PENDING/SENDING.
+ * Reuses the same day-view + human-status rollup as the Activity page so
+ * the two stay consistent.
  */
 async function loadUpcomingToday(
   organizationId: string,
   todayDate: string,
-  todayDateFilter: Date,
 ): Promise<DashboardUpcomingToday> {
   const viewAllHref = `/dashboard/activity?status=pending&date=${todayDate}`;
 
-  const [rules, totalCount, rows] = await Promise.all([
-    prisma.categoryAutomationRule.findMany({
-      where: {
-        organizationId,
-        sendHour: { not: null },
-        sendMinute: { not: null },
-      },
-      select: {
-        occasionId: true,
-        categoryId: true,
-        sendHour: true,
-        sendMinute: true,
-        smsEnabled: true,
-        whatsappEnabled: true,
-        emailEnabled: true,
-      },
-    }),
-    prisma.sendQueue.count({
-      where: {
-        organizationId,
-        status: { in: [QueueStatus.PENDING, QueueStatus.SENDING] },
-        scheduledDate: todayDateFilter,
-      },
-    }),
-    prisma.sendQueue.findMany({
-      where: {
-        organizationId,
-        status: { in: [QueueStatus.PENDING, QueueStatus.SENDING] },
-        scheduledDate: todayDateFilter,
-      },
-      select: {
-        id: true,
-        channel: true,
-        status: true,
-        occasionId: true,
-        createdAt: true,
-        nextAttemptAt: true,
-        recipientName: true,
-        contact: { select: { name: true, categoryId: true } },
-        occasion: { select: { name: true } },
-      },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      take: UPCOMING_TODAY_SCAN_LIMIT,
-    }),
-  ]);
+  const result = await getActivityUpcoming(organizationId, { date: todayDate });
 
-  const ruleTimeByKey = new Map<string, { sendHour: number; sendMinute: number }>();
-  for (const rule of rules) {
-    if (rule.sendHour === null || rule.sendMinute === null) {
-      continue;
-    }
-    const time = { sendHour: rule.sendHour, sendMinute: rule.sendMinute };
-    const channels: Array<[boolean, Channel]> = [
-      [rule.smsEnabled, Channel.SMS],
-      [rule.whatsappEnabled, Channel.WHATSAPP],
-      [rule.emailEnabled, Channel.EMAIL],
-    ];
-    for (const [enabled, channel] of channels) {
-      if (enabled) {
-        ruleTimeByKey.set(ruleTimeKey(rule.occasionId, rule.categoryId, channel), time);
-      }
-    }
-  }
-
-  const resolved = rows.map((row) => {
-    const key = ruleTimeKey(row.occasionId, row.contact?.categoryId ?? null, row.channel);
-    const fallbackKey = ruleTimeKey(row.occasionId, null, row.channel);
-    const rule = ruleTimeByKey.get(key) ?? ruleTimeByKey.get(fallbackKey);
-
-    let sendHour: number;
-    let sendMinute: number;
-    if (rule) {
-      sendHour = rule.sendHour;
-      sendMinute = rule.sendMinute;
-    } else {
-      const local = getLocalHourMinute(AUTOMATION_TIMEZONE, row.nextAttemptAt ?? row.createdAt);
-      sendHour = local.hour;
-      sendMinute = local.minute;
-    }
-
-    return {
-      item: {
-        id: row.id,
-        timeLabel: formatAutomationSendTimeLabel(sendHour, sendMinute),
-        occasionLabel: row.occasion.name,
-        contactName: row.contact?.name ?? row.recipientName,
-        channel: row.channel,
-        channelLabel: CHANNEL_LABEL[row.channel],
-        status: row.status === QueueStatus.SENDING ? "SENDING" as const : "PENDING" as const,
-      },
-      sortMinutes: sendHour * 60 + sendMinute,
-    };
-  });
-
-  resolved.sort((a, b) => {
-    if (a.sortMinutes !== b.sortMinutes) {
-      return a.sortMinutes - b.sortMinutes;
-    }
-    return a.item.contactName.localeCompare(b.item.contactName);
-  });
+  const items: UpcomingTodayItem[] = result.items
+    .slice(0, UPCOMING_TODAY_PREVIEW_LIMIT)
+    .map((item) => ({
+      id: item.id,
+      timeLabel: item.sendTimeLabel,
+      occasionLabel: item.occasionLabel,
+      contactName: item.contactName,
+      channelLabel: item.channel === "MULTI" ? "Multiple" : CHANNEL_LABEL[item.channel],
+      status: item.status,
+    }));
 
   return {
-    items: resolved.slice(0, UPCOMING_TODAY_PREVIEW_LIMIT).map(({ item }) => item),
-    totalCount,
+    items,
+    totalCount: result.meta.total,
     viewAllHref,
   };
 }
@@ -389,7 +284,7 @@ export async function getDashboardHomeSummary(
       ? getWhatsAppChannelConfig(organizationId)
       : Promise.resolve(null),
     isAdmin ? countMissedYesterday(organizationId, yesterdayDate) : Promise.resolve(0),
-    loadUpcomingToday(organizationId, todayDate, todayDateFilter),
+    loadUpcomingToday(organizationId, todayDate),
   ]);
 
   const { rows: runningAutomations, nextRunLabel } = automationState;
@@ -482,13 +377,8 @@ export async function getDashboardHomeStatus(
   organizationId: string,
 ): Promise<DashboardHomeStatus> {
   const todayDate = getOrganizationLocalIsoDate(AUTOMATION_TIMEZONE);
-  const todayDateFilter = parseTargetDate(todayDate).date;
 
   return {
-    upcomingToday: await loadUpcomingToday(
-      organizationId,
-      todayDate,
-      todayDateFilter,
-    ),
+    upcomingToday: await loadUpcomingToday(organizationId, todayDate),
   };
 }

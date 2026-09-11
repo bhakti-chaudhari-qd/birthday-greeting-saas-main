@@ -12,6 +12,8 @@ import type {
   RunningAutomationRow,
   UpcomingTodayItem,
 } from "@/lib/dashboard/home-summary";
+import type { OccasionHumanStatus } from "@/lib/queue/occasions-status";
+import { getOccasionStatusLabel } from "@/lib/ui/customer-labels";
 
 export type DashboardHomeProps = {
   name: string;
@@ -137,6 +139,17 @@ function AutomationRowCard({ row }: { row: RunningAutomationRow }) {
   );
 }
 
+function upcomingStatusTone(
+  status: OccasionHumanStatus,
+): "neutral" | "success" | "warning" | "danger" | "info" | "scheduled" {
+  if (status === "sent") return "success";
+  if (status === "failed") return "danger";
+  if (status === "pending" || status === "skipped") return "warning";
+  if (status === "sending") return "info";
+  if (status === "will_send") return "scheduled";
+  return "neutral";
+}
+
 function UpcomingTodayRow({ item }: { item: UpcomingTodayItem }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm">
@@ -150,9 +163,10 @@ function UpcomingTodayRow({ item }: { item: UpcomingTodayItem }) {
         {item.contactName}
       </span>
       <span className="shrink-0 text-stone-500">{item.channelLabel}</span>
-      {item.status === "SENDING" ? (
-        <StatusBadge label="Sending" tone="warning" />
-      ) : null}
+      <StatusBadge
+        label={getOccasionStatusLabel(item.status)}
+        tone={upcomingStatusTone(item.status)}
+      />
     </div>
   );
 }
