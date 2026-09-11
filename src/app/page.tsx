@@ -9,6 +9,11 @@ export const metadata: Metadata = {
     "Design reusable greeting templates, add dynamic variables, and generate personalized PDFs for every recipient.",
 };
 
+// Static page, so Next sends a long shared-cache TTL by default - the VPS's
+// nginx has no deploy-aware invalidation, so an unbounded TTL means a stale
+// build could get stuck in its cache indefinitely. Bound it here instead.
+export const revalidate = 300;
+
 export default function Home() {
   return (
     <>
