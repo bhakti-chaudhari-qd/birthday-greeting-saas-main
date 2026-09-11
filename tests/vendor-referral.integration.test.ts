@@ -43,7 +43,12 @@ describe("vendor referral attribution", () => {
     await expect(resolveOptionalVendorReferral("   ")).resolves.toBeNull();
   });
 
-  it("rejects unknown referral codes", async () => {
+  it("rejects unknown referral codes", async ({ skip }) => {
+    if (!databaseAvailable) {
+      skip();
+      return;
+    }
+
     await expect(
       resolveOptionalVendorReferral("NOT-A-REAL-CODE"),
     ).rejects.toBeInstanceOf(VendorReferralError);

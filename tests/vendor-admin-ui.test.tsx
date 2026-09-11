@@ -85,12 +85,15 @@ describe("platform admin vendor UI", () => {
       }),
     ).toBe("Latest SMS failed");
     expect(
-      describeLatestVendorInvite({
-        deliveryStatus: "AMBIGUOUS",
-        sentAt: null,
-        expiresAt: "2026-07-28T00:00:00.000Z",
-        revokedAt: null,
-      }),
+      describeLatestVendorInvite(
+        {
+          deliveryStatus: "AMBIGUOUS",
+          sentAt: null,
+          expiresAt: "2026-07-28T00:00:00.000Z",
+          revokedAt: null,
+        },
+        new Date("2026-07-21T00:00:00.000Z"),
+      ),
     ).toBe("SMS delivery uncertain · invitation remains valid");
     expect(
       describeLatestVendorInvite(

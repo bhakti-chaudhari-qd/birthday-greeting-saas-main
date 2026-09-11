@@ -38,6 +38,18 @@ vi.mock("@/lib/db", () => ({
     user: {
       findMany: mocks.findUsers,
     },
+    planDeal: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    customPlanTopUp: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    planPayment: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    billingCheckout: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
   },
 }));
 

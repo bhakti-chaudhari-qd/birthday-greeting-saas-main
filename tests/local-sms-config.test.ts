@@ -56,7 +56,10 @@ describe("local SMS channel configuration", () => {
 
     expect(config.channel).toBe(Channel.SMS);
     expect(config.provider).toBe(ChannelProvider.CUSTOM_HTTP);
-    expect(config.settings).toEqual(LOCAL_SMS_PROVIDER_SETTINGS);
+    expect(config.settings).toEqual({
+      ...LOCAL_SMS_PROVIDER_SETTINGS,
+      successStatusCode: 1,
+    });
     expect(isEncryptedStoredCredentials(config.encryptedCredentials)).toBe(
       true,
     );

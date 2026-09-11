@@ -137,6 +137,10 @@ describe("billing webhook (REQ-BILL)", () => {
   });
 
   it("rejects webhooks with bad signatures when keys are set", async () => {
+    if (!databaseAvailable) {
+      return;
+    }
+
     const previous = {
       BILLING_ENABLED: process.env.BILLING_ENABLED,
       RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,

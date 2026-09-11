@@ -1,4 +1,4 @@
-import { Channel, ChannelProvider, OccasionType, QueueStatus } from "@prisma/client";
+import { Channel, ChannelProvider, QueueStatus } from "@prisma/client";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { runBirthdayAutomation } from "@/lib/automation/birthday";
@@ -10,7 +10,8 @@ import { updateBirthdayAutomationSettings } from "@/lib/automation/settings";
 import { CronAuthError, requireCronSecret } from "@/lib/api/cron-auth";
 import { createRegisteredOrganization } from "@/lib/auth/register";
 import { createContact } from "@/lib/contacts/service";
-import { buildBirthdayIdempotencyKey } from "@/lib/queue/idempotency";
+import { ensureSystemBirthdayOccasion } from "@/lib/occasions/service";
+import { buildOccasionIdempotencyKey } from "@/lib/queue/idempotency";
 import { generateBirthdayQueue } from "@/lib/queue/generate";
 import { executeManualSend } from "@/lib/queue/manual-send";
 import { claimQueueItemsForOrganization } from "@/lib/queue/claim";
@@ -88,15 +89,15 @@ describe("birthday automation", () => {
     await prisma.$disconnect();
   });
 
-  it("uses birthday idempotency keys without templateId", () => {
-    const key = buildBirthdayIdempotencyKey({
+  it("uses occasion idempotency keys without templateId", () => {
+    const key = buildOccasionIdempotencyKey({
       contactId: "contact-1",
       channel: "SMS",
-      occasionType: "BIRTHDAY",
+      occasionId: "occasion-1",
       targetDate: "2026-07-11",
     });
 
-    expect(key).toBe("birthday:contact-1:SMS:BIRTHDAY:2026-07-11");
+    expect(key).toBe("occasion:contact-1:SMS:occasion-1:2026-07-11");
   });
 
   it("does not create a second birthday row when the template changes same IST date", async ({
@@ -105,6 +106,7 @@ describe("birthday automation", () => {
     if (!databaseAvailable) skip();
 
     const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
+    const birthday = await ensureSystemBirthdayOccasion(org.organization.id);
     const templateA = await createTemplate(
       org.organization.id,
       birthdayTemplateInput("A"),
@@ -116,7 +118,7 @@ describe("birthday automation", () => {
     await createContact(org.organization.id, {
       name: "Birthday Person",
       mobile: testMobile(),
-      dateOfBirth: "1990-07-11",
+      occasionDates: { [birthday.id]: "1990-07-11" },
 
       isActive: true,
     });
@@ -146,6 +148,7 @@ describe("birthday automation", () => {
     if (!databaseAvailable) skip();
 
     const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
+    const birthday = await ensureSystemBirthdayOccasion(org.organization.id);
     const template = await createTemplate(
       org.organization.id,
       birthdayTemplateInput(),
@@ -165,7 +168,7 @@ describe("birthday automation", () => {
       await createContact(org.organization.id, {
         name: `Person ${index}`,
         mobile: testMobile(),
-        dateOfBirth: "1990-07-11",
+        occasionDates: { [birthday.id]: "1990-07-11" },
 
         isActive: true,
       });
@@ -195,6 +198,7 @@ describe("birthday automation", () => {
     if (!databaseAvailable) skip();
 
     const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
+    const birthday = await ensureSystemBirthdayOccasion(org.organization.id);
     const template = await createTemplate(
       org.organization.id,
       birthdayTemplateInput(),
@@ -209,7 +213,7 @@ describe("birthday automation", () => {
       await createContact(org.organization.id, {
         name: `Person ${index}`,
         mobile: testMobile(),
-        dateOfBirth: "1990-07-11",
+        occasionDates: { [birthday.id]: "1990-07-11" },
 
         isActive: true,
       });
@@ -244,6 +248,7 @@ describe("birthday automation", () => {
     const org = await createRegisteredOrganization(
       registerInput(uniqueSuffix(), "America/New_York"),
     );
+    const birthday = await ensureSystemBirthdayOccasion(org.organization.id);
     const template = await createTemplate(
       org.organization.id,
       birthdayTemplateInput(),
@@ -252,7 +257,7 @@ describe("birthday automation", () => {
     await createContact(org.organization.id, {
       name: "IST Match",
       mobile: testMobile(),
-      dateOfBirth: "1990-07-11",
+      occasionDates: { [birthday.id]: "1990-07-11" },
 
       isActive: true,
     });
@@ -281,6 +286,12 @@ describe("birthday automation", () => {
     const disabledOrg = await createRegisteredOrganization(
       registerInput(`disabled-${uniqueSuffix()}`),
     );
+    const enabledBirthday = await ensureSystemBirthdayOccasion(
+      enabledOrg.organization.id,
+    );
+    const disabledBirthday = await ensureSystemBirthdayOccasion(
+      disabledOrg.organization.id,
+    );
     const enabledTemplate = await createTemplate(
       enabledOrg.organization.id,
       birthdayTemplateInput("Enabled"),
@@ -299,14 +310,14 @@ describe("birthday automation", () => {
     await createContact(enabledOrg.organization.id, {
       name: "Enabled Contact",
       mobile: testMobile(),
-      dateOfBirth: "1990-03-15",
+      occasionDates: { [enabledBirthday.id]: "1990-03-15" },
 
       isActive: true,
     });
     await createContact(disabledOrg.organization.id, {
       name: "Disabled Contact",
       mobile: testMobile(),
-      dateOfBirth: "1990-03-15",
+      occasionDates: { [disabledBirthday.id]: "1990-03-15" },
 
       isActive: true,
     });
@@ -342,6 +353,7 @@ describe("birthday automation", () => {
     if (!databaseAvailable) skip();
 
     const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
+    const birthday = await ensureSystemBirthdayOccasion(org.organization.id);
     const template = await createTemplate(
       org.organization.id,
       birthdayTemplateInput(),
@@ -359,7 +371,7 @@ describe("birthday automation", () => {
     await createContact(org.organization.id, {
       name: "Not Ready",
       mobile: testMobile(),
-      dateOfBirth: "1990-07-11",
+      occasionDates: { [birthday.id]: "1990-07-11" },
 
       isActive: true,
     });
@@ -388,6 +400,7 @@ describe("birthday automation", () => {
     if (!databaseAvailable) skip();
 
     const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
+    const birthday = await ensureSystemBirthdayOccasion(org.organization.id);
     const template = await createTemplate(
       org.organization.id,
       birthdayTemplateInput(),
@@ -410,7 +423,7 @@ describe("birthday automation", () => {
     await createContact(org.organization.id, {
       name: "Ready Contact",
       mobile: "+919876543210",
-      dateOfBirth: "1990-07-11",
+      occasionDates: { [birthday.id]: "1990-07-11" },
 
       isActive: true,
     });
@@ -446,6 +459,7 @@ describe("birthday automation", () => {
     if (!databaseAvailable) skip();
 
     const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
+    const birthday = await ensureSystemBirthdayOccasion(org.organization.id);
     const template = await createTemplate(
       org.organization.id,
       birthdayTemplateInput(),
@@ -457,7 +471,7 @@ describe("birthday automation", () => {
     await createContact(org.organization.id, {
       name: "Dashboard Pending",
       mobile: testMobile(),
-      dateOfBirth: "1990-03-20",
+      occasionDates: { [birthday.id]: "1990-03-20" },
 
       isActive: true,
     });
@@ -491,6 +505,7 @@ describe("birthday automation", () => {
     if (!databaseAvailable) skip();
 
     const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
+    const birthday = await ensureSystemBirthdayOccasion(org.organization.id);
     const template = await createTemplate(
       org.organization.id,
       birthdayTemplateInput(),
@@ -498,7 +513,7 @@ describe("birthday automation", () => {
     await createContact(org.organization.id, {
       name: "Dashboard Enabled Pending",
       mobile: testMobile(),
-      dateOfBirth: "1990-04-18",
+      occasionDates: { [birthday.id]: "1990-04-18" },
 
       isActive: true,
     });
@@ -565,7 +580,6 @@ describe("birthday automation", () => {
     const manualQueue = await prisma.sendQueue.findFirstOrThrow({
       where: {
         organizationId: org.organization.id,
-        occasionType: OccasionType.CUSTOM,
       },
     });
 
@@ -636,7 +650,6 @@ describe("birthday automation", () => {
       where: {
         organizationId: org.organization.id,
         status: QueueStatus.PENDING,
-        occasionType: OccasionType.BIRTHDAY,
       },
     });
     expect(pendingBeforeSecond).toBe(MAX_BIRTHDAY_CREATES_PER_ORGANIZATION);
@@ -654,7 +667,6 @@ describe("birthday automation", () => {
       where: {
         organizationId: org.organization.id,
         status: QueueStatus.PENDING,
-        occasionType: OccasionType.BIRTHDAY,
       },
     });
     expect(totalPending).toBe(MAX_BIRTHDAY_CREATES_PER_ORGANIZATION + 1);

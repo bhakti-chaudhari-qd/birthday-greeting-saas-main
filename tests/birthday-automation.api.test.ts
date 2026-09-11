@@ -82,7 +82,11 @@ describe("birthday automation cron API", () => {
     expect(invalid.status).toBe(401);
   });
 
-  it("accepts GET with a valid Bearer secret (Vercel Cron)", async () => {
+  it("accepts GET with a valid Bearer secret (Vercel Cron)", async ({
+    skip,
+  }) => {
+    if (!databaseAvailable) skip();
+
     process.env.CRON_SECRET = "cron-test-secret";
 
     const response = await GET(

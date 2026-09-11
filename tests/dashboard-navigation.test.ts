@@ -20,10 +20,12 @@ describe("dashboard navigation mapping", () => {
     expect(hrefs).toEqual([
       "/dashboard",
       "/dashboard/contacts",
-      "/dashboard/messages/send",
-      "/dashboard/settings/greeting-routes",
+      "/dashboard/messages",
       "/dashboard/activity",
       "/dashboard/settings/channels",
+      "/dashboard/templates",
+      "/dashboard/settings/occasions",
+      "/dashboard/settings/contact-fields",
       "/dashboard/settings/billing",
     ]);
   });
@@ -37,11 +39,13 @@ describe("dashboard navigation mapping", () => {
 
     expect(labels).toContain("Today");
     expect(labels).toContain("Send Messages");
-    expect(labels).toContain("Automatic Greetings");
     expect(labels).toContain("Activity");
     expect(labels).not.toContain("Templates");
     expect(labels).not.toContain("AI writing tools");
     expect(labels).toContain("Channels");
+    expect(labels).toContain("Manage Templates");
+    expect(labels).toContain("Occasion Management");
+    expect(labels).toContain("Contact Fields");
     expect(labels).toContain("Billing");
     expect(labels).not.toContain("SMS");
     expect(labels).not.toContain("WhatsApp");
@@ -88,30 +92,23 @@ describe("dashboard navigation mapping", () => {
     ).toBe("/dashboard/settings/channels");
   });
 
-  it("marks Activity, Automatic Greetings, Send Messages, and Settings active", () => {
+  it("marks Activity, Send Messages, and Settings active", () => {
     const activity = DASHBOARD_NAV.find((item) => item.label === "Activity");
-    const automatic = DASHBOARD_NAV.find(
-      (item) => item.label === "Automatic Greetings",
-    );
     const createGreeting = DASHBOARD_NAV.find(
       (item) => item.label === "Send Messages",
     );
     const settings = DASHBOARD_NAV.find((item) => item.label === "Settings");
 
     expect(activity).toBeDefined();
-    expect(automatic).toBeDefined();
     expect(createGreeting).toBeDefined();
     expect(settings).toBeDefined();
 
     expect(isNavItemActive("/dashboard/settings/channels", settings!)).toBe(
       true,
     );
-    expect(isNavItemActive("/dashboard/messages/send", createGreeting!)).toBe(
+    expect(isNavItemActive("/dashboard/messages", createGreeting!)).toBe(
       true,
     );
-    expect(
-      isNavItemActive("/dashboard/settings/greeting-routes", automatic!),
-    ).toBe(true);
     expect(isNavItemActive("/dashboard/activity", activity!)).toBe(true);
     expect(
       isNavItemActive("/dashboard/settings/sms/templates", settings!),
@@ -129,6 +126,9 @@ describe("dashboard navigation mapping", () => {
     ).toBe(false);
     expect(settings!.children!.map((child) => child.label)).toEqual([
       "Channels",
+      "Manage Templates",
+      "Occasion Management",
+      "Contact Fields",
       "Billing",
     ]);
   });
@@ -137,7 +137,7 @@ describe("dashboard navigation mapping", () => {
     expect(DASHBOARD_HOME_PATHS).toHaveLength(3);
     expect(DASHBOARD_HOME_PATHS.map(({ title, href }) => ({ title, href }))).toEqual([
       { title: "Add contacts", href: "/dashboard/contacts" },
-      { title: "Send messages", href: "/dashboard/messages/send" },
+      { title: "Messages", href: "/dashboard/messages" },
       { title: "Review activity", href: "/dashboard/activity" },
     ]);
   });

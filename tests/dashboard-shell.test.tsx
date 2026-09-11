@@ -52,7 +52,6 @@ describe("authenticated app shell navigation", () => {
     expect(html).toContain("Birthday Greeting");
     expect(html).toContain("Today");
     expect(html).toContain("Contacts");
-    expect(html).toContain("Automatic Greetings");
     expect(html).toContain("Activity");
     expect(html).not.toContain("Templates");
     expect(html).toContain("Send Messages");
@@ -75,11 +74,15 @@ describe("authenticated app shell navigation", () => {
     expect(html.match(/Sign out/g)?.length).toBe(1);
 
     // Collapsed Settings: top-level hrefs render; nested Settings children do not.
+    const settingsChildHrefs = new Set([
+      "/dashboard/settings/channels",
+      "/dashboard/templates",
+      "/dashboard/settings/occasions",
+      "/dashboard/settings/contact-fields",
+      "/dashboard/settings/billing",
+    ]);
     for (const href of collectNavHrefs()) {
-      if (
-        href === "/dashboard/settings/channels" ||
-        href === "/dashboard/settings/billing"
-      ) {
+      if (settingsChildHrefs.has(href)) {
         expect(html).not.toContain(`href="${href}"`);
       } else {
         expect(html).toContain(`href="${href}"`);
@@ -89,7 +92,7 @@ describe("authenticated app shell navigation", () => {
     expect(html).toContain('href="/dashboard/activity"');
   });
 
-  it("shows Settings children when a Settings route is active", () => {
+  it("styles the Settings trigger as active when a Settings route is active", () => {
     pathnameRef.current = "/dashboard/settings/channels";
 
     const html = renderToStaticMarkup(
@@ -98,16 +101,18 @@ describe("authenticated app shell navigation", () => {
       </AppShell>,
     );
 
+    // Settings children (Channels, Billing, ...) only render once the
+    // dropdown is opened by a click - unreachable from a static server
+    // render. What a static render CAN show is that the Settings trigger
+    // itself reflects the active-group state for a nested settings route.
     expect(html).toContain("Settings");
-    expect(html).toContain("Channels");
-    expect(html).toContain("Billing");
-    expect(html).toContain('href="/dashboard/settings/channels"');
+    expect(html).toContain('aria-haspopup="menu"');
     expect(html).toMatch(
-      /href="\/dashboard\/settings\/channels"[^>]*aria-current="page"|aria-current="page"[^>]*href="\/dashboard\/settings\/channels"/,
+      /aria-haspopup="menu"[^>]*class="[^"]*border-stone-900 bg-stone-900 text-white/,
     );
   });
 
-  it("marks the active nested Channels route with aria-current", () => {
+  it("marks the active Settings group without expanding its children", () => {
     pathnameRef.current = "/dashboard/settings/channels";
 
     const html = renderToStaticMarkup(
@@ -116,9 +121,9 @@ describe("authenticated app shell navigation", () => {
       </AppShell>,
     );
 
-    expect(html).toContain('href="/dashboard/settings/channels"');
     expect(html).toMatch(
-      /href="\/dashboard\/settings\/channels"[^>]*aria-current="page"|aria-current="page"[^>]*href="\/dashboard\/settings\/channels"/,
+      /aria-haspopup="menu"[^>]*class="[^"]*border-stone-900 bg-stone-900 text-white/,
     );
+    expect(html).not.toContain('href="/dashboard/settings/channels"');
   });
 });

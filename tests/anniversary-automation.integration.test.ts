@@ -1,4 +1,3 @@
-import { OccasionType } from "@prisma/client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { runAnniversaryAutomation } from "@/lib/automation/anniversary";
@@ -8,7 +7,7 @@ import {
 import { updateAnniversaryAutomationSettings } from "@/lib/automation/anniversary-settings";
 import { createRegisteredOrganization } from "@/lib/auth/register";
 import { createContact } from "@/lib/contacts/service";
-import { buildAnniversaryIdempotencyKey } from "@/lib/queue/idempotency";
+import { buildOccasionIdempotencyKey } from "@/lib/queue/idempotency";
 import { generateAnniversaryQueue } from "@/lib/queue/generate";
 import { getOrganizationLocalIsoDate } from "@/lib/queue/dates";
 import { createTemplate } from "@/lib/templates/service";
@@ -65,15 +64,15 @@ describe("anniversary automation", () => {
     await prisma.$disconnect();
   });
 
-  it("uses anniversary idempotency keys without templateId", () => {
-    const key = buildAnniversaryIdempotencyKey({
+  it("uses occasion idempotency keys without templateId", () => {
+    const key = buildOccasionIdempotencyKey({
       contactId: "contact-1",
       channel: "SMS",
-      occasionType: OccasionType.ANNIVERSARY,
+      occasionId: "occasion-1",
       targetDate: "2026-07-11",
     });
 
-    expect(key).toBe("anniversary:contact-1:SMS:ANNIVERSARY:2026-07-11");
+    expect(key).toBe("occasion:contact-1:SMS:occasion-1:2026-07-11");
   });
 
   it("does not create a second anniversary row when the template changes same IST date", async ({

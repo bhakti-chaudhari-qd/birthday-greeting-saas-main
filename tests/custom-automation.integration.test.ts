@@ -1,4 +1,3 @@
-import { OccasionType } from "@prisma/client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { runCustomAutomation } from "@/lib/automation/custom";
@@ -6,7 +5,7 @@ import { AUTOMATION_TIMEZONE } from "@/lib/automation/constants";
 import { updateCustomAutomationSettings } from "@/lib/automation/custom-settings";
 import { createRegisteredOrganization } from "@/lib/auth/register";
 import { createContact } from "@/lib/contacts/service";
-import { buildCustomIdempotencyKey } from "@/lib/queue/idempotency";
+import { buildOccasionIdempotencyKey } from "@/lib/queue/idempotency";
 import { generateCustomQueue } from "@/lib/queue/generate";
 import { getOrganizationLocalIsoDate } from "@/lib/queue/dates";
 import { createTemplate } from "@/lib/templates/service";
@@ -53,15 +52,15 @@ describe("custom automation", () => {
     await prisma.$disconnect();
   });
 
-  it("uses custom idempotency keys without templateId", () => {
-    const key = buildCustomIdempotencyKey({
+  it("uses occasion idempotency keys without templateId", () => {
+    const key = buildOccasionIdempotencyKey({
       contactId: "contact-1",
       channel: "SMS",
-      occasionType: OccasionType.CUSTOM,
+      occasionId: "occasion-1",
       targetDate: "2026-07-11",
     });
 
-    expect(key).toBe("custom:contact-1:SMS:CUSTOM:2026-07-11");
+    expect(key).toBe("occasion:contact-1:SMS:occasion-1:2026-07-11");
   });
 
   it("does not create a second custom row when the template changes same IST date", async ({
