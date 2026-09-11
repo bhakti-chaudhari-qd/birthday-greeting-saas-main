@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
   // Native binaries must not be bundled by Turbopack/webpack.
   serverExternalPackages: ["@napi-rs/canvas", "ffmpeg-static"],
+  // Minimal self-contained server bundle for the Docker image.
+  output: "standalone",
 };
 
 export default nextConfig;

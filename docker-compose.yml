@@ -1,0 +1,17 @@
+services:
+  app:
+    build: .
+    container_name: birthday-greeting
+    restart: unless-stopped
+    # Host networking so the container reaches the VPS's own Postgres at
+    # localhost:5432 (same DATABASE_URL already in .env) without any
+    # bridge/port-mapping changes, and keeps serving on :3001 exactly like
+    # the pm2 setup nginx already proxies to.
+    network_mode: host
+    env_file:
+      - .env
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
