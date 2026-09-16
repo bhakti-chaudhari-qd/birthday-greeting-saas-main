@@ -20,6 +20,7 @@ import {
   type MessageSendRequest,
   type MessageSendResult,
 } from "../types";
+import { assertPublicHttpTarget } from "../ssrf-guard";
 
 export type CustomHttpWhatsAppProviderConfig =
   ResolvedWhatsAppHttpProviderConfig & {
@@ -151,7 +152,7 @@ async function fetchProviderResponseNative(
 export function createCustomHttpWhatsAppProvider(
   config: CustomHttpWhatsAppProviderConfig,
 ): MessageProvider {
-  const tlsInsecure = config.tlsInsecure !== false;
+  const tlsInsecure = config.tlsInsecure === true;
 
   return {
     name: ChannelProvider.CUSTOM_HTTP,
@@ -180,6 +181,7 @@ export function createCustomHttpWhatsAppProvider(
 
       const mobileNumber = formatIndianWhatsAppRecipient(request.recipient);
       const url = buildCustomWhatsAppSendUrl(config);
+      await assertPublicHttpTarget(url);
       const mediaBytes =
         request.media?.bytes ??
         config.mediaBytes ??

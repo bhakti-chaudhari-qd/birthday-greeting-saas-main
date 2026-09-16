@@ -29,6 +29,7 @@ import {
   type MessageSendRequest,
   type MessageSendResult,
 } from "../types";
+import { assertPublicHttpTarget } from "../ssrf-guard";
 
 export type LegacyHttpSmsProviderConfig = ResolvedSmsProviderConfig & {
   fetchFn?: typeof fetch;
@@ -94,6 +95,8 @@ async function fetchProviderResponse(
   requestUrl: string,
   timeoutMs: number,
 ): Promise<string> {
+  await assertPublicHttpTarget(requestUrl);
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -177,6 +180,8 @@ export function createLegacyHttpSmsProvider(
         message: request.body,
         templateId: dltTemplateId,
       });
+
+      await assertPublicHttpTarget(requestUrl);
 
       const controller = new AbortController();
       const timeout = setTimeout(
