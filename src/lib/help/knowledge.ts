@@ -521,12 +521,28 @@ export type SuggestedHelpQuestion = {
   title: string;
 };
 
+/** Localized chip label for a suggested question - the lead-in read as a short title, e.g. "To create an automation" -> "Create an automation". */
+function suggestedQuestionTitle(
+  article: HelpArticle,
+  language: HelpReplyLanguage,
+): string {
+  if (language === "en") {
+    return article.title;
+  }
+  const leadIn = language === "hi" ? article.leadInHi : article.leadInMr;
+  return leadIn.replace(/[:：]\s*$/, "");
+}
+
 export function getSuggestedHelpQuestions(
   limit = 6,
+  language: HelpReplyLanguage = "en",
 ): SuggestedHelpQuestion[] {
   return HELP_ARTICLES.filter((article) => article.suggest)
     .slice(0, limit)
-    .map((article) => ({ id: article.id, title: article.title }));
+    .map((article) => ({
+      id: article.id,
+      title: suggestedQuestionTitle(article, language),
+    }));
 }
 
 function normalize(text: string): string {

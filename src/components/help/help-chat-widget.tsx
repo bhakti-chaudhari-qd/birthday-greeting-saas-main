@@ -8,6 +8,8 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/ui/page";
+import { getHelpWidgetDict } from "@/lib/i18n/dictionaries/help-widget";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type SuggestedQuestion = { id: string; title: string };
 type HelpLink = { label: string; href: string };
@@ -37,13 +39,12 @@ type ChatPayload = {
   error?: { message?: string };
 };
 
-const DEFAULT_WELCOME =
-  "Hi! I can help with contacts, templates, automations, SMS/WhatsApp setup, roles, and billing. Ask in English, हिंदी, or मराठी - I'll reply in the same language.";
-
 export function HelpChatWidget() {
   const panelId = useId();
+  const locale = useLocale();
+  const dict = getHelpWidgetDict(locale);
   const [open, setOpen] = useState(false);
-  const [welcome, setWelcome] = useState(DEFAULT_WELCOME);
+  const [welcome, setWelcome] = useState(dict.defaultWelcome);
   const [suggested, setSuggested] = useState<SuggestedQuestion[]>([]);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [draft, setDraft] = useState("");
@@ -68,23 +69,21 @@ export function HelpChatWidget() {
 
     async function loadBootstrap() {
       try {
-        const response = await fetch("/api/v1/help/chat", {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        });
+        const response = await fetch(
+          `/api/v1/help/chat?lang=${encodeURIComponent(locale)}`,
+          { method: "GET", headers: { Accept: "application/json" } },
+        );
         const payload = (await response.json()) as BootstrapPayload;
         if (!response.ok) {
-          throw new Error(payload.error?.message ?? "Could not load help");
+          throw new Error(payload.error?.message ?? dict.couldNotLoadHelp);
         }
         if (cancelled) return;
-        setWelcome(payload.data?.welcome ?? DEFAULT_WELCOME);
+        setWelcome(payload.data?.welcome ?? dict.defaultWelcome);
         setSuggested(payload.data?.suggestedQuestions ?? []);
         setBootstrapped(true);
       } catch (err) {
         if (cancelled) return;
-        setError(
-          err instanceof Error ? err.message : "Could not load help questions",
-        );
+        setError(err instanceof Error ? err.message : dict.couldNotLoadHelp);
         setBootstrapped(true);
       }
     }
@@ -93,7 +92,7 @@ export function HelpChatWidget() {
     return () => {
       cancelled = true;
     };
-  }, [open, bootstrapped]);
+  }, [open, bootstrapped, locale, dict.defaultWelcome]);
 
   useEffect(() => {
     if (!open) return;
@@ -145,12 +144,10 @@ export function HelpChatWidget() {
       });
       const payload = (await response.json()) as ChatPayload;
       if (!response.ok) {
-        throw new Error(payload.error?.message ?? "Could not get an answer");
+        throw new Error(payload.error?.message ?? dict.genericAnswerFailed);
       }
 
-      const answer =
-        payload.data?.answer?.trim() ||
-        "I could not form an answer. Please try another question.";
+      const answer = payload.data?.answer?.trim() || dict.genericAnswerFailed;
 
       setTurns((prev) => [
         ...prev,
@@ -166,14 +163,13 @@ export function HelpChatWidget() {
         setSuggested(payload.data.suggestedQuestions);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Help request failed");
+      setError(err instanceof Error ? err.message : dict.helpRequestFailed);
       setTurns((prev) => [
         ...prev,
         {
           id: nextTurnId("a-err"),
           role: "assistant",
-          content:
-            "Sorry - I could not answer that just now. Please try again in a moment.",
+          content: dict.genericChatFailed,
         },
       ]);
     } finally {
@@ -191,16 +187,16 @@ export function HelpChatWidget() {
       {open ? (
         <section
           id={panelId}
-          aria-label="Product help chat"
+          aria-label={dict.panelLabel}
           className="pointer-events-auto flex h-[min(32rem,calc(100vh-6rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-stone-200 bg-[#fbfaf7] shadow-2xl shadow-stone-900/15"
         >
           <header className="flex items-start justify-between gap-3 border-b border-stone-200 bg-white px-4 py-3">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-stone-900">
-                Product help
+                {dict.headerTitle}
               </p>
               <p className="mt-0.5 text-xs leading-relaxed text-stone-500">
-                Answers from product docs. I can&apos;t change your account.
+                {dict.headerSubtitle}
               </p>
             </div>
             <button
@@ -208,7 +204,7 @@ export function HelpChatWidget() {
               onClick={() => setOpen(false)}
               className="shrink-0 rounded-full px-2.5 py-1 text-sm font-medium text-stone-600 outline-none hover:bg-stone-100 focus-visible:ring-2 focus-visible:ring-primary"
             >
-              Close
+              {dict.close}
             </button>
           </header>
 
@@ -223,7 +219,7 @@ export function HelpChatWidget() {
             {turns.length === 0 && suggested.length > 0 ? (
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-                  Suggested questions
+                  {dict.suggestedQuestions}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {suggested.map((item) => (
@@ -269,7 +265,7 @@ export function HelpChatWidget() {
             ))}
 
             {loading ? (
-              <p className="text-xs font-medium text-stone-500">Thinking…</p>
+              <p className="text-xs font-medium text-stone-500">{dict.thinking}</p>
             ) : null}
 
             {error ? (
@@ -299,7 +295,7 @@ export function HelpChatWidget() {
             className="border-t border-stone-200 bg-white p-3"
           >
             <label className="sr-only" htmlFor={`${panelId}-input`}>
-              Ask a product question
+              {dict.askInputLabel}
             </label>
             <div className="flex gap-2">
               <input
@@ -307,7 +303,7 @@ export function HelpChatWidget() {
                 ref={inputRef}
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder="Ask in English, हिंदी, or मराठी…"
+                placeholder={dict.askPlaceholder}
                 maxLength={1000}
                 disabled={loading}
                 className={`${inputClass} flex-1`}
@@ -317,7 +313,7 @@ export function HelpChatWidget() {
                 disabled={loading || !draft.trim()}
                 className={`${primaryButtonClass} px-4`}
               >
-                Ask
+                {dict.ask}
               </button>
             </div>
           </form>
@@ -335,7 +331,7 @@ export function HelpChatWidget() {
           "px-4",
         ].join(" ")}
       >
-        {open ? "Hide help" : "Need help?"}
+        {open ? dict.toggleClose : dict.toggleOpen}
       </button>
     </div>
   );

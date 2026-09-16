@@ -49,7 +49,7 @@ function curatedAnswer(
       provider: "curated",
       articleIds: [],
       links: [{ label: "Dashboard home", href: "/dashboard" }],
-      suggestedQuestions: getSuggestedHelpQuestions(6),
+      suggestedQuestions: getSuggestedHelpQuestions(6, language),
     };
   }
 
@@ -59,7 +59,7 @@ function curatedAnswer(
     provider: "curated",
     articleIds: articles.map((a) => a.id),
     links: uniqueLinks(articles),
-    suggestedQuestions: getSuggestedHelpQuestions(6),
+    suggestedQuestions: getSuggestedHelpQuestions(6, language),
   };
 }
 
@@ -167,7 +167,7 @@ export async function answerHelpChat(
       provider: "openai",
       articleIds: articlesForModel.map((a) => a.id),
       links: uniqueLinks(articlesForModel),
-      suggestedQuestions: getSuggestedHelpQuestions(6),
+      suggestedQuestions: getSuggestedHelpQuestions(6, language),
     };
   }
 

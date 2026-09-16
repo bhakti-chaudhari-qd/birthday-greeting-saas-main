@@ -7,22 +7,29 @@ import {
 } from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import { answerHelpChat, getSuggestedHelpQuestions } from "@/lib/help/chat";
+import type { HelpReplyLanguage } from "@/lib/help/language";
 import {
   assertHelpChatAllowed,
   HelpRateLimitError,
 } from "@/lib/help/rate-limit";
+import { getHelpWidgetDict } from "@/lib/i18n/dictionaries/help-widget";
 import { helpChatSchema } from "@/lib/validation/help";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+function parseLang(value: string | null): HelpReplyLanguage {
+  return value === "hi" || value === "mr" ? value : "en";
+}
+
+export async function GET(request: Request) {
   try {
     await requireSessionAuth();
+    const { searchParams } = new URL(request.url);
+    const lang = parseLang(searchParams.get("lang"));
     return NextResponse.json({
       data: {
-        suggestedQuestions: getSuggestedHelpQuestions(6),
-        welcome:
-          "Hi! I can help with contacts, templates, automations, SMS/WhatsApp setup, roles, and billing. Ask in English, हिंदी, or मराठी - I'll reply in the same language.",
+        suggestedQuestions: getSuggestedHelpQuestions(6, lang),
+        welcome: getHelpWidgetDict(lang).defaultWelcome,
       },
     });
   } catch (error) {

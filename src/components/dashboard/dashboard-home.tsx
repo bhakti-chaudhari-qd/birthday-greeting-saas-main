@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { EmptyState, InlineAlert, StatusBadge } from "@/components/ui/feedback";
 import { compactSecondaryButtonClass } from "@/components/ui/page";
 import { getDashboardHomeDict } from "@/lib/i18n/dictionaries/dashboard-home";
+import { toDevanagari } from "@/lib/i18n/transliterate";
 import { useLocale } from "@/lib/i18n/use-locale";
 import type {
   DashboardHomeAlert,
@@ -203,8 +204,11 @@ export function DashboardHome({
   summary: initialSummary,
   canManage = false,
 }: DashboardHomeProps) {
-  const dict = getDashboardHomeDict(useLocale());
+  const locale = useLocale();
+  const dict = getDashboardHomeDict(locale);
   const firstName = name.trim().split(/\s+/)[0] || name;
+  const displayFirstName =
+    locale === "en" ? firstName : toDevanagari(firstName);
   const [summary, setSummary] = useState(initialSummary);
   const [refreshing, setRefreshing] = useState(false);
   const [catchingUp, setCatchingUp] = useState(false);
@@ -306,7 +310,7 @@ export function DashboardHome({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">
-            {dict.welcome(firstName)}
+            {dict.welcome(displayFirstName)}
           </h1>
           <p className="mt-1.5 text-sm text-stone-500">{dict.subtitle}</p>
           <p className="mt-0.5 text-xs text-stone-400">
