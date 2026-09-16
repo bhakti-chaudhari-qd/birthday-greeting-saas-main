@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { EmptyState, InlineAlert, StatusBadge } from "@/components/ui/feedback";
 import { compactSecondaryButtonClass } from "@/components/ui/page";
+import { getDashboardHomeDict } from "@/lib/i18n/dictionaries/dashboard-home";
+import { useLocale } from "@/lib/i18n/use-locale";
 import type {
   DashboardHomeAlert,
   DashboardHomeStatus,
@@ -13,7 +15,6 @@ import type {
   UpcomingTodayItem,
 } from "@/lib/dashboard/home-summary";
 import type { OccasionHumanStatus } from "@/lib/queue/occasions-status";
-import { getOccasionStatusLabel } from "@/lib/ui/customer-labels";
 
 export type DashboardHomeProps = {
   name: string;
@@ -95,11 +96,12 @@ function ChannelStatusRow({
   label: string;
   connected: boolean;
 }) {
+  const dict = getDashboardHomeDict(useLocale()).systemStatus;
   return (
     <div className="flex items-center justify-between gap-2">
       <span className="text-sm font-medium text-stone-800">{label}</span>
       <StatusBadge
-        label={connected ? "Connected" : "Not connected"}
+        label={connected ? dict.connected : dict.notConnected}
         tone={connected ? "success" : "danger"}
       />
     </div>
@@ -107,29 +109,30 @@ function ChannelStatusRow({
 }
 
 function AutomationRowCard({ row }: { row: RunningAutomationRow }) {
+  const dict = getDashboardHomeDict(useLocale()).runningAutomations;
   return (
     <div className="rounded-xl border border-stone-200/80 bg-white p-4 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-stone-900">
           {row.occasionLabel}
         </p>
-        <StatusBadge label="Active" tone="success" />
+        <StatusBadge label={dict.active} tone="success" />
       </div>
       <dl className="mt-4 grid grid-cols-3 gap-x-3 gap-y-3">
         <div>
-          <dt className="text-xs text-stone-500">Category</dt>
+          <dt className="text-xs text-stone-500">{dict.category}</dt>
           <dd className="mt-1 text-sm font-medium text-stone-800">
             {row.categoryName}
           </dd>
         </div>
         <div>
-          <dt className="text-xs text-stone-500">Channel</dt>
+          <dt className="text-xs text-stone-500">{dict.channel}</dt>
           <dd className="mt-1 text-sm font-medium text-stone-800">
             {row.channelLabel}
           </dd>
         </div>
         <div>
-          <dt className="text-xs text-stone-500">Send Time</dt>
+          <dt className="text-xs text-stone-500">{dict.sendTime}</dt>
           <dd className="mt-1 text-sm font-medium text-stone-800">
             {row.sendTimeLabel}
           </dd>
@@ -151,6 +154,7 @@ function upcomingStatusTone(
 }
 
 function UpcomingTodayRow({ item }: { item: UpcomingTodayItem }) {
+  const dict = getDashboardHomeDict(useLocale()).occasionStatus;
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm">
       <span className="w-20 shrink-0 font-medium text-stone-900">
@@ -164,7 +168,7 @@ function UpcomingTodayRow({ item }: { item: UpcomingTodayItem }) {
       </span>
       <span className="shrink-0 text-stone-500">{item.channelLabel}</span>
       <StatusBadge
-        label={getOccasionStatusLabel(item.status)}
+        label={dict[item.status]}
         tone={upcomingStatusTone(item.status)}
       />
     </div>
@@ -199,6 +203,7 @@ export function DashboardHome({
   summary: initialSummary,
   canManage = false,
 }: DashboardHomeProps) {
+  const dict = getDashboardHomeDict(useLocale());
   const firstName = name.trim().split(/\s+/)[0] || name;
   const [summary, setSummary] = useState(initialSummary);
   const [refreshing, setRefreshing] = useState(false);
@@ -301,18 +306,16 @@ export function DashboardHome({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">
-            Welcome, {firstName}
+            {dict.welcome(firstName)}
           </h1>
-          <p className="mt-1.5 text-sm text-stone-500">
-            Manage your birthday automations from one place.
-          </p>
+          <p className="mt-1.5 text-sm text-stone-500">{dict.subtitle}</p>
           <p className="mt-0.5 text-xs text-stone-400">
             {summary.todayDateLabel}
           </p>
         </div>
         <button
           type="button"
-          aria-label="Refresh dashboard"
+          aria-label={dict.refreshDashboard}
           className="inline-flex shrink-0 items-center justify-center rounded-full border border-stone-300 bg-white p-2 text-stone-600 outline-none transition-colors hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           onClick={() => void refreshSummary()}
           disabled={refreshing}
@@ -327,10 +330,7 @@ export function DashboardHome({
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-amber-50 px-4 py-2.5">
               <p className="flex items-center gap-2 text-sm text-amber-900">
                 <StatusDot tone="warning" />
-                Some greetings could not be processed yesterday (
-                {summary.missedQueue.missedCount}{" "}
-                {summary.missedQueue.missedCount === 1 ? "person" : "people"}{" "}
-                missed).
+                {dict.missedQueue.message(summary.missedQueue.missedCount)}
               </p>
               <button
                 type="button"
@@ -338,7 +338,7 @@ export function DashboardHome({
                 disabled={catchingUp}
                 onClick={() => void runCatchUp(summary.missedQueue!.targetDate)}
               >
-                {catchingUp ? "Retrying…" : "Retry Queue"}
+                {catchingUp ? dict.missedQueue.retrying : dict.missedQueue.retryQueue}
               </button>
             </div>
           ) : null}
@@ -356,51 +356,53 @@ export function DashboardHome({
           id="status-heading"
           className="text-lg font-semibold text-stone-900"
         >
-          System Status
+          {dict.systemStatus.heading}
         </h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatusCard label="Automation">
+          <StatusCard label={dict.systemStatus.automation}>
             <div className="mt-3 flex items-center gap-2">
               <StatusDot tone={summary.automation.running ? "success" : "danger"} />
               <p className="text-2xl font-semibold text-stone-900">
-                {summary.automation.running ? "Running" : "Paused"}
+                {summary.automation.running
+                  ? dict.systemStatus.running
+                  : dict.systemStatus.paused}
               </p>
             </div>
             <div className="mt-auto flex items-center justify-between pt-4 text-xs text-stone-500">
-              <span>Next Run</span>
+              <span>{dict.systemStatus.nextRun}</span>
               <span className="text-sm font-medium text-stone-700">
                 {summary.automation.nextRunLabel ?? "—"}
               </span>
             </div>
           </StatusCard>
 
-          <StatusCard label="Today's Greetings" href="/dashboard/activity">
+          <StatusCard label={dict.systemStatus.todaysGreetings} href="/dashboard/activity">
             <p className="mt-3 text-2xl font-semibold text-stone-900">
               {summary.scheduledTodayCount}
             </p>
             <p className="mt-auto pt-4 text-xs text-stone-500">
-              Scheduled Today
+              {dict.systemStatus.scheduledToday}
             </p>
           </StatusCard>
 
-          <StatusCard label="Contacts">
+          <StatusCard label={dict.systemStatus.contacts}>
             <p className="mt-3 text-2xl font-semibold text-stone-900">
               {summary.activeContactsCount}
             </p>
             <p className="mt-auto pt-4 text-xs text-stone-500">
-              Active Contacts
+              {dict.systemStatus.activeContacts}
             </p>
           </StatusCard>
 
           {summary.channels ? (
-            <StatusCard label="Channels">
+            <StatusCard label={dict.systemStatus.channels}>
               <div className="mt-3 flex flex-1 flex-col justify-center gap-2.5">
                 <ChannelStatusRow
-                  label="WhatsApp"
+                  label={dict.systemStatus.whatsapp}
                   connected={summary.channels.whatsappConnected}
                 />
                 <ChannelStatusRow
-                  label="SMS"
+                  label={dict.systemStatus.sms}
                   connected={summary.channels.smsConnected}
                 />
               </div>
@@ -417,14 +419,14 @@ export function DashboardHome({
           id="attention-heading"
           className="text-lg font-semibold text-stone-900"
         >
-          Attention Required
+          {dict.attention.heading}
         </h2>
         {summary.alerts.length === 0 ? (
           <div className="inline-flex w-fit max-w-full items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2.5">
             <StatusDot tone="success" />
             <p className="text-sm text-emerald-900">
-              <span className="font-medium">Everything looks good.</span>{" "}
-              No action required today.
+              <span className="font-medium">{dict.attention.allGood}</span>{" "}
+              {dict.attention.noActionRequired}
             </p>
           </div>
         ) : (
@@ -445,23 +447,21 @@ export function DashboardHome({
             id="upcoming-heading"
             className="text-lg font-semibold text-stone-900"
           >
-            Today&apos;s Occasions
+            {dict.todaysOccasions.heading}
           </h2>
           {summary.upcomingToday.totalCount > 0 ? (
             <Link
               href={summary.upcomingToday.viewAllHref}
               className="text-sm font-medium text-primary outline-none hover:text-primary-hover hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
-              View all <span aria-hidden>→</span>
+              {dict.todaysOccasions.viewAll} <span aria-hidden>→</span>
             </Link>
           ) : null}
         </div>
 
         {summary.upcomingToday.items.length === 0 ? (
           <div className="rounded-xl border border-stone-200/80 bg-white p-4 sm:p-5">
-            <p className="text-sm text-stone-600">
-              No messages scheduled for today.
-            </p>
+            <p className="text-sm text-stone-600">{dict.todaysOccasions.empty}</p>
           </div>
         ) : (
           <div className="divide-y divide-stone-100 rounded-xl border border-stone-200/80 bg-white">
@@ -481,14 +481,14 @@ export function DashboardHome({
             id="automations-heading"
             className="text-lg font-semibold text-stone-900"
           >
-            Running Automations
+            {dict.runningAutomations.heading}
           </h2>
           {canManage && summary.runningAutomations.length > 0 ? (
             <Link
               href="/dashboard/settings/greeting-routes"
               className="text-sm font-medium text-primary outline-none hover:text-primary-hover hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
-              Manage <span aria-hidden>→</span>
+              {dict.runningAutomations.manage} <span aria-hidden>→</span>
             </Link>
           ) : null}
         </div>
@@ -496,12 +496,12 @@ export function DashboardHome({
         {summary.runningAutomations.length === 0 ? (
           <div className="rounded-xl border border-stone-200/80 bg-white">
             <EmptyState
-              title="No automations yet."
-              description="Create your first automation to start sending greetings automatically."
+              title={dict.runningAutomations.emptyTitle}
+              description={dict.runningAutomations.emptyDescription}
               actionHref={
                 canManage ? "/dashboard/settings/greeting-routes" : undefined
               }
-              actionLabel={canManage ? "Create Automation" : undefined}
+              actionLabel={canManage ? dict.runningAutomations.createAutomation : undefined}
             />
           </div>
         ) : (
