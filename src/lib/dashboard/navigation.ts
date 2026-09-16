@@ -47,7 +47,7 @@ export const ADMIN_ONLY_NAV_HREFS: ReadonlySet<string> = new Set([
  * Groups use nested links - no new hubs.
  */
 export const DASHBOARD_NAV: readonly DashboardNavItem[] = [
-  { label: "Today", href: "/dashboard" },
+  { label: "Home", href: "/dashboard" },
   { label: "Contacts", href: "/dashboard/contacts" },
   { label: "Send Messages", href: "/dashboard/messages" },
   { label: "Activity", href: "/dashboard/activity" },

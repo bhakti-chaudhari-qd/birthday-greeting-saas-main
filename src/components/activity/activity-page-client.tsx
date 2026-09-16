@@ -36,6 +36,7 @@ type ActivityGroup = {
   title: string;
   occasionLabel: string | null;
   categoryName: string | null;
+  scheduledDate: string;
   executedAtLabel: string;
   executedAt: string;
   counts: { sent: number; failed: number; pending: number; total: number };
@@ -43,7 +44,8 @@ type ActivityGroup = {
 };
 
 type GroupedActivityResult = {
-  targetDate: string;
+  startDate: string;
+  endDate: string;
   summary: { sent: number; failed: number; pending: number; total: number };
   groups: ActivityGroup[];
   pagination: { nextCursor: string | null; hasMore: boolean };
@@ -57,7 +59,8 @@ export type ActivityPageClientProps = {
   initialChannel: "" | Channel;
   initialOccasionId: string;
   initialCategoryId: string;
-  initialDate: string;
+  initialStartDate: string;
+  initialEndDate: string;
   todayDate: string;
 };
 
@@ -246,7 +249,7 @@ function ActivityLoadingSkeleton() {
 
 function GroupCard({
   group,
-  dateLabel,
+  todayDate,
   canManage,
   expanded,
   onToggleExpanded,
@@ -254,13 +257,16 @@ function GroupCard({
   onRetry,
 }: {
   group: ActivityGroup;
-  dateLabel: string;
+  todayDate: string;
   canManage: boolean;
   expanded: boolean;
   onToggleExpanded: () => void;
   retryingId: string | null;
   onRetry: (recipient: ActivityRecipientRow) => void;
 }) {
+  const dateLabel =
+    group.scheduledDate === todayDate ? "Today" : formatDisplayDate(group.scheduledDate);
+
   return (
     <div className="rounded-xl border border-stone-200/80 bg-white px-5 py-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -418,7 +424,8 @@ export function ActivityPageClient({
   initialChannel,
   initialOccasionId,
   initialCategoryId,
-  initialDate,
+  initialStartDate,
+  initialEndDate,
   todayDate,
 }: ActivityPageClientProps) {
   const { occasions } = useOccasions();
@@ -428,7 +435,8 @@ export function ActivityPageClient({
   const [channel, setChannel] = useState<"" | Channel>(initialChannel);
   const [occasionId, setOccasionId] = useState(initialOccasionId);
   const [categoryId, setCategoryId] = useState(initialCategoryId);
-  const [date, setDate] = useState(initialDate);
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
 
   const [result, setResult] = useState<GroupedActivityResult | null>(null);
   const resultRef = useRef<GroupedActivityResult | null>(null);
@@ -458,7 +466,7 @@ export function ActivityPageClient({
       }
       setError(null);
       try {
-        const params = new URLSearchParams({ status, date });
+        const params = new URLSearchParams({ status, startDate, endDate });
         params.set("limit", "25");
         if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
         if (channel) params.set("channel", channel);
@@ -507,7 +515,7 @@ export function ActivityPageClient({
         setRefreshing(false);
       }
     },
-    [status, date, debouncedSearch, channel, occasionId, categoryId],
+    [status, startDate, endDate, debouncedSearch, channel, occasionId, categoryId],
   );
 
   useEffect(() => {
@@ -535,7 +543,8 @@ export function ActivityPageClient({
     setChannel("");
     setOccasionId("");
     setCategoryId("");
-    setDate(todayDate);
+    setStartDate(todayDate);
+    setEndDate(todayDate);
   }
 
   async function handleRetry(recipient: ActivityRecipientRow) {
@@ -572,9 +581,20 @@ export function ActivityPageClient({
   const summary = result?.summary ?? { sent: 0, failed: 0, pending: 0, total: 0 };
   const groups = result?.groups ?? [];
   const hasMore = result?.pagination.hasMore ?? false;
-  const dateLabel = date === todayDate ? "Today" : formatDisplayDate(date);
+  const isSingleDay = startDate === endDate;
+  const summaryPeriodLabel = isSingleDay
+    ? startDate === todayDate
+      ? "Today's"
+      : `${formatDisplayDate(startDate)}`
+    : `${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`;
   const hasFilters = Boolean(
-    searchInput.trim() || status !== "all" || channel || occasionId || categoryId || date !== todayDate,
+    searchInput.trim() ||
+      status !== "all" ||
+      channel ||
+      occasionId ||
+      categoryId ||
+      startDate !== todayDate ||
+      endDate !== todayDate,
   );
 
   const chips: Array<{ key: string; label: string; onRemove: () => void }> = [];
@@ -616,7 +636,7 @@ export function ActivityPageClient({
         <div className="flex shrink-0 items-center gap-2">
           {canManage ? (
             <a
-              href={`/api/v1/activity/export?tab=${status === "failed" ? "failed" : status === "pending" ? "upcoming" : "sent"}&date=${encodeURIComponent(date)}`}
+              href={`/api/v1/activity/export?tab=${status === "failed" ? "failed" : status === "pending" ? "upcoming" : "sent"}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`}
               className={secondaryButtonClass}
             >
               Export CSV
@@ -637,7 +657,7 @@ export function ActivityPageClient({
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard label="Today's Total" value={summary.total} tone="neutral" />
+        <SummaryCard label={`${summaryPeriodLabel} Total`} value={summary.total} tone="neutral" />
         <SummaryCard label="Sent Successfully" value={summary.sent} tone="success" />
         <SummaryCard label="Failed" value={summary.failed} tone="danger" />
         <SummaryCard label="Pending" value={summary.pending} tone="warning" />
@@ -695,15 +715,39 @@ export function ActivityPageClient({
               <option value="SMS">SMS</option>
             </select>
           </label>
-          <label className="block text-sm sm:w-40">
-            <span className="sr-only">Date</span>
-            <input
-              type="date"
-              className={inputClass}
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
-            />
-          </label>
+          <div className="flex items-center gap-1.5">
+            <label className="block text-sm sm:w-36">
+              <span className="sr-only">From date</span>
+              <input
+                type="date"
+                className={inputClass}
+                value={startDate}
+                max={endDate}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setStartDate(value);
+                  if (value > endDate) setEndDate(value);
+                }}
+              />
+            </label>
+            <span className="text-stone-400" aria-hidden>
+              –
+            </span>
+            <label className="block text-sm sm:w-36">
+              <span className="sr-only">To date</span>
+              <input
+                type="date"
+                className={inputClass}
+                value={endDate}
+                min={startDate}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setEndDate(value);
+                  if (value < startDate) setStartDate(value);
+                }}
+              />
+            </label>
+          </div>
           <div className="sm:w-36">
             <MoreFiltersPopover
               categories={categories}
@@ -749,7 +793,7 @@ export function ActivityPageClient({
             <GroupCard
               key={group.key}
               group={group}
-              dateLabel={dateLabel}
+              todayDate={todayDate}
               canManage={canManage}
               expanded={expandedKeys.has(group.key)}
               onToggleExpanded={() => toggleExpanded(group.key)}

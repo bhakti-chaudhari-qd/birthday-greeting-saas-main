@@ -27,7 +27,8 @@ export async function GET(request: Request) {
           : undefined,
       occasionId: searchParams.get("occasionId") ?? undefined,
       categoryId: searchParams.get("categoryId") ?? undefined,
-      date: searchParams.get("date") ?? undefined,
+      startDate: searchParams.get("startDate") ?? undefined,
+      endDate: searchParams.get("endDate") ?? undefined,
     });
 
     const result = await exportActivityCsv(auth.organizationId, query);

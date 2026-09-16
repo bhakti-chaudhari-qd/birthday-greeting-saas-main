@@ -50,7 +50,7 @@ describe("authenticated app shell navigation", () => {
     );
 
     expect(html).toContain("Birthday Greeting");
-    expect(html).toContain("Today");
+    expect(html).toContain("Home");
     expect(html).toContain("Contacts");
     expect(html).toContain("Activity");
     expect(html).not.toContain("Templates");

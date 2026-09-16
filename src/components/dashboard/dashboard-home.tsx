@@ -445,7 +445,7 @@ export function DashboardHome({
             id="upcoming-heading"
             className="text-lg font-semibold text-stone-900"
           >
-            Upcoming Today
+            Today&apos;s Occasions
           </h2>
           {summary.upcomingToday.totalCount > 0 ? (
             <Link

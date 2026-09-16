@@ -18,7 +18,12 @@ const groupedQuerySchema = z.object({
   categoryId: z.string().trim().min(1).max(100).optional(),
   cursor: z.string().trim().min(1).max(500).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
-  date: z
+  startDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must use YYYY-MM-DD format")
+    .optional(),
+  endDate: z
     .string()
     .trim()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must use YYYY-MM-DD format")
@@ -50,7 +55,8 @@ export async function GET(request: Request) {
       categoryId: searchParams.get("categoryId") ?? undefined,
       cursor: searchParams.get("cursor") ?? undefined,
       limit: searchParams.get("limit") ?? undefined,
-      date: searchParams.get("date") ?? undefined,
+      startDate: searchParams.get("startDate") ?? undefined,
+      endDate: searchParams.get("endDate") ?? undefined,
     });
 
     const result = await getGroupedActivity(auth.organizationId, query);

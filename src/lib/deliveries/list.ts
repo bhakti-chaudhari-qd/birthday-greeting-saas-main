@@ -89,7 +89,11 @@ export function serializeDeliveryLog(
 
 export function buildDeliveryListWhere(
   organizationId: string,
-  query: ExportDeliveriesQuery | ListDeliveriesQuery,
+  query: (ExportDeliveriesQuery | ListDeliveriesQuery) & {
+    /** Inclusive range, used instead of scheduledDate when either bound is set. */
+    scheduledDateFrom?: string;
+    scheduledDateTo?: string;
+  },
 ): Prisma.DeliveryLogWhereInput {
   const where: Prisma.DeliveryLogWhereInput = { organizationId };
 
@@ -110,6 +114,8 @@ export function buildDeliveryListWhere(
     query.queueStatus ||
     query.search ||
     query.scheduledDate ||
+    query.scheduledDateFrom ||
+    query.scheduledDateTo ||
     query.occasionId ||
     query.categoryId
   ) {
@@ -117,11 +123,22 @@ export function buildDeliveryListWhere(
       ...(query.channel ? { channel: query.channel } : {}),
       ...(query.queueStatus ? { status: query.queueStatus } : {}),
       ...(query.occasionId ? { occasionId: query.occasionId } : {}),
-      ...(query.scheduledDate
+      ...(query.scheduledDateFrom || query.scheduledDateTo
         ? {
-            scheduledDate: new Date(`${query.scheduledDate}T00:00:00.000Z`),
+            scheduledDate: {
+              ...(query.scheduledDateFrom
+                ? { gte: new Date(`${query.scheduledDateFrom}T00:00:00.000Z`) }
+                : {}),
+              ...(query.scheduledDateTo
+                ? { lte: new Date(`${query.scheduledDateTo}T00:00:00.000Z`) }
+                : {}),
+            },
           }
-        : {}),
+        : query.scheduledDate
+          ? {
+              scheduledDate: new Date(`${query.scheduledDate}T00:00:00.000Z`),
+            }
+          : {}),
       ...(query.categoryId
         ? {
             contact: {

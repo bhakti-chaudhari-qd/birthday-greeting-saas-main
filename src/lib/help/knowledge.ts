@@ -51,15 +51,15 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "सेटअप",
     ],
     answer:
-      "Start with three steps: (1) add or import contacts, (2) create a greeting under Send Messages, (3) review Today and Activity. Organization Owners can connect SMS/WhatsApp under Settings and use Automatic Greetings to schedule birthday or anniversary messages.",
+      "Start with three steps: (1) add or import contacts, (2) create a greeting under Send Messages, (3) review Home and Activity. Organization Owners can connect SMS/WhatsApp under Settings and use Automatic Greetings to schedule birthday or anniversary messages.",
     answerHi:
-      "तीन कदमों से शुरू करें: (1) संपर्क जोड़ें या इंपोर्ट करें, (2) Send Messages से ग्रीटिंग बनाएँ, (3) Today और Activity देखें। Organization Owner Settings में SMS/WhatsApp जोड़कर Automatic Greetings सेट करें, ताकि जन्मदिन/वर्षगाँठ संदेश अपने आप जाएँ।",
+      "तीन कदमों से शुरू करें: (1) संपर्क जोड़ें या इंपोर्ट करें, (2) Send Messages से ग्रीटिंग बनाएँ, (3) Home और Activity देखें। Organization Owner Settings में SMS/WhatsApp जोड़कर Automatic Greetings सेट करें, ताकि जन्मदिन/वर्षगाँठ संदेश अपने आप जाएँ।",
     answerMr:
-      "तीन पावलांपासून सुरू करा: (1) संपर्क जोडा किंवा इंपोर्ट करा, (2) Send Messages ने ग्रीटिंग तयार करा, (3) Today आणि Activity पाहा. Organization Owner ने Settings मध्ये SMS/WhatsApp जोडून Automatic Greetings सेट करावेत, जेणेकरून वाढदिवस/वर्धापनदिन संदेश आपोआप जातील.",
+      "तीन पावलांपासून सुरू करा: (1) संपर्क जोडा किंवा इंपोर्ट करा, (2) Send Messages ने ग्रीटिंग तयार करा, (3) Home आणि Activity पाहा. Organization Owner ने Settings मध्ये SMS/WhatsApp जोडून Automatic Greetings सेट करावेत, जेणेकरून वाढदिवस/वर्धापनदिन संदेश आपोआप जातील.",
     hrefs: [
       { label: "Contacts", href: "/dashboard/contacts" },
       { label: "Send Messages", href: "/dashboard/messages/send" },
-      { label: "Today", href: "/dashboard" },
+      { label: "Home", href: "/dashboard" },
     ],
   },
   {
@@ -239,17 +239,17 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "मार्ग",
     ],
     answer:
-      "Owners configure Automatic Greetings (one place for birthday, anniversary, and custom occasions). Each contact group can have its own send time, message, and channels (SMS, WhatsApp, Email). Automatic greetings use India Standard Time (IST). Review today’s people on Today and all upcoming, submitted, or failed messages in Activity. Owners can catch up yesterday’s missed greetings from Today if automation was down.",
+      "Owners configure Automatic Greetings (one place for birthday, anniversary, and custom occasions). Each contact group can have its own send time, message, and channels (SMS, WhatsApp, Email). Automatic greetings use India Standard Time (IST). Review today’s people on Home and all upcoming, submitted, or failed messages in Activity. Owners can catch up yesterday’s missed greetings from Home if automation was down.",
     answerHi:
-      "Owners Automatic Greetings में सेटअप करते हैं (जन्मदिन, वर्षगाँठ और कस्टम अवसर एक ही जगह)। हर संपर्क श्रेणी का अपना भेजने का समय, संदेश और चैनल (SMS/WhatsApp/Email) हो सकता है। स्वचालित ग्रीटिंग India Standard Time (IST) पर चलती हैं। आज के लोग Today पर देखें; upcoming/submitted/failed Activity में देखें।",
+      "Owners Automatic Greetings में सेटअप करते हैं (जन्मदिन, वर्षगाँठ और कस्टम अवसर एक ही जगह)। हर संपर्क श्रेणी का अपना भेजने का समय, संदेश और चैनल (SMS/WhatsApp/Email) हो सकता है। स्वचालित ग्रीटिंग India Standard Time (IST) पर चलती हैं। आज के लोग Home पर देखें; upcoming/submitted/failed Activity में देखें।",
     answerMr:
-      "Owners Automatic Greetings मध्ये सेटअप करतात (वाढदिवस, वर्धापनदिन आणि कस्टम प्रसंग एकाच ठिकाणी). प्रत्येक संपर्क श्रेणीला स्वतःचा पाठवण्याचा वेळ, संदेश आणि चॅनेल (SMS/WhatsApp/Email) असू शकतो. स्वयंचलित ग्रीटिंग India Standard Time (IST) वापरतात. आजचे लोक Today वर पाहा; upcoming/submitted/failed Activity मध्ये पाहा.",
+      "Owners Automatic Greetings मध्ये सेटअप करतात (वाढदिवस, वर्धापनदिन आणि कस्टम प्रसंग एकाच ठिकाणी). प्रत्येक संपर्क श्रेणीला स्वतःचा पाठवण्याचा वेळ, संदेश आणि चॅनेल (SMS/WhatsApp/Email) असू शकतो. स्वयंचलित ग्रीटिंग India Standard Time (IST) वापरतात. आजचे लोक Home वर पाहा; upcoming/submitted/failed Activity मध्ये पाहा.",
     hrefs: [
       {
         label: "Automatic Greetings",
         href: "/dashboard/settings/greeting-routes",
       },
-      { label: "Today", href: "/dashboard" },
+      { label: "Home", href: "/dashboard" },
     ],
   },
   {
@@ -264,12 +264,12 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "upcoming",
     ],
     answer:
-      "Open Today on the dashboard to see who has a birthday, anniversary, or custom occasion today. From there you can confirm who should be greeted before or after automation runs.",
+      "Open Home on the dashboard to see who has a birthday, anniversary, or custom occasion today. From there you can confirm who should be greeted before or after automation runs.",
     answerHi:
-      "डैशबोर्ड पर Today खोलकर देखें किसे आज जन्मदिन, वर्षगाँठ या कस्टम अवसर है। ऑटोमेशन से पहले या बाद में किसे बधाई देनी है, यहीं से जाँचें।",
+      "डैशबोर्ड पर Home खोलकर देखें किसे आज जन्मदिन, वर्षगाँठ या कस्टम अवसर है। ऑटोमेशन से पहले या बाद में किसे बधाई देनी है, यहीं से जाँचें।",
     answerMr:
-      "डॅशबोर्डवर Today उघडून पाहा की आज कोणाचा वाढदिवस, वर्धापनदिन किंवा कस्टम प्रसंग आहे. ऑटोमेशनपूर्वी किंवा नंतर कोणाला शुभेच्छा द्यायच्या ते इथून तपासा.",
-    hrefs: [{ label: "Today", href: "/dashboard" }],
+      "डॅशबोर्डवर Home उघडून पाहा की आज कोणाचा वाढदिवस, वर्धापनदिन किंवा कस्टम प्रसंग आहे. ऑटोमेशनपूर्वी किंवा नंतर कोणाला शुभेच्छा द्यायच्या ते इथून तपासा.",
+    hrefs: [{ label: "Home", href: "/dashboard" }],
   },
   {
     id: "queue-history",

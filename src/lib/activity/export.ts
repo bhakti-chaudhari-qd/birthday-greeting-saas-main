@@ -1,6 +1,7 @@
 import { QueueStatus } from "@prisma/client";
 
 import { getActivityUpcoming } from "@/lib/activity/upcoming";
+import { AUTOMATION_TIMEZONE } from "@/lib/automation/constants";
 import { escapeCsvField } from "@/lib/contacts/csv";
 import { exportDeliveriesCsv } from "@/lib/deliveries/export";
 import {
@@ -8,6 +9,7 @@ import {
   serializeDeliveryLog,
 } from "@/lib/deliveries/list";
 import { prisma } from "@/lib/db";
+import { getOrganizationLocalIsoDate, parseTargetDate } from "@/lib/queue/dates";
 import { buildQueueListWhere, serializeQueueItem } from "@/lib/queue/serialize";
 import {
   getCustomerDeliveryStatusLabel,
@@ -16,6 +18,22 @@ import {
 import type { ExportActivityQuery } from "@/lib/validation/activity-export";
 
 export const MAX_ACTIVITY_EXPORT_ROWS = 5000;
+/** Upcoming occasions are computed per calendar day - cap the range so a wide export doesn't run away. */
+const MAX_UPCOMING_EXPORT_DAYS = 31;
+
+/** Inclusive list of YYYY-MM-DD dates from start to end, capped at MAX_UPCOMING_EXPORT_DAYS. */
+function enumerateIsoDateRange(start: string, end: string): string[] {
+  const dates: string[] = [];
+  let cursor = start;
+  while (dates.length < MAX_UPCOMING_EXPORT_DAYS) {
+    dates.push(cursor);
+    if (cursor >= end) break;
+    const { year, month, day } = parseTargetDate(cursor);
+    const next = new Date(Date.UTC(year, month - 1, day + 1));
+    cursor = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}-${String(next.getUTCDate()).padStart(2, "0")}`;
+  }
+  return dates;
+}
 
 const UPCOMING_CSV_HEADERS = [
   "contactName",
@@ -76,7 +94,8 @@ async function exportFailedCsv(
     channel: query.channel,
     occasionId: query.occasionId,
     categoryId: query.categoryId,
-    scheduledDate: query.date,
+    scheduledDateFrom: query.startDate,
+    scheduledDateTo: query.endDate,
   });
 
   const deliveryWhere = buildDeliveryListWhere(organizationId, {
@@ -84,7 +103,8 @@ async function exportFailedCsv(
     channel: query.channel,
     occasionId: query.occasionId,
     categoryId: query.categoryId,
-    scheduledDate: query.date,
+    scheduledDateFrom: query.startDate,
+    scheduledDateTo: query.endDate,
     outcome: "not_delivered",
   });
 
@@ -160,7 +180,7 @@ async function exportFailedCsv(
     const serialized = serializeDeliveryLog(log);
     const scheduledDate = log.sendQueue.scheduledDate
       ? log.sendQueue.scheduledDate.toISOString().slice(0, 10)
-      : (query.date ?? "");
+      : (query.startDate ?? "");
     lines.push(
       [
         escapeCsvField("delivery"),
@@ -195,7 +215,8 @@ export async function exportActivityCsv(
       channel: query.channel,
       occasionId: query.occasionId,
       categoryId: query.categoryId,
-      scheduledDate: query.date,
+      scheduledDateFrom: query.startDate,
+      scheduledDateTo: query.endDate,
       outcome: "sent",
     });
     return {
@@ -212,18 +233,31 @@ export async function exportActivityCsv(
     };
   }
 
-  const upcoming = await getActivityUpcoming(organizationId, {
-    search: query.search,
-    channel: query.channel ?? "",
-    occasionId: query.occasionId ?? "",
-    categoryId: query.categoryId,
-    date: query.date,
-  });
+  const today = getOrganizationLocalIsoDate(AUTOMATION_TIMEZONE);
+  const rangeStart = query.startDate ?? query.endDate ?? today;
+  const rangeEnd = query.endDate ?? query.startDate ?? today;
+  const rangeDates = enumerateIsoDateRange(
+    rangeStart <= rangeEnd ? rangeStart : rangeEnd,
+    rangeStart <= rangeEnd ? rangeEnd : rangeStart,
+  );
+  const dayResults = await Promise.all(
+    rangeDates.map((date) =>
+      getActivityUpcoming(organizationId, {
+        search: query.search,
+        channel: query.channel ?? "",
+        occasionId: query.occasionId ?? "",
+        categoryId: query.categoryId,
+        date,
+      }),
+    ),
+  );
+  const upcomingItems = dayResults.flatMap((result) => result.items);
+  const upcomingTotal = dayResults.reduce((sum, result) => sum + result.meta.total, 0);
 
   return {
-    csv: exportUpcomingCsv(upcoming.items),
-    total: upcoming.meta.total,
-    truncated: upcoming.items.length > MAX_ACTIVITY_EXPORT_ROWS,
+    csv: exportUpcomingCsv(upcomingItems),
+    total: upcomingTotal,
+    truncated: upcomingItems.length > MAX_ACTIVITY_EXPORT_ROWS,
     filename: "activity-upcoming.csv",
   };
 }

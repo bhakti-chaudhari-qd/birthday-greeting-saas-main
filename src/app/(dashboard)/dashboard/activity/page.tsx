@@ -26,6 +26,8 @@ export default async function ActivityPage({
     search?: string;
     channel?: string;
     date?: string;
+    startDate?: string;
+    endDate?: string;
     occasionId?: string;
     categoryId?: string;
   }>;
@@ -43,10 +45,19 @@ export default async function ActivityPage({
       : statusFromLegacyTab(params.tab);
 
   const todayIst = getOrganizationLocalIsoDate(AUTOMATION_TIMEZONE);
-  const initialDate =
-    typeof params.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
-      ? params.date
-      : todayIst;
+  const isValidDate = (value: string | undefined): value is string =>
+    typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  // Legacy links (dashboard home, help center) still pass a single ?date= -
+  // treat that as both endpoints of the range.
+  const legacyDate = isValidDate(params.date) ? params.date : undefined;
+  const initialStartDate =
+    (isValidDate(params.startDate) ? params.startDate : undefined) ??
+    legacyDate ??
+    todayIst;
+  const initialEndDate =
+    (isValidDate(params.endDate) ? params.endDate : undefined) ??
+    legacyDate ??
+    todayIst;
 
   const categories = await listContactCategories(auth.organizationId);
   const knownCategory =
@@ -67,7 +78,8 @@ export default async function ActivityPage({
       }
       initialOccasionId={params.occasionId ?? ""}
       initialCategoryId={knownCategory ? params.categoryId! : ""}
-      initialDate={initialDate}
+      initialStartDate={initialStartDate}
+      initialEndDate={initialEndDate}
       todayDate={todayIst}
       categories={categories.map((category) => ({
         id: category.id,

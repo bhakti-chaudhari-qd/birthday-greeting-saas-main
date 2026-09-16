@@ -12,7 +12,8 @@ export const exportActivityQuerySchema = z.object({
   channel: z.nativeEnum(Channel).optional(),
   occasionId: z.string().trim().min(1).max(100).optional(),
   categoryId: z.string().trim().min(1).max(100).optional(),
-  date: dateSchema.optional(),
+  startDate: dateSchema.optional(),
+  endDate: dateSchema.optional(),
 });
 
 export type ExportActivityQuery = z.infer<typeof exportActivityQuerySchema>;

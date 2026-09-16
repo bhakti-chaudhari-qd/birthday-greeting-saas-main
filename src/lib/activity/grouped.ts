@@ -8,7 +8,10 @@ export type ActivityStatusFilter = "all" | "sent" | "failed" | "pending";
 export type ActivityRecipientStatus = "sent" | "failed" | "pending";
 
 export type GroupedActivityQuery = {
-  date?: string;
+  /** Range start (YYYY-MM-DD, inclusive). Defaults to endDate, or today if both are unset. */
+  startDate?: string;
+  /** Range end (YYYY-MM-DD, inclusive). Defaults to startDate, or today if both are unset. */
+  endDate?: string;
   search?: string;
   status?: ActivityStatusFilter;
   channel?: Channel;
@@ -36,6 +39,8 @@ export type ActivityGroup = {
   title: string;
   occasionLabel: string | null;
   categoryName: string | null;
+  /** Greeting day (YYYY-MM-DD) this group's queue rows were scheduled for. */
+  scheduledDate: string;
   executedAtLabel: string;
   executedAt: string;
   counts: { sent: number; failed: number; pending: number; total: number };
@@ -43,7 +48,8 @@ export type ActivityGroup = {
 };
 
 export type GroupedActivityResult = {
-  targetDate: string;
+  startDate: string;
+  endDate: string;
   summary: { sent: number; failed: number; pending: number; total: number };
   groups: ActivityGroup[];
   pagination: { nextCursor: string | null; hasMore: boolean };
@@ -112,17 +118,22 @@ function formatTimeLabel(date: Date): string {
 }
 
 /**
- * Groups a day's SendQueue rows into "automation executions": one group per
- * (category, occasion) for automation-originated rows, one per operation for
- * manual sends. SendQueue has no direct category FK, so category comes from
- * the joined contact.
+ * Groups a date range's SendQueue rows into "automation executions": one
+ * group per (day, category, occasion) for automation-originated rows, one
+ * per operation for manual sends. SendQueue has no direct category FK, so
+ * category comes from the joined contact.
  */
 export async function getGroupedActivity(
   organizationId: string,
   query: GroupedActivityQuery,
 ): Promise<GroupedActivityResult> {
-  const targetDate = query.date?.trim() || getOrganizationLocalIsoDate(AUTOMATION_TIMEZONE);
-  const scheduledDate = parseTargetDate(targetDate).date;
+  const today = getOrganizationLocalIsoDate(AUTOMATION_TIMEZONE);
+  const startDate = query.startDate?.trim() || query.endDate?.trim() || today;
+  const endDate = query.endDate?.trim() || query.startDate?.trim() || today;
+  const parsedStart = parseTargetDate(startDate).date;
+  const parsedEnd = parseTargetDate(endDate).date;
+  const scheduledDateGte = parsedStart <= parsedEnd ? parsedStart : parsedEnd;
+  const scheduledDateLte = parsedStart <= parsedEnd ? parsedEnd : parsedStart;
   const statusFilter = query.status ?? "all";
   const statuses = statusFilterToQueueStatuses(statusFilter);
   const limit = Math.min(Math.max(query.limit ?? DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
@@ -143,7 +154,7 @@ export async function getGroupedActivity(
 
   const baseWhere: Prisma.SendQueueWhereInput = {
     organizationId,
-    scheduledDate,
+    scheduledDate: { gte: scheduledDateGte, lte: scheduledDateLte },
     ...(query.channel ? { channel: query.channel } : {}),
     ...(query.occasionId ? { occasionId: query.occasionId } : {}),
     ...(query.categoryId ? { contact: { categoryId: query.categoryId } } : {}),
@@ -202,7 +213,10 @@ export async function getGroupedActivity(
     const bucket = statusBucket(row.status);
     const isManual = row.idempotencyKey.startsWith("manual-send:");
     const operationId = isManual ? row.idempotencyKey.split(":")[1] : null;
-    const key = isManual ? `manual:${operationId}` : `${row.occasionId}:${row.contact?.categoryId ?? "none"}`;
+    const rowScheduledDate = row.scheduledDate.toISOString().slice(0, 10);
+    const key = isManual
+      ? `manual:${operationId}`
+      : `${rowScheduledDate}:${row.occasionId}:${row.contact?.categoryId ?? "none"}`;
 
     let group = groupsByKey.get(key);
     if (!group) {
@@ -212,6 +226,7 @@ export async function getGroupedActivity(
         title: isManual ? `Manual Send - ${formatTimeLabel(row.createdAt)}` : `${categoryName} ${row.occasion.name}`,
         occasionLabel: isManual ? null : row.occasion.name,
         categoryName: isManual ? null : categoryName,
+        scheduledDate: rowScheduledDate,
         executedAtLabel: formatTimeLabel(row.createdAt),
         executedAt: row.createdAt.toISOString(),
         counts: { sent: 0, failed: 0, pending: 0, total: 0 },
@@ -245,5 +260,5 @@ export async function getGroupedActivity(
     (a, b) => new Date(a.executedAt).getTime() - new Date(b.executedAt).getTime(),
   );
 
-  return { targetDate, summary, groups, pagination: { nextCursor, hasMore } };
+  return { startDate, endDate, summary, groups, pagination: { nextCursor, hasMore } };
 }

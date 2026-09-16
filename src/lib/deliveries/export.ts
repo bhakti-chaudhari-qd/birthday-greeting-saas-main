@@ -9,7 +9,10 @@ import { buildDeliveryListWhere, serializeDeliveryLog } from "./list";
 
 export async function exportDeliveriesCsv(
   organizationId: string,
-  query: ExportDeliveriesQuery,
+  query: ExportDeliveriesQuery & {
+    scheduledDateFrom?: string;
+    scheduledDateTo?: string;
+  },
 ): Promise<{ csv: string; total: number; truncated: boolean }> {
   const where = buildDeliveryListWhere(organizationId, query);
 

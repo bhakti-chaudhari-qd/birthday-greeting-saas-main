@@ -185,7 +185,7 @@ describe("dashboard home presentation", () => {
         <DashboardHome name="Ada Lovelace" summary={readySummary} canManage />,
       );
 
-      expect(html).toContain("Upcoming Today");
+      expect(html).toContain("Today&#x27;s Occasions");
       expect(html).toContain("4:30 PM");
       expect(html).toContain("Anniversary");
       expect(html).toContain("Sagar");

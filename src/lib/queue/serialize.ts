@@ -51,6 +51,9 @@ export function buildQueueListWhere(
     occasionId?: SendQueue["occasionId"];
     categoryId?: string;
     scheduledDate?: string;
+    /** Inclusive range, used instead of scheduledDate when either bound is set. */
+    scheduledDateFrom?: string;
+    scheduledDateTo?: string;
   },
 ): Prisma.SendQueueWhereInput {
   const where: Prisma.SendQueueWhereInput = { organizationId };
@@ -67,7 +70,16 @@ export function buildQueueListWhere(
     where.occasionId = query.occasionId;
   }
 
-  if (query.scheduledDate) {
+  if (query.scheduledDateFrom || query.scheduledDateTo) {
+    where.scheduledDate = {
+      ...(query.scheduledDateFrom
+        ? { gte: new Date(`${query.scheduledDateFrom}T00:00:00.000Z`) }
+        : {}),
+      ...(query.scheduledDateTo
+        ? { lte: new Date(`${query.scheduledDateTo}T00:00:00.000Z`) }
+        : {}),
+    };
+  } else if (query.scheduledDate) {
     where.scheduledDate = new Date(`${query.scheduledDate}T00:00:00.000Z`);
   }
 

@@ -37,7 +37,7 @@ describe("dashboard navigation mapping", () => {
         : [item.label],
     );
 
-    expect(labels).toContain("Today");
+    expect(labels).toContain("Home");
     expect(labels).toContain("Send Messages");
     expect(labels).toContain("Activity");
     expect(labels).not.toContain("Templates");
