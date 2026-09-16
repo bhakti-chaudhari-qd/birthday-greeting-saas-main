@@ -33,6 +33,137 @@ export function getLocalizedHelpAnswer(
 
 export const HELP_ARTICLES: readonly HelpArticle[] = [
   {
+    id: "connect-email",
+    title: "How do I configure Email sending?",
+    suggest: true,
+    keywords: [
+      "email",
+      "configure email",
+      "connect email",
+      "set up email",
+      "email settings",
+      "email setup",
+      "email provider",
+      "resend",
+      "ईमेल",
+      "ईमेल सेटिंग",
+      "ईमेल सेटअप",
+    ],
+    answer:
+      "1. Open Settings → Channels → Email.\n2. Choose your provider (Resend) and enter the API key plus the From email address greetings should send from.\n3. Save - the key is encrypted and never shown again in full.\n4. Email is now selectable in Send Messages, and per category under Automatic Greetings.\nOwners only. Email must be configured before you can pick it as a channel.",
+    answerHi:
+      "1. Settings → Channels → Email खोलें।\n2. प्रोवाइडर चुनें (Resend) और API key के साथ From ईमेल पता भरें।\n3. Save करें - कुंजी एन्क्रिप्टेड रहती है, पूरी दोबारा नहीं दिखती।\n4. अब Email को Send Messages में, और Automatic Greetings में हर श्रेणी के लिए चुना जा सकता है।\nकेवल Owners। चैनल चुनने से पहले Email सेट होना चाहिए।",
+    answerMr:
+      "1. Settings → Channels → Email उघडा.\n2. प्रोव्हायडर निवडा (Resend) आणि API key सोबत From ईमेल पत्ता भरा.\n3. Save करा - की एन्क्रिप्टेड राहते, पूर्ण पुन्हा दिसत नाही.\n4. आता Email Send Messages मध्ये, आणि Automatic Greetings मध्ये प्रत्येक श्रेणीसाठी निवडता येते.\nफक्त Owners. चॅनेल निवडण्याआधी Email सेट असावे लागते.",
+    hrefs: [
+      { label: "Channels (Email)", href: "/dashboard/settings/channels?tab=email" },
+    ],
+  },
+  {
+    id: "connect-sms",
+    title: "How do I configure SMS sending?",
+    suggest: true,
+    keywords: [
+      "connect sms",
+      "configure sms",
+      "set up sms",
+      "sms setup",
+      "sms settings",
+      "sms provider",
+      "dlt",
+    ],
+    answer:
+      "1. Open Settings → Channels → SMS.\n2. Pick TEST for a safe trial, or Custom HTTP for your real gateway.\n3. Enter your provider's credentials (URL, keys) - these are encrypted at rest.\n4. Save, then send a test message to confirm delivery.\nLive Custom HTTP sending needs a verified email plus an ACTIVE paid plan or platform approval, and SMS often needs a DLT-approved template id.",
+    answerHi:
+      "1. Settings → Channels → SMS खोलें।\n2. सुरक्षित ट्रायल के लिए TEST चुनें, या अपने असली गेटवे के लिए Custom HTTP।\n3. प्रोवाइडर विवरण (URL, keys) भरें - ये एन्क्रिप्टेड रहते हैं।\n4. Save करें, फिर एक टेस्ट संदेश भेजकर डिलीवरी जाँचें।\nलाइव Custom HTTP को verified email और ACTIVE पेड प्लान या प्लेटफ़ॉर्म अनुमति चाहिए; SMS को अक्सर DLT-approved टेम्पलेट id चाहिए।",
+    answerMr:
+      "1. Settings → Channels → SMS उघडा.\n2. सुरक्षित ट्रायलसाठी TEST निवडा, किंवा तुमच्या खऱ्या गेटवेसाठी Custom HTTP.\n3. प्रोव्हायडर तपशील (URL, keys) भरा - हे एन्क्रिप्टेड राहतात.\n4. Save करा, नंतर टेस्ट संदेश पाठवून डिलिव्हरी तपासा.\nलाइव्ह Custom HTTP ला verified email आणि ACTIVE पेड प्लान किंवा प्लॅटफॉर्म परवानगी हवी; SMS ला अनेकदा DLT-approved टेम्पलेट id लागतो.",
+    hrefs: [{ label: "Channels (SMS)", href: "/dashboard/settings/channels" }],
+  },
+  {
+    id: "connect-whatsapp",
+    title: "How do I configure WhatsApp sending?",
+    suggest: true,
+    keywords: [
+      "connect whatsapp",
+      "configure whatsapp",
+      "set up whatsapp",
+      "whatsapp setup",
+      "whatsapp settings",
+      "wa",
+    ],
+    answer:
+      "1. Open Settings → Channels → WhatsApp.\n2. Pick TEST for a safe trial, or Custom HTTP for your real gateway.\n3. Enter your provider's credentials - encrypted at rest, same as SMS.\n4. Save, then use WhatsApp templates in Send Messages or Automatic Greetings.\nLive Custom HTTP sending is gated the same way as SMS (verified email plus ACTIVE paid plan or platform approval).",
+    answerHi:
+      "1. Settings → Channels → WhatsApp खोलें।\n2. सुरक्षित ट्रायल के लिए TEST चुनें, या असली गेटवे के लिए Custom HTTP।\n3. प्रोवाइडर विवरण भरें - SMS की तरह एन्क्रिप्टेड रहते हैं।\n4. Save करें, फिर Send Messages या Automatic Greetings में WhatsApp टेम्पलेट इस्तेमाल करें।\nलाइव Custom HTTP भी SMS जैसे गेटेड है (verified email और ACTIVE पेड प्लान या प्लेटफ़ॉर्म अनुमति)।",
+    answerMr:
+      "1. Settings → Channels → WhatsApp उघडा.\n2. सुरक्षित ट्रायलसाठी TEST निवडा, किंवा खऱ्या गेटवेसाठी Custom HTTP.\n3. प्रोव्हायडर तपशील भरा - SMS प्रमाणे एन्क्रिप्टेड राहतात.\n4. Save करा, नंतर Send Messages किंवा Automatic Greetings मध्ये WhatsApp टेम्पलेट वापरा.\nलाइव्ह Custom HTTP देखील SMS सारखे गेटेड आहे (verified email आणि ACTIVE पेड प्लान किंवा प्लॅटफॉर्म परवानगी).",
+    hrefs: [
+      {
+        label: "Channels (WhatsApp)",
+        href: "/dashboard/settings/channels?tab=whatsapp",
+      },
+    ],
+  },
+  {
+    id: "automations",
+    title: "How do I create an automation?",
+    suggest: true,
+    keywords: [
+      "automation",
+      "create automation",
+      "set up automation",
+      "automatic",
+      "birthday",
+      "anniversary",
+      "schedule",
+      "auto send",
+      "cron",
+      "greeting routes",
+      "जन्मदिन",
+      "वाढदिवस",
+      "ऑटोमेशन",
+      "स्वयं",
+      "मार्ग",
+    ],
+    answer:
+      "1. Open Settings → Automatic Greetings.\n2. Pick the occasion tab (Birthday, Anniversary, or Custom).\n3. Choose a contact category and turn on the channels you want (SMS, WhatsApp, Email), picking a template for each.\n4. Set the send time (IST) and save - the row goes Active once a valid template and time are set.\nOwners only. Check today's people on Home, and review upcoming/submitted/failed sends in Activity.",
+    answerHi:
+      "1. Settings → Automatic Greetings खोलें।\n2. अवसर टैब चुनें (Birthday, Anniversary, या Custom)।\n3. संपर्क श्रेणी चुनें और जो चैनल चाहिए (SMS, WhatsApp, Email) चालू करें, हर एक के लिए टेम्पलेट चुनें।\n4. भेजने का समय (IST) सेट करके Save करें - वैध टेम्पलेट और समय मिलते ही पंक्ति Active हो जाती है।\nकेवल Owners। आज के लोग Home पर देखें; upcoming/submitted/failed Activity में देखें।",
+    answerMr:
+      "1. Settings → Automatic Greetings उघडा.\n2. प्रसंग टॅब निवडा (Birthday, Anniversary, किंवा Custom).\n3. संपर्क श्रेणी निवडा आणि हवे असलेले चॅनेल (SMS, WhatsApp, Email) चालू करा, प्रत्येकासाठी टेम्पलेट निवडा.\n4. पाठवण्याची वेळ (IST) सेट करून Save करा - वैध टेम्पलेट आणि वेळ मिळताच पंक्ती Active होते.\nफक्त Owners. आजचे लोक Home वर पाहा; upcoming/submitted/failed Activity मध्ये पाहा.",
+    hrefs: [
+      {
+        label: "Automatic Greetings",
+        href: "/dashboard/settings/greeting-routes",
+      },
+      { label: "Home", href: "/dashboard" },
+    ],
+  },
+  {
+    id: "manual-send",
+    title: "How do I send a message right now?",
+    suggest: true,
+    keywords: [
+      "send",
+      "manual send",
+      "send message",
+      "send now",
+      "send right now",
+      "right now",
+      "broadcast",
+      "campaign",
+      "send messages",
+    ],
+    answer:
+      "1. Open Send Messages.\n2. Choose a channel (SMS, WhatsApp, or Email) and pick or create a template.\n3. Select contacts individually, or by filter/category.\n4. Review the preview, then queue the send - large audiences go out in batches.\nOwners only. Your subscription must be ACTIVE and the channel must be configured first.",
+    answerHi:
+      "1. Send Messages खोलें।\n2. चैनल चुनें (SMS, WhatsApp, या Email) और टेम्पलेट चुनें या बनाएँ।\n3. संपर्क अलग-अलग, या फ़िल्टर/श्रेणी से चुनें।\n4. प्रीव्यू देखें, फिर भेजने की कतार लगाएँ - बड़ी सूची बैच में जाती है।\nकेवल Owners। सब्सक्रिप्शन ACTIVE और चैनल पहले से सेट होना चाहिए।",
+    answerMr:
+      "1. Send Messages उघडा.\n2. चॅनेल निवडा (SMS, WhatsApp, किंवा Email) आणि टेम्पलेट निवडा किंवा तयार करा.\n3. संपर्क वेगवेगळे, किंवा फिल्टर/श्रेणीने निवडा.\n4. प्रीव्ह्यू पाहा, नंतर पाठवण्याची रांग लावा - मोठी यादी बॅचमध्ये जाते.\nफक्त Owners. सब्सक्रिप्शन ACTIVE आणि चॅनेल आधीच सेट असावे.",
+    hrefs: [{ label: "Send Messages", href: "/dashboard/messages/send" }],
+  },
+  {
     id: "get-started",
     title: "How do I get started?",
     suggest: true,
@@ -178,26 +309,6 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     ],
   },
   {
-    id: "manual-send",
-    title: "How do I send a message manually?",
-    suggest: false,
-    keywords: [
-      "send",
-      "manual send",
-      "send message",
-      "broadcast",
-      "campaign",
-      "send messages",
-    ],
-    answer:
-      "Owners open Send Messages, choose a template/channel, pick contacts or filters, and queue the send. Large audiences are batched. Your subscription must be ACTIVE, and SMS/WhatsApp must be configured for the channel you choose.",
-    answerHi:
-      "Owners Send Messages खोलकर टेम्पलेट/चैनल चुनें, संपर्क चुनें, और भेजने की कतार लगाएँ। बड़ी सूची बैच में जाती है। सब्सक्रिप्शन ACTIVE होना चाहिए, और चुने चैनल के लिए SMS/WhatsApp सेट होना चाहिए।",
-    answerMr:
-      "Owners Send Messages उघडून टेम्पलेट/चॅनेल निवडा, संपर्क निवडा आणि पाठवण्याची रांग लावा. मोठी यादी बॅचमध्ये जाते. सब्सक्रिप्शन ACTIVE असावे आणि निवडलेल्या चॅनेलसाठी SMS/WhatsApp सेट असावे.",
-    hrefs: [{ label: "Send Messages", href: "/dashboard/messages/send" }],
-  },
-  {
     id: "sms-vs-whatsapp",
     title: "What's the difference between SMS and WhatsApp sending?",
     suggest: false,
@@ -217,39 +328,6 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "SMS छोटा मजकूर आहे (लांबी महत्त्वाची; DLT टेम्पलेट id लागू शकतो). WhatsApp समृद्ध ग्रीटिंग आणि (प्रोव्हायडर परवानगी देत असल्यास) मीडिया सपोर्ट करते. दोन्ही Settings → Channels मध्ये सेट होतात. टेम्पलेट, मॅन्युअल सेंड किंवा ऑटोमेशनमध्ये चॅनेल निवडा.",
     hrefs: [
       { label: "Channels", href: "/dashboard/settings/channels" },
-    ],
-  },
-  {
-    id: "automations",
-    title: "How do birthday automations work?",
-    suggest: true,
-    keywords: [
-      "automation",
-      "automatic",
-      "birthday",
-      "anniversary",
-      "schedule",
-      "auto send",
-      "cron",
-      "greeting routes",
-      "जन्मदिन",
-      "वाढदिवस",
-      "ऑटोमेशन",
-      "स्वयं",
-      "मार्ग",
-    ],
-    answer:
-      "Owners configure Automatic Greetings (one place for birthday, anniversary, and custom occasions). Each contact group can have its own send time, message, and channels (SMS, WhatsApp, Email). Automatic greetings use India Standard Time (IST). Review today’s people on Home and all upcoming, submitted, or failed messages in Activity. Owners can catch up yesterday’s missed greetings from Home if automation was down.",
-    answerHi:
-      "Owners Automatic Greetings में सेटअप करते हैं (जन्मदिन, वर्षगाँठ और कस्टम अवसर एक ही जगह)। हर संपर्क श्रेणी का अपना भेजने का समय, संदेश और चैनल (SMS/WhatsApp/Email) हो सकता है। स्वचालित ग्रीटिंग India Standard Time (IST) पर चलती हैं। आज के लोग Home पर देखें; upcoming/submitted/failed Activity में देखें।",
-    answerMr:
-      "Owners Automatic Greetings मध्ये सेटअप करतात (वाढदिवस, वर्धापनदिन आणि कस्टम प्रसंग एकाच ठिकाणी). प्रत्येक संपर्क श्रेणीला स्वतःचा पाठवण्याचा वेळ, संदेश आणि चॅनेल (SMS/WhatsApp/Email) असू शकतो. स्वयंचलित ग्रीटिंग India Standard Time (IST) वापरतात. आजचे लोक Home वर पाहा; upcoming/submitted/failed Activity मध्ये पाहा.",
-    hrefs: [
-      {
-        label: "Automatic Greetings",
-        href: "/dashboard/settings/greeting-routes",
-      },
-      { label: "Home", href: "/dashboard" },
     ],
   },
   {
@@ -294,48 +372,6 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     hrefs: [
       { label: "Upcoming", href: "/dashboard/activity?tab=upcoming" },
       { label: "Submitted", href: "/dashboard/activity?tab=sent" },
-    ],
-  },
-  {
-    id: "connect-sms",
-    title: "How do I connect SMS?",
-    suggest: false,
-    keywords: [
-      "connect sms",
-      "sms settings",
-      "sms provider",
-      "dlt",
-      "configure sms",
-    ],
-    answer:
-      "Owners open Settings → Channels → SMS and enter provider details (including TEST for safe trials or Custom HTTP for your gateway). SMS credentials are encrypted at rest. Live Custom HTTP sending has extra safety checks (verified email, ACTIVE paid plan or platform approval).",
-    answerHi:
-      "Owners Settings → Channels → SMS खोलकर प्रोवाइडर विवरण भरें (सुरक्षित ट्रायल के लिए TEST, या अपने गेटवे के लिए Custom HTTP)। SMS क्रेडेंशियल एन्क्रिप्टेड रहते हैं। लाइव Custom HTTP में अतिरिक्त सुरक्षा जाँच होती है (verified email, ACTIVE पेड प्लान या प्लेटफ़ॉर्म अनुमति)।",
-    answerMr:
-      "Owners Settings → Channels → SMS उघडून प्रोव्हायडर तपशील भरा (सुरक्षित ट्रायलसाठी TEST, किंवा तुमच्या गेटवेसाठी Custom HTTP). SMS क्रेडेन्शियल एन्क्रिप्टेड राहतात. लाइव्ह Custom HTTP मध्ये अतिरिक्त सुरक्षा तपासणी असते (verified email, ACTIVE पेड प्लान किंवा प्लॅटफॉर्म परवानगी).",
-    hrefs: [{ label: "Channels (SMS)", href: "/dashboard/settings/channels" }],
-  },
-  {
-    id: "connect-whatsapp",
-    title: "How do I connect WhatsApp?",
-    suggest: false,
-    keywords: [
-      "connect whatsapp",
-      "whatsapp settings",
-      "wa",
-      "configure whatsapp",
-    ],
-    answer:
-      "Owners open Settings → Channels → WhatsApp and configure the provider (TEST or Custom HTTP). Like SMS, live Custom HTTP is gated for safety. After setup, use WhatsApp templates with Send Messages or Automatic Greetings.",
-    answerHi:
-      "Owners Settings → Channels → WhatsApp खोलकर प्रोवाइडर सेट करें (TEST या Custom HTTP)। SMS की तरह लाइव Custom HTTP सुरक्षा के लिए गेटेड है। सेटअप के बाद WhatsApp टेम्पलेट और Send Messages / Automatic Greetings से ग्रीटिंग भेजें।",
-    answerMr:
-      "Owners Settings → Channels → WhatsApp उघडून प्रोव्हायडर सेट करा (TEST किंवा Custom HTTP). SMS प्रमाणे लाइव्ह Custom HTTP सुरक्षेसाठी गेटेड आहे. सेटअपनंतर WhatsApp टेम्पलेट आणि Send Messages / Automatic Greetings ने ग्रीटिंग पाठवा.",
-    hrefs: [
-      {
-        label: "Channels (WhatsApp)",
-        href: "/dashboard/settings/channels?tab=whatsapp",
-      },
     ],
   },
   {

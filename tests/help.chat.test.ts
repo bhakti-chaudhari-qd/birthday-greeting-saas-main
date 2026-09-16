@@ -14,13 +14,21 @@ import {
 } from "@/lib/help/rate-limit";
 
 describe("help knowledge", () => {
-  it("exposes suggested starter questions", () => {
+  it("exposes suggested starter questions, prioritizing setup and sending", () => {
     const questions = getSuggestedHelpQuestions(6);
     expect(questions.length).toBeGreaterThanOrEqual(4);
-    expect(questions.some((q) => /get started/i.test(q.title))).toBe(true);
+    expect(questions.some((q) => /configure email/i.test(q.title))).toBe(true);
+    expect(questions.some((q) => /configure sms/i.test(q.title))).toBe(true);
+    expect(questions.some((q) => /configure whatsapp/i.test(q.title))).toBe(
+      true,
+    );
+    expect(questions.some((q) => /create an automation/i.test(q.title))).toBe(
+      true,
+    );
     expect(
-      questions.some((q) => /why can.?t i send messages/i.test(q.title)),
+      questions.some((q) => /send a message right now/i.test(q.title)),
     ).toBe(true);
+    expect(questions.some((q) => /get started/i.test(q.title))).toBe(true);
   });
 
   it("retrieves owner vs staff article for role questions", () => {
