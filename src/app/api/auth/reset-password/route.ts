@@ -6,13 +6,34 @@ import {
   PasswordResetError,
   resetPasswordWithToken,
 } from "@/lib/auth/email-flows";
+import {
+  RateLimitError,
+  assertLoginAllowed,
+  clearLoginFailures,
+  getClientIp,
+  recordLoginFailure,
+  resetPasswordThrottleKey,
+} from "@/lib/auth/rate-limit";
 import { resetPasswordSchema } from "@/lib/validation/auth";
 
 export async function POST(request: Request) {
+  const throttleKey = resetPasswordThrottleKey(getClientIp(request));
+
   try {
     const body = await request.json();
     const input = resetPasswordSchema.parse(body);
-    await resetPasswordWithToken(input);
+
+    await assertLoginAllowed(throttleKey);
+
+    try {
+      await resetPasswordWithToken(input);
+      await clearLoginFailures(throttleKey);
+    } catch (error) {
+      if (error instanceof PasswordResetError) {
+        await recordLoginFailure(throttleKey);
+      }
+      throw error;
+    }
 
     return NextResponse.json({
       data: { message: "Password updated. You can sign in now." },
@@ -20,6 +41,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return jsonError("Invalid input", 400, error.flatten());
+    }
+
+    if (error instanceof RateLimitError) {
+      return jsonError(error.message, 429);
     }
 
     if (error instanceof PasswordResetError) {

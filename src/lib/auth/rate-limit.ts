@@ -54,6 +54,11 @@ export function registerThrottleKey(ip: string): string {
   return `register:ip:${ip}`;
 }
 
+/** No email available at this step (only a reset token) - throttle by IP alone. */
+export function resetPasswordThrottleKey(ip: string): string {
+  return `reset-password:ip:${ip}`;
+}
+
 export function adminPasswordResetThrottleKey(
   adminId: string,
   targetUserId: string,
