@@ -56,7 +56,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
     organizationPortalLabel: "संगठन",
     navLabelsByHref: {
       "/dashboard": "होम",
-      "/dashboard/contacts": "संपर्क",
+      "/dashboard/contacts": "संपर्क सूची",
       "/dashboard/messages": "संदेश भेजें",
       "/dashboard/activity": "गतिविधि",
       "/dashboard/settings/channels": "चैनल",
@@ -85,7 +85,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
     organizationPortalLabel: "संस्था",
     navLabelsByHref: {
       "/dashboard": "होम",
-      "/dashboard/contacts": "संपर्क",
+      "/dashboard/contacts": "संपर्क यादी",
       "/dashboard/messages": "संदेश पाठवा",
       "/dashboard/activity": "अ‍ॅक्टिव्हिटी",
       "/dashboard/settings/channels": "चॅनेल्स",
