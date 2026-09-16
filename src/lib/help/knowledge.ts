@@ -12,23 +12,31 @@ export type HelpArticle = {
   /** Shown as a suggested question chip when true. */
   suggest: boolean;
   keywords: string[];
+  /** Short restatement of the question shown above the answer, e.g. "To create an automation:". */
+  leadIn: string;
+  leadInHi: string;
+  leadInMr: string;
   answer: string;
   answerHi: string;
   answerMr: string;
   hrefs?: Array<{ label: string; href: string }>;
 };
 
+function withLeadIn(leadIn: string, answer: string): string {
+  return `${leadIn}\n\n${answer}`;
+}
+
 export function getLocalizedHelpAnswer(
   article: HelpArticle,
   language: HelpReplyLanguage,
 ): string {
   if (language === "hi") {
-    return article.answerHi;
+    return withLeadIn(article.leadInHi, article.answerHi);
   }
   if (language === "mr") {
-    return article.answerMr;
+    return withLeadIn(article.leadInMr, article.answerMr);
   }
-  return article.answer;
+  return withLeadIn(article.leadIn, article.answer);
 }
 
 export const HELP_ARTICLES: readonly HelpArticle[] = [
@@ -49,6 +57,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "ईमेल सेटिंग",
       "ईमेल सेटअप",
     ],
+    leadIn: "To configure Email sending:",
+    leadInHi: "Email भेजना कॉन्फ़िगर करने के लिए:",
+    leadInMr: "Email पाठवणे कॉन्फिगर करण्यासाठी:",
     answer:
       "1. Open Settings → Channels → Email.\n2. Choose your provider (Resend) and enter the API key plus the From email address greetings should send from.\n3. Save - the key is encrypted and never shown again in full.\n4. Email is now selectable in Send Messages, and per category under Automatic Greetings.\nOwners only. Email must be configured before you can pick it as a channel.",
     answerHi:
@@ -72,6 +83,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "sms provider",
       "dlt",
     ],
+    leadIn: "To configure SMS sending:",
+    leadInHi: "SMS भेजना कॉन्फ़िगर करने के लिए:",
+    leadInMr: "SMS पाठवणे कॉन्फिगर करण्यासाठी:",
     answer:
       "1. Open Settings → Channels → SMS.\n2. Pick TEST for a safe trial, or Custom HTTP for your real gateway.\n3. Enter your provider's credentials (URL, keys) - these are encrypted at rest.\n4. Save, then send a test message to confirm delivery.\nLive Custom HTTP sending needs a verified email plus an ACTIVE paid plan or platform approval, and SMS often needs a DLT-approved template id.",
     answerHi:
@@ -92,6 +106,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "whatsapp settings",
       "wa",
     ],
+    leadIn: "To configure WhatsApp sending:",
+    leadInHi: "WhatsApp भेजना कॉन्फ़िगर करने के लिए:",
+    leadInMr: "WhatsApp पाठवणे कॉन्फिगर करण्यासाठी:",
     answer:
       "1. Open Settings → Channels → WhatsApp.\n2. Pick TEST for a safe trial, or Custom HTTP for your real gateway.\n3. Enter your provider's credentials - encrypted at rest, same as SMS.\n4. Save, then use WhatsApp templates in Send Messages or Automatic Greetings.\nLive Custom HTTP sending is gated the same way as SMS (verified email plus ACTIVE paid plan or platform approval).",
     answerHi:
@@ -126,6 +143,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "स्वयं",
       "मार्ग",
     ],
+    leadIn: "To create an automation:",
+    leadInHi: "ऑटोमेशन बनाने के लिए:",
+    leadInMr: "ऑटोमेशन तयार करण्यासाठी:",
     answer:
       "1. Open Settings → Automatic Greetings.\n2. Pick the occasion tab (Birthday, Anniversary, or Custom).\n3. Choose a contact category and turn on the channels you want (SMS, WhatsApp, Email), picking a template for each.\n4. Set the send time (IST) and save - the row goes Active once a valid template and time are set.\nOwners only. Check today's people on Home, and review upcoming/submitted/failed sends in Activity.",
     answerHi:
@@ -155,6 +175,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "campaign",
       "send messages",
     ],
+    leadIn: "To send a message right now:",
+    leadInHi: "अभी संदेश भेजने के लिए:",
+    leadInMr: "आत्ताच संदेश पाठवण्यासाठी:",
     answer:
       "1. Open Send Messages.\n2. Choose a channel (SMS, WhatsApp, or Email) and pick or create a template.\n3. Select contacts individually, or by filter/category.\n4. Review the preview, then queue the send - large audiences go out in batches.\nOwners only. Your subscription must be ACTIVE and the channel must be configured first.",
     answerHi:
@@ -181,6 +204,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "सुरुवात",
       "सेटअप",
     ],
+    leadIn: "To get started:",
+    leadInHi: "शुरू करने के लिए:",
+    leadInMr: "सुरुवात करण्यासाठी:",
     answer:
       "Start with three steps: (1) add or import contacts, (2) create a greeting under Send Messages, (3) review Home and Activity. Organization Owners can connect SMS/WhatsApp under Settings and use Automatic Greetings to schedule birthday or anniversary messages.",
     answerHi:
@@ -209,6 +235,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "जोड़ें",
       "जोडा",
     ],
+    leadIn: "To add contacts:",
+    leadInHi: "संपर्क जोड़ने के लिए:",
+    leadInMr: "संपर्क जोडण्यासाठी:",
     answer:
       "Open Contacts to add people one by one or import many from CSV/Excel. Each contact can have a birthday, anniversary, phone number, and category. Your plan's contact limit applies, so free and paid plans allow different totals.",
     answerHi:
@@ -230,6 +259,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "bulk",
       "spreadsheet",
     ],
+    leadIn: "To import contacts from CSV or Excel:",
+    leadInHi: "CSV या Excel से संपर्क इंपोर्ट करने के लिए:",
+    leadInMr: "CSV किंवा Excel मधून संपर्क इंपोर्ट करण्यासाठी:",
     answer:
       "On the Contacts page, use import to upload a CSV or Excel file. Make sure columns for name, phone, and dates are filled correctly. If a mobile number already exists, that contact is updated. Duplicate rows inside the same file are skipped. Invalid rows are reported so you can fix them and re-import. Export is available to Owners for backups.",
     answerHi:
@@ -252,6 +284,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "rbac",
       "who can",
     ],
+    leadIn: "Owner vs Staff:",
+    leadInHi: "Owner बनाम Staff:",
+    leadInMr: "Owner विरुद्ध Staff:",
     answer:
       "Owners (Organization Admins) can send messages, configure SMS/WhatsApp, manage automations, create/edit templates, export contacts, and manage billing. Staff can manage contacts, view templates, and see the queue and delivery history - but they cannot send, change channel settings, or open billing.",
     answerHi:
@@ -275,6 +310,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "sidebar",
       "hidden",
     ],
+    leadIn: "Why Billing or Send Message might be missing:",
+    leadInHi: "Billing या Send Message क्यों नहीं दिख रहा:",
+    leadInMr: "Billing किंवा Send Message का दिसत नाही:",
     answer:
       "Those pages are Owner-only. If you are signed in as Staff, Billing, Send Messages, channel settings, and Automatic Greetings are hidden on purpose. Ask an Owner on your team to help, or have them change your role.",
     answerHi:
@@ -297,6 +335,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "संदेश",
       "मेसेज",
     ],
+    leadIn: "To create a greeting template:",
+    leadInHi: "ग्रीटिंग टेम्पलेट बनाने के लिए:",
+    leadInMr: "ग्रीटिंग टेम्पलेट तयार करण्यासाठी:",
     answer:
       "Open Send Messages and create or pick a saved message for Email or WhatsApp. For SMS, use provider-approved templates via Advanced SMS Setup under Channels. Use {{name}} so each recipient gets their own name.",
     answerHi:
@@ -320,6 +361,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "compare",
       "which channel",
     ],
+    leadIn: "SMS vs WhatsApp:",
+    leadInHi: "SMS बनाम WhatsApp:",
+    leadInMr: "SMS विरुद्ध WhatsApp:",
     answer:
       "SMS is short text (often length-sensitive and may need a DLT template id). WhatsApp supports richer greetings and optional media when your provider allows it. Both are configured under Settings → Channels. You pick the channel when creating templates, sending manually, or enabling automations.",
     answerHi:
@@ -341,6 +385,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "who to greet",
       "upcoming",
     ],
+    leadIn: "To see today's occasions:",
+    leadInHi: "आज के अवसर देखने के लिए:",
+    leadInMr: "आजचे प्रसंग पाहण्यासाठी:",
     answer:
       "Open Home on the dashboard to see who has a birthday, anniversary, or custom occasion today. From there you can confirm who should be greeted before or after automation runs.",
     answerHi:
@@ -363,6 +410,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "status",
       "failed",
     ],
+    leadIn: "To check scheduled and sent messages:",
+    leadInHi: "शेड्यूल्ड और भेजे गए संदेश देखने के लिए:",
+    leadInMr: "शेड्युल्ड आणि पाठवलेले संदेश तपासण्यासाठी:",
     answer:
       "Activity → Upcoming lists people due on the selected date for automatic greetings, including Scheduled before the send time. After queueing you also see Pending / Sending. Activity → Submitted shows messages the provider accepted for that greeting day - that is not the same as delivered to the phone. Use the Date filter to review other days. Failed items may be retryable by Owners depending on status and plan gates.",
     answerHi:
@@ -390,6 +440,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "पाठवता येत नाही",
       "भेज नहीं",
     ],
+    leadIn: "Why you can't send messages:",
+    leadInHi: "संदेश क्यों नहीं भेज पा रहे:",
+    leadInMr: "संदेश का पाठवता येत नाही:",
     answer:
       "Common reasons: (1) you are Staff - only Owners can send, (2) subscription is not ACTIVE (unpaid/cancelled blocks send), (3) SMS/WhatsApp is not configured for that channel, (4) live Custom HTTP needs a verified email plus a paid ACTIVE plan or platform approval, (5) the queue worker is not draining pending items. Check Billing, channel settings, and Scheduled activity.",
     answerHi:
@@ -419,6 +472,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "razorpay",
       "subscription",
     ],
+    leadIn: "How plans and contact limits work:",
+    leadInHi: "प्लान और संपर्क सीमा कैसे काम करती है:",
+    leadInMr: "प्लान आणि संपर्क मर्यादा कशी काम करते:",
     answer:
       "Organizations use FREE, STARTER, PRO, or CUSTOM plans. Each plan has a contact limit. Billing is under Settings → Billing (Owners only). Upgrades use Razorpay when keys are configured. If the subscription is not ACTIVE, generating and sending messages is blocked until billing is fixed.",
     answerHi:
@@ -432,6 +488,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     title: "How do I upgrade my plan?",
     suggest: false,
     keywords: ["upgrade", "pay", "checkout", "razorpay", "buy", "paid"],
+    leadIn: "To upgrade your plan:",
+    leadInHi: "प्लान अपग्रेड करने के लिए:",
+    leadInMr: "प्लान अपग्रेड करण्यासाठी:",
     answer:
       "Owners open Settings → Billing and choose STARTER or PRO. Checkout runs through Razorpay. After payment confirms (and the webhook applies the plan), your contact limits update and send features unlock for ACTIVE subscriptions. CUSTOM plans are set by Platform Admin, not self-serve checkout.",
     answerHi:
@@ -445,6 +504,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     title: "Can Staff send messages?",
     suggest: false,
     keywords: ["staff send", "can staff", "staff permission", "staff role"],
+    leadIn: "Whether Staff can send messages:",
+    leadInHi: "क्या Staff संदेश भेज सकता है:",
+    leadInMr: "Staff संदेश पाठवू शकतो का:",
     answer:
       "No. Staff can manage contacts and view templates, queue, and deliveries. Only Owners can manually send, change channel or Automatic Greetings settings, export contacts, edit templates, and manage billing.",
     answerHi:
@@ -562,7 +624,7 @@ export function formatArticlesForPrompt(articles: HelpArticle[]): string {
               .map((link) => `${link.label} (${link.href})`)
               .join("; ")}`
           : "";
-      return `Article ${index + 1}: ${article.title}\n${article.answer}${links}`;
+      return `Article ${index + 1}: ${article.title}\n${article.leadIn}\n\n${article.answer}${links}`;
     })
     .join("\n\n");
 }
