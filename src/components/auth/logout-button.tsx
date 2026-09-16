@@ -3,6 +3,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { getShellDict } from "@/lib/i18n/dictionaries/shell";
+import { useLocale } from "@/lib/i18n/use-locale";
+
 type LogoutButtonProps = {
   className?: string;
   logoutPath?: string;
@@ -18,6 +21,7 @@ export function LogoutButton({
   showEverywhereOption = false,
 }: LogoutButtonProps) {
   const router = useRouter();
+  const dict = getShellDict(useLocale()).signOut;
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -50,9 +54,7 @@ export function LogoutButton({
 
   async function runLogout(mode: "current" | "everywhere") {
     if (mode === "everywhere") {
-      const confirmed = window.confirm(
-        "Sign out of every device for your Owner account? You’ll need to sign in again here.",
-      );
+      const confirmed = window.confirm(dict.confirmEverywhere);
       if (!confirmed) {
         return;
       }
@@ -106,14 +108,14 @@ export function LogoutButton({
         aria-controls={showEverywhereOption && menuOpen ? menuId : undefined}
         className={buttonClass}
       >
-        {isSubmitting ? "Signing out..." : "Sign out"}
+        {isSubmitting ? dict.signingOut : dict.signOut}
       </button>
 
       {showEverywhereOption && menuOpen ? (
         <div
           id={menuId}
           role="menu"
-          aria-label="Sign out options"
+          aria-label={dict.signOutOptions}
           className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-stone-200 bg-white py-1 shadow-lg"
         >
           <button
@@ -122,7 +124,7 @@ export function LogoutButton({
             className="block w-full px-4 py-2.5 text-left text-sm text-stone-900 hover:bg-stone-50"
             onClick={() => void runLogout("current")}
           >
-            Sign out of this device
+            {dict.signOutThisDevice}
           </button>
           <button
             type="button"
@@ -130,7 +132,7 @@ export function LogoutButton({
             className="block w-full px-4 py-2.5 text-left text-sm text-stone-900 hover:bg-stone-50"
             onClick={() => void runLogout("everywhere")}
           >
-            Sign out everywhere
+            {dict.signOutEverywhere}
           </button>
         </div>
       ) : null}

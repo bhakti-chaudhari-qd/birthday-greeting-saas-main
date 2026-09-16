@@ -8,8 +8,11 @@ import {
   primaryButtonClass,
 } from "@/components/ui/page";
 import { PasswordField } from "@/components/ui/password-field";
+import { getAuthDict } from "@/lib/i18n/dictionaries/auth";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 function ResetPasswordForm() {
+  const dict = getAuthDict(useLocale()).resetPassword;
   const searchParams = useSearchParams();
   const tokenFromUrl = searchParams.get("token") ?? "";
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +31,7 @@ function ResetPasswordForm() {
     const token = String(formData.get("token") ?? tokenFromUrl);
 
     if (password !== confirm) {
-      setError("Passwords do not match");
+      setError(dict.fallbackMismatch);
       setIsSubmitting(false);
       return;
     }
@@ -42,13 +45,13 @@ function ResetPasswordForm() {
       const payload = await response.json();
 
       if (!response.ok) {
-        setError(payload.error?.message ?? "Could not reset password");
+        setError(payload.error?.message ?? dict.fallbackError);
         return;
       }
 
-      setMessage(payload.data?.message ?? "Password updated.");
+      setMessage(payload.data?.message ?? dict.fallbackUpdated);
     } catch {
-      setError("Could not reset password");
+      setError(dict.fallbackError);
     } finally {
       setIsSubmitting(false);
     }
@@ -57,17 +60,14 @@ function ResetPasswordForm() {
   return (
     <div className="rounded-xl border border-stone-200/90 bg-white p-6 shadow-sm">
       <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
-        Reset password
+        {dict.title}
       </h1>
-      <p className="mt-2 text-sm text-stone-600">
-        Choose a new password (at least 10 characters, or 8+ with upper, lower,
-        and a number).
-      </p>
+      <p className="mt-2 text-sm text-stone-600">{dict.subtitle}</p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
         <input type="hidden" name="token" value={tokenFromUrl} />
         <PasswordField
-          label="New password"
+          label={dict.newPasswordLabel}
           name="password"
           required
           minLength={8}
@@ -75,7 +75,7 @@ function ResetPasswordForm() {
           autoComplete="new-password"
         />
         <PasswordField
-          label="Confirm password"
+          label={dict.confirmPasswordLabel}
           name="confirm"
           required
           minLength={8}
@@ -91,20 +91,21 @@ function ResetPasswordForm() {
           disabled={isSubmitting || !tokenFromUrl}
           className={`w-full ${primaryButtonClass}`}
         >
-          {isSubmitting ? "Updating…" : "Update password"}
+          {isSubmitting ? dict.submitting : dict.submit}
         </button>
       </form>
 
       <div className="mt-4">
-        <SecondaryButtonLink href="/login">Sign in</SecondaryButtonLink>
+        <SecondaryButtonLink href="/login">{dict.signIn}</SecondaryButtonLink>
       </div>
     </div>
   );
 }
 
 export default function ResetPasswordPage() {
+  const dict = getAuthDict(useLocale()).resetPassword;
   return (
-    <Suspense fallback={<p className="text-sm text-stone-600">Loading…</p>}>
+    <Suspense fallback={<p className="text-sm text-stone-600">{dict.loading}</p>}>
       <ResetPasswordForm />
     </Suspense>
   );

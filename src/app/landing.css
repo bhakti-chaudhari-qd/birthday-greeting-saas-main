@@ -114,6 +114,24 @@ code {
   border-top-width: 3px;
 }
 
+.nav-lang-select {
+  appearance: auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+}
+
+.nav-lang-select:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
 .nav-links {
   display: flex;
   align-items: center;
@@ -995,6 +1013,11 @@ code {
   .nav-links a:not(.btn) {
     padding: 0.85rem 0.25rem;
     border-bottom: 1px solid var(--border);
+  }
+
+  .nav-lang-select {
+    margin-top: 0.6rem;
+    width: 100%;
   }
 
   .nav-cta {

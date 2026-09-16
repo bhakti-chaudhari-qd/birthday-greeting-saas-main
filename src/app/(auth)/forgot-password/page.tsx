@@ -7,8 +7,11 @@ import {
   inputClass,
   primaryButtonClass,
 } from "@/components/ui/page";
+import { getAuthDict } from "@/lib/i18n/dictionaries/auth";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export default function ForgotPasswordPage() {
+  const dict = getAuthDict(useLocale()).forgotPassword;
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,21 +33,18 @@ export default function ForgotPasswordPage() {
       const payload = await response.json();
 
       if (response.status === 429) {
-        setError(payload.error?.message ?? "Too many attempts. Try again later.");
+        setError(payload.error?.message ?? dict.fallbackTooMany);
         return;
       }
 
       if (!response.ok) {
-        setError(payload.error?.message ?? "Request failed");
+        setError(payload.error?.message ?? dict.fallbackError);
         return;
       }
 
-      setMessage(
-        payload.data?.message ??
-          "If an account exists for that email, a reset link has been sent.",
-      );
+      setMessage(payload.data?.message ?? dict.fallbackSent);
     } catch {
-      setError("Request failed");
+      setError(dict.fallbackError);
     } finally {
       setIsSubmitting(false);
     }
@@ -53,16 +53,13 @@ export default function ForgotPasswordPage() {
   return (
     <div className="rounded-xl border border-stone-200/90 bg-white p-6 shadow-sm">
       <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
-        Forgot password
+        {dict.title}
       </h1>
-      <p className="mt-2 text-sm text-stone-600">
-        Enter your organization account email. We’ll send a one-hour reset link
-        if the account exists.
-      </p>
+      <p className="mt-2 text-sm text-stone-600">{dict.subtitle}</p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Email</span>
+          <span className="font-medium text-stone-800">{dict.emailLabel}</span>
           <input
             className={`mt-1 ${inputClass}`}
             name="email"
@@ -79,12 +76,12 @@ export default function ForgotPasswordPage() {
           disabled={isSubmitting}
           className={`w-full ${primaryButtonClass}`}
         >
-          {isSubmitting ? "Sending…" : "Send reset link"}
+          {isSubmitting ? dict.submitting : dict.submit}
         </button>
       </form>
 
       <div className="mt-4">
-        <SecondaryButtonLink href="/login">Back to sign in</SecondaryButtonLink>
+        <SecondaryButtonLink href="/login">{dict.backToSignIn}</SecondaryButtonLink>
       </div>
     </div>
   );

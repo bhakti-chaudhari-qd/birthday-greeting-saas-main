@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { LogoutButton } from "@/components/auth/logout-button";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { getShellDict, type ShellDict } from "@/lib/i18n/dictionaries/shell";
+import { useLocale } from "@/lib/i18n/use-locale";
 import {
   DASHBOARD_NAV,
   PRODUCT_DISPLAY_NAME,
@@ -13,6 +16,28 @@ import {
   isNavItemActive,
   type DashboardNavItem,
 } from "@/lib/dashboard/navigation";
+
+function translateNav(
+  nav: readonly DashboardNavItem[],
+  dict: ShellDict,
+): DashboardNavItem[] {
+  return nav.map((item) => {
+    if (item.children) {
+      return {
+        ...item,
+        label: dict.navGroupLabelsByEnglishLabel[item.label] ?? item.label,
+        children: item.children.map((child) => ({
+          ...child,
+          label: dict.navLabelsByHref[child.href] ?? child.label,
+        })),
+      };
+    }
+    return {
+      ...item,
+      label: dict.navLabelsByHref[item.href] ?? item.label,
+    };
+  });
+}
 
 export type AppShellProps = {
   user: {
@@ -342,6 +367,10 @@ export function AppShell({
   showSignOutEverywhere = false,
 }: AppShellProps) {
   const pathname = usePathname();
+  const dict = getShellDict(useLocale());
+  const translatedNav = useMemo(() => translateNav(nav, dict), [nav, dict]);
+  const translatedPortalLabel =
+    portalLabel === "Organization" ? dict.organizationPortalLabel : portalLabel;
   const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
   const mobileOpen = mobileMenuPath === pathname;
   const panelId = useId();
@@ -382,7 +411,7 @@ export function AppShell({
         href="#main-content"
         className="absolute left-4 top-4 z-50 -translate-y-16 rounded-full bg-white px-3 py-2 text-sm font-medium text-stone-900 shadow outline-none ring-2 ring-primary transition focus:translate-y-0"
       >
-        Skip to main content
+        {dict.skipToMainContent}
       </a>
 
       {mobileOpen ? (
@@ -402,20 +431,20 @@ export function AppShell({
               <BrandMark
                 homeHref={homeHref}
                 brandTitle={brandTitle}
-                portalLabel={portalLabel}
+                portalLabel={translatedPortalLabel}
               />
               <button
                 type="button"
                 onClick={closeMobile}
                 className="rounded-full px-2 py-1.5 text-sm font-medium text-stone-700 outline-none hover:bg-stone-100 focus-visible:ring-2 focus-visible:ring-primary"
               >
-                Close
+                {dict.close}
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
               <MobileNav
                 pathname={pathname}
-                nav={nav}
+                nav={translatedNav}
                 exactMatchHrefs={exactMatchHrefs}
                 onNavigate={closeMobile}
               />
@@ -433,22 +462,22 @@ export function AppShell({
             aria-controls={panelId}
             onClick={openMobile}
           >
-            Menu
+            {dict.menu}
           </button>
 
           <div className="hidden shrink-0 justify-self-start md:block">
             <BrandMark
               homeHref={homeHref}
               brandTitle={brandTitle}
-              portalLabel={portalLabel}
+              portalLabel={translatedPortalLabel}
               compact
             />
           </div>
 
           <div className="min-w-0 flex-1 md:hidden">
-            {portalLabel ? (
+            {translatedPortalLabel ? (
               <p className="truncate text-[0.65rem] font-medium uppercase tracking-wide text-stone-500">
-                {portalLabel}
+                {translatedPortalLabel}
               </p>
             ) : null}
             <p className="truncate text-sm font-semibold text-stone-900">
@@ -458,11 +487,12 @@ export function AppShell({
 
           <TopNav
             pathname={pathname}
-            nav={nav}
+            nav={translatedNav}
             exactMatchHrefs={exactMatchHrefs}
           />
 
-          <div className="ml-auto flex shrink-0 items-center justify-self-end md:ml-0">
+          <div className="ml-auto flex shrink-0 items-center gap-2 justify-self-end md:ml-0">
+            <LanguageSwitcher className="rounded-full border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-800 outline-none hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-primary" />
             <LogoutButton
               logoutPath={logoutPath}
               redirectTo={loginPath}

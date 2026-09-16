@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { getLandingDict } from "@/lib/i18n/dictionaries/landing";
+import { useLocale } from "@/lib/i18n/use-locale";
+
 export function LandingNav() {
   const [open, setOpen] = useState(false);
+  const dict = getLandingDict(useLocale()).nav;
 
   return (
     <>
@@ -25,23 +30,24 @@ export function LandingNav() {
         aria-label="Primary"
       >
         <a href="#features" onClick={() => setOpen(false)}>
-          Features
+          {dict.features}
         </a>
         <a href="#how-it-works" onClick={() => setOpen(false)}>
-          How It Works
+          {dict.howItWorks}
         </a>
         <a href="#use-cases" onClick={() => setOpen(false)}>
-          Use Cases
+          {dict.useCases}
         </a>
         <a href="#contact" onClick={() => setOpen(false)}>
-          Contact
+          {dict.contact}
         </a>
+        <LanguageSwitcher className="nav-lang-select" />
         <a
           className="btn btn-primary btn-sm nav-cta"
           href="/register"
           onClick={() => setOpen(false)}
         >
-          Get Started
+          {dict.getStarted}
         </a>
       </nav>
     </>

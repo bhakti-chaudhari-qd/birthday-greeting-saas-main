@@ -3,6 +3,8 @@
 import { useState } from "react";
 
 import { inputClass } from "@/components/ui/page";
+import { getAuthDict } from "@/lib/i18n/dictionaries/auth";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type PasswordFieldProps = {
   label: string;
@@ -23,6 +25,7 @@ export function PasswordField({
   autoComplete,
 }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false);
+  const dict = getAuthDict(useLocale()).passwordField;
 
   return (
     <label className="block text-sm">
@@ -41,9 +44,9 @@ export function PasswordField({
           type="button"
           className="absolute inset-y-0 right-0 px-3 text-xs font-medium text-stone-600 hover:text-stone-900"
           onClick={() => setVisible((current) => !current)}
-          aria-label={visible ? "Hide password" : "Show password"}
+          aria-label={visible ? dict.hide : dict.show}
         >
-          {visible ? "Hide" : "Show"}
+          {visible ? dict.hide : dict.show}
         </button>
       </div>
     </label>

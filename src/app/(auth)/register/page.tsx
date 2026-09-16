@@ -9,8 +9,11 @@ import {
 } from "@/components/ui/page";
 import { PasswordField } from "@/components/ui/password-field";
 import { navigateToAuthenticatedLanding } from "@/lib/auth/navigate-after-auth";
+import { getAuthDict } from "@/lib/i18n/dictionaries/auth";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 function RegisterForm() {
+  const dict = getAuthDict(useLocale()).register;
   const searchParams = useSearchParams();
   const referralFromQuery = searchParams.get("ref")?.trim() ?? "";
   const [error, setError] = useState<string | null>(null);
@@ -44,13 +47,13 @@ function RegisterForm() {
       const payload = await response.json();
 
       if (!response.ok) {
-        setError(payload.error?.message ?? "Registration failed");
+        setError(payload.error?.message ?? dict.fallbackError);
         return;
       }
 
       navigateToAuthenticatedLanding();
     } catch {
-      setError("Registration failed");
+      setError(dict.fallbackError);
     } finally {
       setIsSubmitting(false);
     }
@@ -58,15 +61,11 @@ function RegisterForm() {
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <h1 className="text-2xl font-semibold text-zinc-900">Register organization</h1>
-      <p className="mt-2 text-sm text-zinc-600">
-        Create your organization and Owner account.
-      </p>
+      <h1 className="text-2xl font-semibold text-zinc-900">{dict.title}</h1>
+      <p className="mt-2 text-sm text-zinc-600">{dict.subtitle}</p>
 
       <noscript>
-        <p className="mt-4 text-sm text-red-600">
-          JavaScript is required to create an account.
-        </p>
+        <p className="mt-4 text-sm text-red-600">{dict.jsRequired}</p>
       </noscript>
 
       <form
@@ -74,22 +73,20 @@ function RegisterForm() {
         onSubmit={handleSubmit}
         method="dialog"
       >
-        <Field label="Organization name" name="organizationName" required />
-        <Field label="Owner name" name="adminName" required />
-        <Field label="Email" name="email" type="email" required />
+        <Field label={dict.organizationNameLabel} name="organizationName" required />
+        <Field label={dict.ownerNameLabel} name="adminName" required />
+        <Field label={dict.emailLabel} name="email" type="email" required />
         <PasswordField
-          label="Password"
+          label={dict.passwordLabel}
           name="password"
           required
           autoComplete="new-password"
         />
-        <p className="text-xs text-zinc-500">
-          At least 10 characters, or 8+ with uppercase, lowercase, and a number.
-        </p>
+        <p className="text-xs text-zinc-500">{dict.passwordHint}</p>
         <Field
-          label="Referral code"
+          label={dict.referralLabel}
           name="referralCode"
-          placeholder="From your partner, if you have one"
+          placeholder={dict.referralPlaceholder}
           defaultValue={referralFromQuery}
         />
 
@@ -100,20 +97,21 @@ function RegisterForm() {
           disabled={isSubmitting}
           className={`w-full ${primaryButtonClass}`}
         >
-          {isSubmitting ? "Creating..." : "Create account"}
+          {isSubmitting ? dict.submitting : dict.submit}
         </button>
       </form>
 
       <div className="mt-4">
-        <SecondaryButtonLink href="/login">Sign in</SecondaryButtonLink>
+        <SecondaryButtonLink href="/login">{dict.signIn}</SecondaryButtonLink>
       </div>
     </div>
   );
 }
 
 export default function RegisterPage() {
+  const dict = getAuthDict(useLocale()).register;
   return (
-    <Suspense fallback={<p className="text-sm text-stone-600">Loading…</p>}>
+    <Suspense fallback={<p className="text-sm text-stone-600">{dict.loading}</p>}>
       <RegisterForm />
     </Suspense>
   );

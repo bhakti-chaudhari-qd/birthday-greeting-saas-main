@@ -8,6 +8,8 @@ import {
   primaryButtonClass,
 } from "@/components/ui/page";
 import { PasswordField } from "@/components/ui/password-field";
+import { getAuthDict } from "@/lib/i18n/dictionaries/auth";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type LoginResponse = {
   data?: {
@@ -19,6 +21,7 @@ type LoginResponse = {
 };
 
 export default function LoginPage() {
+  const dict = getAuthDict(useLocale()).login;
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,13 +45,13 @@ export default function LoginPage() {
       const payload = (await response.json()) as LoginResponse;
 
       if (!response.ok) {
-        setError(payload.error?.message ?? "Login failed");
+        setError(payload.error?.message ?? dict.fallbackError);
         return;
       }
 
       window.location.assign(payload.data?.redirectTo ?? "/dashboard");
     } catch {
-      setError("Login failed");
+      setError(dict.fallbackError);
     } finally {
       setIsSubmitting(false);
     }
@@ -57,23 +60,18 @@ export default function LoginPage() {
   return (
     <div className="rounded-xl border border-stone-200/90 bg-white p-6 shadow-sm">
       <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
-        Sign in
+        {dict.title}
       </h1>
-      <p className="mt-2 text-sm text-stone-600">
-        Use your email or Indian mobile number and password. We’ll route you to
-        the right workspace.
-      </p>
+      <p className="mt-2 text-sm text-stone-600">{dict.subtitle}</p>
 
       <noscript>
-        <p className="mt-4 text-sm text-red-600">
-          JavaScript is required to sign in.
-        </p>
+        <p className="mt-4 text-sm text-red-600">{dict.jsRequired}</p>
       </noscript>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit} method="dialog">
         <label className="block text-sm">
           <span className="font-medium text-stone-800">
-            Email or Indian mobile
+            {dict.identifierLabel}
           </span>
           <input
             className={`mt-1 ${inputClass}`}
@@ -86,7 +84,7 @@ export default function LoginPage() {
         </label>
 
         <PasswordField
-          label="Password"
+          label={dict.passwordLabel}
           name="password"
           required
           autoComplete="current-password"
@@ -99,15 +97,15 @@ export default function LoginPage() {
           disabled={isSubmitting}
           className={`w-full ${primaryButtonClass}`}
         >
-          {isSubmitting ? "Signing in..." : "Sign in"}
+          {isSubmitting ? dict.submitting : dict.submit}
         </button>
       </form>
 
       <div className="mt-4 flex flex-wrap gap-2">
         <SecondaryButtonLink href="/forgot-password">
-          Forgot password
+          {dict.forgotPassword}
         </SecondaryButtonLink>
-        <SecondaryButtonLink href="/register">Register</SecondaryButtonLink>
+        <SecondaryButtonLink href="/register">{dict.register}</SecondaryButtonLink>
       </div>
     </div>
   );
