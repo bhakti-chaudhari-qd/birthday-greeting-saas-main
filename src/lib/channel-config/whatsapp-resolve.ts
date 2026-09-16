@@ -28,7 +28,7 @@ export function buildWhatsAppHttpSettings(
   baseUrl: string,
   sendPath: string,
   media?: WhatsAppHttpMediaInput | null,
-  tlsInsecure: boolean = true,
+  tlsInsecure: boolean = false,
 ): WhatsAppHttpSettings {
   const settings: WhatsAppHttpSettings = {
     baseUrl: baseUrl.trim().replace(/\/$/, ""),
@@ -100,8 +100,9 @@ export function resolveWhatsAppHttpProviderConfig(
     apiKey: credentials.apiKey,
     requestTimeoutMs:
       settings.requestTimeoutMs ?? DEFAULT_WHATSAPP_HTTP_REQUEST_TIMEOUT_MS,
-    // Default true so IP HTTPS / self-signed test gateways work like Postman.
-    tlsInsecure: settings.tlsInsecure !== false,
+    // Secure by default - a stored config must explicitly opt into skipping
+    // certificate verification (e.g. for a self-signed test gateway).
+    tlsInsecure: settings.tlsInsecure === true,
   };
 
   if (settings.mediaBase64?.trim()) {

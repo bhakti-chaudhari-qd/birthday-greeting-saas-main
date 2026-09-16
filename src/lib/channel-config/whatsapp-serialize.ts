@@ -88,7 +88,7 @@ function safeSettingsFromConfig(config: ChannelConfig): {
     return {
       baseUrl: settings.baseUrl,
       sendPath: settings.sendPath,
-      tlsInsecure: settings.tlsInsecure !== false,
+      tlsInsecure: settings.tlsInsecure === true,
       mediaConfigured,
       ...(mediaConfigured && settings.mediaFilename
         ? { mediaFilename: settings.mediaFilename }
@@ -135,7 +135,7 @@ export function serializeWhatsAppChannelConfig(
     ...(settings.baseUrl ? { baseUrl: settings.baseUrl } : {}),
     ...(settings.sendPath ? { sendPath: settings.sendPath } : {}),
     ...(config.provider === ChannelProvider.CUSTOM_HTTP
-      ? { tlsInsecure: settings.tlsInsecure !== false }
+      ? { tlsInsecure: settings.tlsInsecure === true }
       : {}),
     ...(settings.mediaFilename
       ? { mediaFilename: settings.mediaFilename }

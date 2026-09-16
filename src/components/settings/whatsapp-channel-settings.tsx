@@ -52,7 +52,7 @@ const emptyForm: FormState = {
   apiKey: "",
   baseUrl: "",
   sendPath: "",
-  tlsInsecure: true,
+  tlsInsecure: false,
 };
 
 /** Local-only demo Custom HTTP defaults for provider testing. Never prefilled in production. */
@@ -116,7 +116,7 @@ export function WhatsAppChannelSettings() {
             apiKey: "",
             baseUrl: data.baseUrl ?? "",
             sendPath: data.sendPath ?? "",
-            tlsInsecure: data.tlsInsecure !== false,
+            tlsInsecure: data.tlsInsecure === true,
           }),
         );
       } catch {

@@ -165,7 +165,7 @@ function resolveSettingsForWrite(
     );
   }
 
-  let existingTlsInsecure = true;
+  let existingTlsInsecure = false;
   let existingMedia:
     | {
         mediaBase64: string;
@@ -180,7 +180,7 @@ function resolveSettingsForWrite(
   ) {
     try {
       const parsed = whatsappHttpSettingsSchema.parse(existing.settings);
-      existingTlsInsecure = parsed.tlsInsecure !== false;
+      existingTlsInsecure = parsed.tlsInsecure === true;
       if (
         !input.clearMedia &&
         parsed.mediaBase64?.trim() &&
@@ -381,7 +381,7 @@ export async function updateWhatsAppChannelMedia(
       settings.baseUrl,
       settings.sendPath,
       storedMedia,
-      settings.tlsInsecure !== false,
+      settings.tlsInsecure === true,
     );
   }
 
