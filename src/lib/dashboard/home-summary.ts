@@ -337,15 +337,21 @@ export async function getDashboardHomeSummary(
 
   if (
     isAdmin &&
-    occasionsToday.summary.total > 0 &&
+    occasionsToday.summary.rawTotal > 0 &&
     !occasionsToday.sections.some(
       (section) =>
-        section.automationEnabled || section.whatsappAutomationEnabled,
+        section.automationEnabled ||
+        section.whatsappAutomationEnabled ||
+        section.emailAutomationEnabled,
     )
   ) {
+    // rawTotal (everyone with an occasion today) drives this alert, not
+    // summary.total - total only counts contacts who already resolved to an
+    // enabled automated channel, so it stays 0 in the exact "nothing is set
+    // up" case this alert exists to catch.
     alerts.push({
-      message: `${occasionsToday.summary.total} ${
-        occasionsToday.summary.total === 1 ? "person has" : "people have"
+      message: `${occasionsToday.summary.rawTotal} ${
+        occasionsToday.summary.rawTotal === 1 ? "person has" : "people have"
       } an occasion today, but greeting routes are off.`,
       href: "/dashboard/settings/greeting-routes",
       cta: "Set up automatic greetings",

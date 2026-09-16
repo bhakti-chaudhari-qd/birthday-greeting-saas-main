@@ -72,6 +72,8 @@ export type OccasionDaySection = {
   occasionName: string;
   label: string;
   count: number;
+  /** Contacts with this occasion today, before filtering to ones with a resolved automated channel - use for "N people have an occasion today" copy. */
+  rawCount: number;
   automationEnabled: boolean;
   whatsappAutomationEnabled: boolean;
   emailAutomationEnabled: boolean;
@@ -85,6 +87,8 @@ export type OccasionsDayView = {
   summary: {
     byOccasion: Record<string, number>;
     total: number;
+    /** Sum of rawCount across sections - everyone with an occasion today, automated or not. */
+    rawTotal: number;
   };
   sections: OccasionDaySection[];
 };
@@ -498,6 +502,7 @@ export async function getOccasionsDayView(
       occasionName: occasion.name,
       label: occasion.name,
       count: contacts.length,
+      rawCount: contactsByOccasion[index]!.length,
       automationEnabled: anyRule.some((rule) => rule.smsEnabled),
       whatsappAutomationEnabled: anyRule.some((rule) => rule.whatsappEnabled),
       emailAutomationEnabled: anyRule.some((rule) => rule.emailEnabled),
@@ -522,6 +527,7 @@ export async function getOccasionsDayView(
     summary: {
       byOccasion,
       total: sections.reduce((sum, section) => sum + section.count, 0),
+      rawTotal: sections.reduce((sum, section) => sum + section.rawCount, 0),
     },
     sections,
   };
