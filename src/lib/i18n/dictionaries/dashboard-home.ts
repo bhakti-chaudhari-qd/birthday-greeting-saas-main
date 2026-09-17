@@ -153,7 +153,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
     },
     alerts: {
       automationPaused: {
-        message: "ऑटोमेशन रुका हुआ है - कोई सक्रिय ऑटोमेशन सेट नहीं है।",
+        message: "ऑटोमेशन रुका हुआ है - कोई एक्टिव ऑटोमेशन सेट नहीं है।",
         cta: "सेट करें",
       },
       smsNotConfigured: {
@@ -184,7 +184,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       todaysGreetings: "आज की ग्रीटिंग",
       scheduledToday: "आज शेड्यूल",
       contacts: "कॉन्टैक्ट्स",
-      activeContacts: "सक्रिय कॉन्टैक्ट्स",
+      activeContacts: "एक्टिव कॉन्टैक्ट्स",
       channels: "चैनल",
       whatsapp: "WhatsApp",
       sms: "SMS",
@@ -208,7 +208,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       emptyDescription:
         "अपने आप ग्रीटिंग भेजना शुरू करने के लिए अपना पहला ऑटोमेशन बनाएँ।",
       createAutomation: "ऑटोमेशन बनाएँ",
-      active: "सक्रिय",
+      active: "एक्टिव",
       category: "श्रेणी",
       channel: "चैनल",
       sendTime: "भेजने का समय",
@@ -235,7 +235,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
     },
     alerts: {
       automationPaused: {
-        message: "ऑटोमेशन थांबले आहे - कोणतेही सक्रिय ऑटोमेशन सेट केलेले नाही.",
+        message: "ऑटोमेशन थांबले आहे - कोणतेही अ‍ॅक्टिव्ह ऑटोमेशन सेट केलेले नाही.",
         cta: "सेट करा",
       },
       smsNotConfigured: {
@@ -266,7 +266,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       todaysGreetings: "आजच्या ग्रीटिंग",
       scheduledToday: "आज शेड्यूल्ड",
       contacts: "कॉन्टॅक्ट्स",
-      activeContacts: "सक्रिय कॉन्टॅक्ट्स",
+      activeContacts: "अ‍ॅक्टिव्ह कॉन्टॅक्ट्स",
       channels: "चॅनेल्स",
       whatsapp: "WhatsApp",
       sms: "SMS",
@@ -290,7 +290,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       emptyDescription:
         "आपोआप ग्रीटिंग पाठवणे सुरू करण्यासाठी तुमचे पहिले ऑटोमेशन तयार करा.",
       createAutomation: "ऑटोमेशन तयार करा",
-      active: "सक्रिय",
+      active: "अ‍ॅक्टिव्ह",
       category: "श्रेणी",
       channel: "चॅनेल",
       sendTime: "पाठवण्याची वेळ",
