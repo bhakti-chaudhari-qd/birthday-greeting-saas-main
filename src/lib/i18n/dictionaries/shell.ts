@@ -56,13 +56,13 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
     organizationPortalLabel: "संगठन",
     navLabelsByHref: {
       "/dashboard": "होम",
-      "/dashboard/contacts": "संपर्क सूची",
+      "/dashboard/contacts": "कॉन्टैक्ट्स",
       "/dashboard/messages": "संदेश भेजें",
       "/dashboard/activity": "गतिविधि",
       "/dashboard/settings/channels": "चैनल",
       "/dashboard/templates": "टेम्पलेट प्रबंधित करें",
       "/dashboard/settings/occasions": "अवसर प्रबंधन",
-      "/dashboard/settings/contact-fields": "संपर्क फ़ील्ड",
+      "/dashboard/settings/contact-fields": "कॉन्टैक्ट फ़ील्ड",
       "/dashboard/settings/billing": "बिलिंग",
     },
     navGroupLabelsByEnglishLabel: {
@@ -85,13 +85,13 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
     organizationPortalLabel: "संस्था",
     navLabelsByHref: {
       "/dashboard": "होम",
-      "/dashboard/contacts": "संपर्क यादी",
+      "/dashboard/contacts": "कॉन्टॅक्ट्स",
       "/dashboard/messages": "संदेश पाठवा",
       "/dashboard/activity": "अ‍ॅक्टिव्हिटी",
       "/dashboard/settings/channels": "चॅनेल्स",
       "/dashboard/templates": "टेम्पलेट व्यवस्थापित करा",
       "/dashboard/settings/occasions": "प्रसंग व्यवस्थापन",
-      "/dashboard/settings/contact-fields": "संपर्क फील्ड्स",
+      "/dashboard/settings/contact-fields": "कॉन्टॅक्ट फील्ड्स",
       "/dashboard/settings/billing": "बिलिंग",
     },
     navGroupLabelsByEnglishLabel: {

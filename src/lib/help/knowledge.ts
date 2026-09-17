@@ -149,9 +149,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     answer:
       "1. Open Settings → Automatic Greetings.\n2. Pick the occasion tab (Birthday, Anniversary, or Custom).\n3. Choose a contact category and turn on the channels you want (SMS, WhatsApp, Email), picking a template for each.\n4. Set the send time (IST) and save - the row goes Active once a valid template and time are set.\nOwners only. Check today's people on Home, and review upcoming/submitted/failed sends in Activity.",
     answerHi:
-      "1. Settings → Automatic Greetings खोलें।\n2. अवसर टैब चुनें (Birthday, Anniversary, या Custom)।\n3. संपर्क श्रेणी चुनें और जो चैनल चाहिए (SMS, WhatsApp, Email) चालू करें, हर एक के लिए टेम्पलेट चुनें।\n4. भेजने का समय (IST) सेट करके Save करें - वैध टेम्पलेट और समय मिलते ही पंक्ति Active हो जाती है।\nकेवल Owners। आज के लोग Home पर देखें; upcoming/submitted/failed Activity में देखें।",
+      "1. Settings → Automatic Greetings खोलें।\n2. अवसर टैब चुनें (Birthday, Anniversary, या Custom)।\n3. कॉन्टैक्ट श्रेणी चुनें और जो चैनल चाहिए (SMS, WhatsApp, Email) चालू करें, हर एक के लिए टेम्पलेट चुनें।\n4. भेजने का समय (IST) सेट करके Save करें - वैध टेम्पलेट और समय मिलते ही पंक्ति Active हो जाती है।\nकेवल Owners। आज के लोग Home पर देखें; upcoming/submitted/failed Activity में देखें।",
     answerMr:
-      "1. Settings → Automatic Greetings उघडा.\n2. प्रसंग टॅब निवडा (Birthday, Anniversary, किंवा Custom).\n3. संपर्क श्रेणी निवडा आणि हवे असलेले चॅनेल (SMS, WhatsApp, Email) चालू करा, प्रत्येकासाठी टेम्पलेट निवडा.\n4. पाठवण्याची वेळ (IST) सेट करून Save करा - वैध टेम्पलेट आणि वेळ मिळताच पंक्ती Active होते.\nफक्त Owners. आजचे लोक Home वर पाहा; upcoming/submitted/failed Activity मध्ये पाहा.",
+      "1. Settings → Automatic Greetings उघडा.\n2. प्रसंग टॅब निवडा (Birthday, Anniversary, किंवा Custom).\n3. कॉन्टॅक्ट श्रेणी निवडा आणि हवे असलेले चॅनेल (SMS, WhatsApp, Email) चालू करा, प्रत्येकासाठी टेम्पलेट निवडा.\n4. पाठवण्याची वेळ (IST) सेट करून Save करा - वैध टेम्पलेट आणि वेळ मिळताच पंक्ती Active होते.\nफक्त Owners. आजचे लोक Home वर पाहा; upcoming/submitted/failed Activity मध्ये पाहा.",
     hrefs: [
       {
         label: "Automatic Greetings",
@@ -181,9 +181,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     answer:
       "1. Open Send Messages.\n2. Choose a channel (SMS, WhatsApp, or Email) and pick or create a template.\n3. Select contacts individually, or by filter/category.\n4. Review the preview, then queue the send - large audiences go out in batches.\nOwners only. Your subscription must be ACTIVE and the channel must be configured first.",
     answerHi:
-      "1. Send Messages खोलें।\n2. चैनल चुनें (SMS, WhatsApp, या Email) और टेम्पलेट चुनें या बनाएँ।\n3. संपर्क अलग-अलग, या फ़िल्टर/श्रेणी से चुनें।\n4. प्रीव्यू देखें, फिर भेजने की कतार लगाएँ - बड़ी सूची बैच में जाती है।\nकेवल Owners। सब्सक्रिप्शन ACTIVE और चैनल पहले से सेट होना चाहिए।",
+      "1. Send Messages खोलें।\n2. चैनल चुनें (SMS, WhatsApp, या Email) और टेम्पलेट चुनें या बनाएँ।\n3. कॉन्टैक्ट अलग-अलग, या फ़िल्टर/श्रेणी से चुनें।\n4. प्रीव्यू देखें, फिर भेजने की कतार लगाएँ - बड़ी सूची बैच में जाती है।\nकेवल Owners। सब्सक्रिप्शन ACTIVE और चैनल पहले से सेट होना चाहिए।",
     answerMr:
-      "1. Send Messages उघडा.\n2. चॅनेल निवडा (SMS, WhatsApp, किंवा Email) आणि टेम्पलेट निवडा किंवा तयार करा.\n3. संपर्क वेगवेगळे, किंवा फिल्टर/श्रेणीने निवडा.\n4. प्रीव्ह्यू पाहा, नंतर पाठवण्याची रांग लावा - मोठी यादी बॅचमध्ये जाते.\nफक्त Owners. सब्सक्रिप्शन ACTIVE आणि चॅनेल आधीच सेट असावे.",
+      "1. Send Messages उघडा.\n2. चॅनेल निवडा (SMS, WhatsApp, किंवा Email) आणि टेम्पलेट निवडा किंवा तयार करा.\n3. कॉन्टॅक्ट वेगवेगळे, किंवा फिल्टर/श्रेणीने निवडा.\n4. प्रीव्ह्यू पाहा, नंतर पाठवण्याची रांग लावा - मोठी यादी बॅचमध्ये जाते.\nफक्त Owners. सब्सक्रिप्शन ACTIVE आणि चॅनेल आधीच सेट असावे.",
     hrefs: [{ label: "Send Messages", href: "/dashboard/messages/send" }],
   },
   {
@@ -210,9 +210,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     answer:
       "Start with three steps: (1) add or import contacts, (2) create a greeting under Send Messages, (3) review Home and Activity. Organization Owners can connect SMS/WhatsApp under Settings and use Automatic Greetings to schedule birthday or anniversary messages.",
     answerHi:
-      "तीन कदमों से शुरू करें: (1) संपर्क जोड़ें या इंपोर्ट करें, (2) Send Messages से ग्रीटिंग बनाएँ, (3) Home और Activity देखें। Organization Owner Settings में SMS/WhatsApp जोड़कर Automatic Greetings सेट करें, ताकि जन्मदिन/वर्षगाँठ संदेश अपने आप जाएँ।",
+      "तीन कदमों से शुरू करें: (1) कॉन्टैक्ट जोड़ें या इंपोर्ट करें, (2) Send Messages से ग्रीटिंग बनाएँ, (3) Home और Activity देखें। Organization Owner Settings में SMS/WhatsApp जोड़कर Automatic Greetings सेट करें, ताकि जन्मदिन/वर्षगाँठ संदेश अपने आप जाएँ।",
     answerMr:
-      "तीन पावलांपासून सुरू करा: (1) संपर्क जोडा किंवा इंपोर्ट करा, (2) Send Messages ने ग्रीटिंग तयार करा, (3) Home आणि Activity पाहा. Organization Owner ने Settings मध्ये SMS/WhatsApp जोडून Automatic Greetings सेट करावेत, जेणेकरून वाढदिवस/वर्धापनदिन संदेश आपोआप जातील.",
+      "तीन पावलांपासून सुरू करा: (1) कॉन्टॅक्ट जोडा किंवा इंपोर्ट करा, (2) Send Messages ने ग्रीटिंग तयार करा, (3) Home आणि Activity पाहा. Organization Owner ने Settings मध्ये SMS/WhatsApp जोडून Automatic Greetings सेट करावेत, जेणेकरून वाढदिवस/वर्धापनदिन संदेश आपोआप जातील.",
     hrefs: [
       { label: "Contacts", href: "/dashboard/contacts" },
       { label: "Send Messages", href: "/dashboard/messages/send" },
@@ -236,14 +236,14 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "जोडा",
     ],
     leadIn: "To add contacts:",
-    leadInHi: "संपर्क जोड़ने के लिए:",
-    leadInMr: "संपर्क जोडण्यासाठी:",
+    leadInHi: "कॉन्टैक्ट जोड़ने के लिए:",
+    leadInMr: "कॉन्टॅक्ट जोडण्यासाठी:",
     answer:
       "Open Contacts to add people one by one or import many from CSV/Excel. Each contact can have a birthday, anniversary, phone number, and category. Your plan's contact limit applies, so free and paid plans allow different totals.",
     answerHi:
-      "Contacts खोलकर एक-एक करके लोग जोड़ें, या CSV/Excel से कई इंपोर्ट करें। हर संपर्क पर जन्मदिन, वर्षगाँठ, फ़ोन नंबर और श्रेणी हो सकती है। आपके प्लान की संपर्क सीमा लागू होती है-फ्री और पेड प्लान में अलग कुल सीमा होती है।",
+      "Contacts खोलकर एक-एक करके लोग जोड़ें, या CSV/Excel से कई इंपोर्ट करें। हर कॉन्टैक्ट पर जन्मदिन, वर्षगाँठ, फ़ोन नंबर और श्रेणी हो सकती है। आपके प्लान की कॉन्टैक्ट सीमा लागू होती है-फ्री और पेड प्लान में अलग कुल सीमा होती है।",
     answerMr:
-      "Contacts उघडून एक-एक करून लोक जोडा, किंवा CSV/Excel मधून अनेक इंपोर्ट करा. प्रत्येक संपर्कावर वाढदिवस, वर्धापनदिन, फोन नंबर आणि श्रेणी असू शकते. तुमच्या प्लानची संपर्क मर्यादा लागू होते-फ्री आणि पेड प्लानमध्ये वेगवेगळी एकूण मर्यादा असते.",
+      "Contacts उघडून एक-एक करून लोक जोडा, किंवा CSV/Excel मधून अनेक इंपोर्ट करा. प्रत्येक कॉन्टॅक्टवर वाढदिवस, वर्धापनदिन, फोन नंबर आणि श्रेणी असू शकते. तुमच्या प्लानची कॉन्टॅक्ट मर्यादा लागू होते-फ्री आणि पेड प्लानमध्ये वेगवेगळी एकूण मर्यादा असते.",
     hrefs: [{ label: "Open contacts", href: "/dashboard/contacts" }],
   },
   {
@@ -260,14 +260,14 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "spreadsheet",
     ],
     leadIn: "To import contacts from CSV or Excel:",
-    leadInHi: "CSV या Excel से संपर्क इंपोर्ट करने के लिए:",
-    leadInMr: "CSV किंवा Excel मधून संपर्क इंपोर्ट करण्यासाठी:",
+    leadInHi: "CSV या Excel से कॉन्टैक्ट इंपोर्ट करने के लिए:",
+    leadInMr: "CSV किंवा Excel मधून कॉन्टॅक्ट इंपोर्ट करण्यासाठी:",
     answer:
       "On the Contacts page, use import to upload a CSV or Excel file. Make sure columns for name, phone, and dates are filled correctly. If a mobile number already exists, that contact is updated. Duplicate rows inside the same file are skipped. Invalid rows are reported so you can fix them and re-import. Export is available to Owners for backups.",
     answerHi:
-      "Contacts पेज पर import से CSV या Excel फ़ाइल अपलोड करें। नाम, फ़ोन और तारीख कॉलम सही भरें। अगर मोबाइल पहले से है तो संपर्क अपडेट होता है। एक ही फ़ाइल में डुप्लिकेट पंक्तियाँ छोड़ दी जाती हैं। गलत पंक्तियाँ रिपोर्ट होती हैं-ठीक करके फिर इंपोर्ट करें। बैकअप के लिए Export केवल Owners के लिए उपलब्ध है।",
+      "Contacts पेज पर import से CSV या Excel फ़ाइल अपलोड करें। नाम, फ़ोन और तारीख कॉलम सही भरें। अगर मोबाइल पहले से है तो कॉन्टैक्ट अपडेट होता है। एक ही फ़ाइल में डुप्लिकेट पंक्तियाँ छोड़ दी जाती हैं। गलत पंक्तियाँ रिपोर्ट होती हैं-ठीक करके फिर इंपोर्ट करें। बैकअप के लिए Export केवल Owners के लिए उपलब्ध है।",
     answerMr:
-      "Contacts पेजवर import ने CSV किंवा Excel फाइल अपलोड करा. नाव, फोन आणि तारीख कॉलम बरोबर भरा. मोबाइल आधीच असेल तर संपर्क अपडेट होतो. त्याच फाइलमधील डुप्लिकेट ओळी वगळल्या जातात. चुकीच्या ओळी रिपोर्ट होतात-दुरुस्त करून पुन्हा इंपोर्ट करा. बॅकअपसाठी Export फक्त Owners साठी उपलब्ध आहे.",
+      "Contacts पेजवर import ने CSV किंवा Excel फाइल अपलोड करा. नाव, फोन आणि तारीख कॉलम बरोबर भरा. मोबाइल आधीच असेल तर कॉन्टॅक्ट अपडेट होतो. त्याच फाइलमधील डुप्लिकेट ओळी वगळल्या जातात. चुकीच्या ओळी रिपोर्ट होतात-दुरुस्त करून पुन्हा इंपोर्ट करा. बॅकअपसाठी Export फक्त Owners साठी उपलब्ध आहे.",
     hrefs: [{ label: "Open contacts", href: "/dashboard/contacts" }],
   },
   {
@@ -290,9 +290,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     answer:
       "Owners (Organization Admins) can send messages, configure SMS/WhatsApp, manage automations, create/edit templates, export contacts, and manage billing. Staff can manage contacts, view templates, and see the queue and delivery history - but they cannot send, change channel settings, or open billing.",
     answerHi:
-      "Owners (Organization Admins) संदेश भेज सकते हैं, SMS/WhatsApp सेट कर सकते हैं, ऑटोमेशन चला सकते हैं, टेम्पलेट बना/बदल सकते हैं, संपर्क एक्सपोर्ट और बिलिंग देख सकते हैं। Staff संपर्क संभाल सकते हैं, टेम्पलेट देख सकते हैं, कतार और डिलीवरी इतिहास देख सकते हैं-लेकिन भेज नहीं सकते, चैनल सेटिंग नहीं बदल सकते, बिलिंग नहीं खोल सकते।",
+      "Owners (Organization Admins) संदेश भेज सकते हैं, SMS/WhatsApp सेट कर सकते हैं, ऑटोमेशन चला सकते हैं, टेम्पलेट बना/बदल सकते हैं, कॉन्टैक्ट एक्सपोर्ट और बिलिंग देख सकते हैं। Staff कॉन्टैक्ट संभाल सकते हैं, टेम्पलेट देख सकते हैं, कतार और डिलीवरी इतिहास देख सकते हैं-लेकिन भेज नहीं सकते, चैनल सेटिंग नहीं बदल सकते, बिलिंग नहीं खोल सकते।",
     answerMr:
-      "Owners (Organization Admins) संदेश पाठवू शकतात, SMS/WhatsApp सेट करू शकतात, ऑटोमेशन चालवू शकतात, टेम्पलेट तयार/बदलू शकतात, संपर्क एक्सपोर्ट आणि बिलिंग पाहू शकतात. Staff संपर्क हाताळू शकतात, टेम्पलेट पाहू शकतात, रांग आणि डिलिव्हरी इतिहास पाहू शकतात-पण पाठवू शकत नाहीत, चॅनेल सेटिंग बदलू शकत नाहीत, बिलिंग उघडू शकत नाहीत.",
+      "Owners (Organization Admins) संदेश पाठवू शकतात, SMS/WhatsApp सेट करू शकतात, ऑटोमेशन चालवू शकतात, टेम्पलेट तयार/बदलू शकतात, कॉन्टॅक्ट एक्सपोर्ट आणि बिलिंग पाहू शकतात. Staff कॉन्टॅक्ट हाताळू शकतात, टेम्पलेट पाहू शकतात, रांग आणि डिलिव्हरी इतिहास पाहू शकतात-पण पाठवू शकत नाहीत, चॅनेल सेटिंग बदलू शकत नाहीत, बिलिंग उघडू शकत नाहीत.",
     hrefs: [{ label: "Dashboard home", href: "/dashboard" }],
   },
   {
@@ -473,14 +473,14 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "subscription",
     ],
     leadIn: "How plans and contact limits work:",
-    leadInHi: "प्लान और संपर्क सीमा कैसे काम करती है:",
-    leadInMr: "प्लान आणि संपर्क मर्यादा कशी काम करते:",
+    leadInHi: "प्लान और कॉन्टैक्ट सीमा कैसे काम करती है:",
+    leadInMr: "प्लान आणि कॉन्टॅक्ट मर्यादा कशी काम करते:",
     answer:
       "Organizations use FREE, STARTER, PRO, or CUSTOM plans. Each plan has a contact limit. Billing is under Settings → Billing (Owners only). Upgrades use Razorpay when keys are configured. If the subscription is not ACTIVE, generating and sending messages is blocked until billing is fixed.",
     answerHi:
-      "संगठन FREE, STARTER, PRO या CUSTOM प्लान इस्तेमाल करते हैं। हर प्लान की संपर्क सीमा होती है। बिलिंग Settings → Billing में है (केवल Owners)। अपग्रेड Razorpay से होता है जब कुंजियाँ सेट हों। सब्सक्रिप्शन ACTIVE न हो तो संदेश बनाना/भेजना बिलिंग ठीक होने तक रुक जाता है।",
+      "संगठन FREE, STARTER, PRO या CUSTOM प्लान इस्तेमाल करते हैं। हर प्लान की कॉन्टैक्ट सीमा होती है। बिलिंग Settings → Billing में है (केवल Owners)। अपग्रेड Razorpay से होता है जब कुंजियाँ सेट हों। सब्सक्रिप्शन ACTIVE न हो तो संदेश बनाना/भेजना बिलिंग ठीक होने तक रुक जाता है।",
     answerMr:
-      "संस्था FREE, STARTER, PRO किंवा CUSTOM प्लान वापरतात. प्रत्येक प्लानला संपर्क मर्यादा असते. बिलिंग Settings → Billing मध्ये आहे (फक्त Owners). अपग्रेड Razorpay ने होते जेव्हा कळा सेट असतात. सब्सक्रिप्शन ACTIVE नसेल तर संदेश तयार/पाठवणे बिलिंग दुरुस्त होईपर्यंत थांबते.",
+      "संस्था FREE, STARTER, PRO किंवा CUSTOM प्लान वापरतात. प्रत्येक प्लानला कॉन्टॅक्ट मर्यादा असते. बिलिंग Settings → Billing मध्ये आहे (फक्त Owners). अपग्रेड Razorpay ने होते जेव्हा कळा सेट असतात. सब्सक्रिप्शन ACTIVE नसेल तर संदेश तयार/पाठवणे बिलिंग दुरुस्त होईपर्यंत थांबते.",
     hrefs: [{ label: "Billing", href: "/dashboard/settings/billing" }],
   },
   {
@@ -494,9 +494,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     answer:
       "Owners open Settings → Billing and choose STARTER or PRO. Checkout runs through Razorpay. After payment confirms (and the webhook applies the plan), your contact limits update and send features unlock for ACTIVE subscriptions. CUSTOM plans are set by Platform Admin, not self-serve checkout.",
     answerHi:
-      "Owners Settings → Billing खोलकर STARTER या PRO चुनें। Checkout Razorpay से होता है। भुगतान पुष्टि और webhook प्लान लागू करने के बाद संपर्क सीमा अपडेट होती है और ACTIVE सब्सक्रिप्शन पर सेंड खुलता है। CUSTOM प्लान Platform Admin सेट करता है, स्वयं-सेवा checkout नहीं।",
+      "Owners Settings → Billing खोलकर STARTER या PRO चुनें। Checkout Razorpay से होता है। भुगतान पुष्टि और webhook प्लान लागू करने के बाद कॉन्टैक्ट सीमा अपडेट होती है और ACTIVE सब्सक्रिप्शन पर सेंड खुलता है। CUSTOM प्लान Platform Admin सेट करता है, स्वयं-सेवा checkout नहीं।",
     answerMr:
-      "Owners Settings → Billing उघडून STARTER किंवा PRO निवडा. Checkout Razorpay ने होते. पेमेंट पुष्टी आणि webhook प्लान लागू केल्यानंतर संपर्क मर्यादा अपडेट होते आणि ACTIVE सब्सक्रिप्शनवर सेंड उघडते. CUSTOM प्लान Platform Admin सेट करतो; स्वयं-सेवा checkout नाही.",
+      "Owners Settings → Billing उघडून STARTER किंवा PRO निवडा. Checkout Razorpay ने होते. पेमेंट पुष्टी आणि webhook प्लान लागू केल्यानंतर कॉन्टॅक्ट मर्यादा अपडेट होते आणि ACTIVE सब्सक्रिप्शनवर सेंड उघडते. CUSTOM प्लान Platform Admin सेट करतो; स्वयं-सेवा checkout नाही.",
     hrefs: [{ label: "Billing", href: "/dashboard/settings/billing" }],
   },
   {
@@ -510,9 +510,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     answer:
       "No. Staff can manage contacts and view templates, queue, and deliveries. Only Owners can manually send, change channel or Automatic Greetings settings, export contacts, edit templates, and manage billing.",
     answerHi:
-      "नहीं। Staff संपर्क संभाल सकते हैं और टेम्पलेट, कतार व डिलीवरी देख सकते हैं। केवल Owners मैन्युअल भेज सकते हैं, चैनल/Automatic Greetings सेटिंग बदल सकते हैं, संपर्क एक्सपोर्ट, टेम्पलेट संपादन और बिलिंग कर सकते हैं।",
+      "नहीं। Staff कॉन्टैक्ट संभाल सकते हैं और टेम्पलेट, कतार व डिलीवरी देख सकते हैं। केवल Owners मैन्युअल भेज सकते हैं, चैनल/Automatic Greetings सेटिंग बदल सकते हैं, कॉन्टैक्ट एक्सपोर्ट, टेम्पलेट संपादन और बिलिंग कर सकते हैं।",
     answerMr:
-      "नाही. Staff संपर्क हाताळू शकतात आणि टेम्पलेट, रांग व डिलिव्हरी पाहू शकतात. फक्त Owners मॅन्युअल पाठवू शकतात, चॅनेल/Automatic Greetings सेटिंग बदलू शकतात, संपर्क एक्सपोर्ट, टेम्पलेट संपादन आणि बिलिंग करू शकतात.",
+      "नाही. Staff कॉन्टॅक्ट हाताळू शकतात आणि टेम्पलेट, रांग व डिलिव्हरी पाहू शकतात. फक्त Owners मॅन्युअल पाठवू शकतात, चॅनेल/Automatic Greetings सेटिंग बदलू शकतात, कॉन्टॅक्ट एक्सपोर्ट, टेम्पलेट संपादन आणि बिलिंग करू शकतात.",
   },
 ];
 

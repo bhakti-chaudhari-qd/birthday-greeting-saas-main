@@ -21,6 +21,12 @@ import {
 } from "@/components/ui/page";
 import { formatNearestOccasion } from "@/lib/contacts/nearest-occasion";
 import { fetchOrganizationCategories } from "@/lib/client/organization-reference-data";
+import {
+  getContactsDict,
+  type ContactsDict,
+} from "@/lib/i18n/dictionaries/contacts";
+import { translateOccasionName } from "@/lib/i18n/occasion-labels";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 /** Narrower than the shared compact button - the table's Edit action shouldn't dominate its row. */
 const editButtonClass =
@@ -81,14 +87,17 @@ type ImportJobStatus = {
   errorMessage?: string | null;
 };
 
-function formatImportSummaryNotice(summary: {
-  created: number;
-  updated: number;
-  skippedDuplicate: number;
-  skippedLimit: number;
-  invalid: number;
-}) {
-  return `Import finished: ${summary.created} added, ${summary.updated} updated, ${summary.skippedDuplicate} duplicates in file skipped, ${summary.invalid} invalid, ${summary.skippedLimit} skipped for limit.`;
+function formatImportSummaryNotice(
+  summary: {
+    created: number;
+    updated: number;
+    skippedDuplicate: number;
+    skippedLimit: number;
+    invalid: number;
+  },
+  dict: ContactsDict,
+) {
+  return dict.messages.importFinishedSummary(summary);
 }
 
 export type ContactsPageClientProps = {
@@ -118,7 +127,7 @@ function getSearchQueryForApi(raw: string): string | null {
   return term.length >= 2 ? term : null;
 }
 
-function searchHint(raw: string): string | null {
+function searchHint(raw: string, dict: ContactsDict): string | null {
   const term = raw.trim();
   if (!term) {
     return null;
@@ -132,15 +141,14 @@ function searchHint(raw: string): string | null {
   const digitHeavy =
     digits.length > 0 && digits.length >= Math.ceil(compact.length * 0.8);
 
-  return digitHeavy
-    ? "Type at least 3 digits to search by mobile."
-    : "Type at least 2 characters to search.";
+  return digitHeavy ? dict.filters.hintMobile : dict.filters.hintText;
 }
 
 function ContactsLoadingSkeleton() {
+  const dict = getContactsDict(useLocale());
   return (
-    <div className="animate-pulse" role="status" aria-label="Loading contacts">
-      <span className="sr-only">Loading contacts</span>
+    <div className="animate-pulse" role="status" aria-label={dict.loadingAria}>
+      <span className="sr-only">{dict.loadingAria}</span>
       <div className="hidden border-b border-stone-200 bg-stone-50 px-4 py-3 md:grid md:grid-cols-[2rem_1.5fr_1fr_1fr_1fr_1fr_4rem] md:gap-4">
         {Array.from({ length: 7 }, (_, index) => (
           <div key={index} className="h-3 rounded bg-stone-200" />
@@ -173,6 +181,8 @@ export function ContactsPageClient({
 }: ContactsPageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const locale = useLocale();
+  const dict = getContactsDict(locale);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [meta, setMeta] = useState<ContactsResponse["meta"] | null>(null);
   const [searchInput, setSearchInput] = useState("");
@@ -231,7 +241,7 @@ export function ContactsPageClient({
     () => getSearchQueryForApi(debouncedSearch),
     [debouncedSearch],
   );
-  const hint = searchHint(searchInput);
+  const hint = searchHint(searchInput, dict);
 
   const pollImportJob = useCallback(async (jobId: string) => {
     const response = await fetch(`/api/v1/contacts/import/jobs/${jobId}`);
@@ -242,35 +252,32 @@ export function ContactsPageClient({
     return body.data as ImportJobStatus;
   }, []);
 
-  const finishImportJob = useCallback(
-    async (job: ImportJobStatus) => {
-      const errorsResponse = await fetch(
-        `/api/v1/contacts/import/jobs/${job.id}/errors?limit=100`,
-      );
-      const errorsBody = await errorsResponse.json();
-      const errors = errorsResponse.ok
-        ? (errorsBody.data as Array<{ row: number; message: string }>)
-        : [];
+  async function finishImportJob(job: ImportJobStatus) {
+    const errorsResponse = await fetch(
+      `/api/v1/contacts/import/jobs/${job.id}/errors?limit=100`,
+    );
+    const errorsBody = await errorsResponse.json();
+    const errors = errorsResponse.ok
+      ? (errorsBody.data as Array<{ row: number; message: string }>)
+      : [];
 
-      const summary: ImportSummary = {
-        created: job.created,
-        updated: job.updated ?? 0,
-        skippedDuplicate: job.skippedDuplicate,
-        skippedLimit: job.skippedLimit,
-        invalid: job.invalid,
-        errors,
-      };
+    const summary: ImportSummary = {
+      created: job.created,
+      updated: job.updated ?? 0,
+      skippedDuplicate: job.skippedDuplicate,
+      skippedLimit: job.skippedLimit,
+      invalid: job.invalid,
+      errors,
+    };
 
-      setImportSummary(summary);
-      setImportNotice(formatImportSummaryNotice(summary));
-      setImportJob(null);
-      setPage(1);
-      setSelectedIds(new Set());
-      setReloadToken((current) => current + 1);
-      setCategories(await fetchContactCategories());
-    },
-    [],
-  );
+    setImportSummary(summary);
+    setImportNotice(formatImportSummaryNotice(summary, dict));
+    setImportJob(null);
+    setPage(1);
+    setSelectedIds(new Set());
+    setReloadToken((current) => current + 1);
+    setCategories(await fetchContactCategories());
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -325,7 +332,7 @@ export function ContactsPageClient({
           if (latest.status === "COMPLETED") {
             await finishImportJob(latest);
           } else if (latest.status === "FAILED") {
-            setError(latest.errorMessage ?? "Import failed. Try again.");
+            setError(latest.errorMessage ?? dict.messages.importFailed);
             setImportJob(null);
           } else {
             setImportJob(null);
@@ -335,7 +342,11 @@ export function ContactsPageClient({
     }, 2000);
 
     return () => window.clearInterval(timer);
-  }, [importJob, pollImportJob, finishImportJob]);
+    // finishImportJob is a plain function (recreated every render, closes over
+    // current dict/state) - intentionally excluded so this interval isn't
+    // torn down and rebuilt on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [importJob, pollImportJob]);
 
   useEffect(() => {
     async function loadCategories() {
@@ -378,7 +389,7 @@ export function ContactsPageClient({
         const body = await response.json();
 
         if (!response.ok) {
-          setError(body.error?.message ?? "Could not load contacts. Try again.");
+          setError(body.error?.message ?? dict.messages.couldNotLoadContacts);
           return;
         }
 
@@ -388,7 +399,7 @@ export function ContactsPageClient({
         if (err instanceof DOMException && err.name === "AbortError") {
           return;
         }
-        setError("Could not load contacts. Check your connection and try again.");
+        setError(dict.messages.couldNotLoadContactsConn);
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -444,13 +455,7 @@ export function ContactsPageClient({
     }
 
     const action = nextActive ? "activate" : "deactivate";
-    if (
-      !window.confirm(
-        `${nextActive ? "Mark" : "Deactivate"} ${ids.length} contact${
-          ids.length === 1 ? "" : "s"
-        }?`,
-      )
-    ) {
+    if (!window.confirm(dict.bulk.confirmBulkStatus(nextActive, ids.length))) {
       return;
     }
 
@@ -467,20 +472,20 @@ export function ContactsPageClient({
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? `Could not ${action} contacts.`);
+        setError(body.error?.message ?? dict.messages.couldNotChangeStatus(action));
         return;
       }
 
       const updated = Number(body.data?.updated ?? 0);
       setBulkMessage(
         updated === 0
-          ? "No contacts needed a status change."
-          : `Updated ${updated} contact${updated === 1 ? "" : "s"}.`,
+          ? dict.messages.noStatusChangeNeeded
+          : dict.messages.updatedContacts(updated),
       );
       setSelectedIds(new Set());
       setReloadToken((token) => token + 1);
     } catch {
-      setError("Could not update contacts. Check your connection and try again.");
+      setError(dict.messages.couldNotUpdateConn);
     } finally {
       setBulkUpdating(false);
     }
@@ -492,13 +497,7 @@ export function ContactsPageClient({
       return;
     }
 
-    if (
-      !window.confirm(
-        `Permanently delete ${ids.length} contact${
-          ids.length === 1 ? "" : "s"
-        }? This cannot be undone.`,
-      )
-    ) {
+    if (!window.confirm(dict.bulk.confirmBulkDelete(ids.length))) {
       return;
     }
 
@@ -515,18 +514,16 @@ export function ContactsPageClient({
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not delete contacts.");
+        setError(body.error?.message ?? dict.messages.couldNotDeleteContacts);
         return;
       }
 
       const deleted = Number(body.data?.deleted ?? 0);
-      setBulkMessage(
-        `Deleted ${deleted} contact${deleted === 1 ? "" : "s"}.`,
-      );
+      setBulkMessage(dict.messages.deletedContacts(deleted));
       setSelectedIds(new Set());
       setReloadToken((token) => token + 1);
     } catch {
-      setError("Could not delete contacts. Check your connection and try again.");
+      setError(dict.messages.couldNotDeleteConn);
     } finally {
       setBulkUpdating(false);
     }
@@ -551,9 +548,7 @@ export function ContactsPageClient({
 
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        setError(
-          body?.error?.message ?? "Could not export selected contacts.",
-        );
+        setError(body?.error?.message ?? dict.messages.couldNotExportSelected);
         return;
       }
 
@@ -564,11 +559,9 @@ export function ContactsPageClient({
       anchor.download = "contacts-selected.csv";
       anchor.click();
       URL.revokeObjectURL(url);
-      setBulkMessage(
-        `Exported ${ids.length} selected contact${ids.length === 1 ? "" : "s"}.`,
-      );
+      setBulkMessage(dict.messages.exportedSelected(ids.length));
     } catch {
-      setError("Could not export contacts. Check your connection and try again.");
+      setError(dict.messages.couldNotExportConn);
     } finally {
       setBulkUpdating(false);
     }
@@ -596,9 +589,7 @@ export function ContactsPageClient({
 
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        setError(
-          body?.error?.message ?? "Could not export contacts. Try again.",
-        );
+        setError(body?.error?.message ?? dict.messages.couldNotExportContacts);
         return;
       }
 
@@ -610,7 +601,7 @@ export function ContactsPageClient({
       anchor.click();
       URL.revokeObjectURL(url);
     } catch {
-      setError("Could not export contacts. Check your connection and try again.");
+      setError(dict.messages.couldNotExportConn);
     } finally {
       setExporting(false);
     }
@@ -664,7 +655,7 @@ export function ContactsPageClient({
       ) {
         payload = { csv: await file.text(), fileName: file.name };
       } else {
-        setError("Import a .csv, .xlsx, or .xls file.");
+        setError(dict.messages.importFileTypeError);
         return;
       }
       payload.fieldMappings = fieldMappings;
@@ -677,7 +668,7 @@ export function ContactsPageClient({
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not import contacts. Try again.");
+        setError(body.error?.message ?? dict.messages.couldNotImportContacts);
         return;
       }
 
@@ -685,13 +676,16 @@ export function ContactsPageClient({
         const summary = body.data as ImportSummary;
         setImportSummary(summary);
         setImportNotice(
-          formatImportSummaryNotice({
-            created: summary.created,
-            updated: summary.updated ?? 0,
-            skippedDuplicate: summary.skippedDuplicate,
-            skippedLimit: summary.skippedLimit,
-            invalid: summary.invalid,
-          }),
+          formatImportSummaryNotice(
+            {
+              created: summary.created,
+              updated: summary.updated ?? 0,
+              skippedDuplicate: summary.skippedDuplicate,
+              skippedLimit: summary.skippedLimit,
+              invalid: summary.invalid,
+            },
+            dict,
+          ),
         );
         setPage(1);
         setSelectedIds(new Set());
@@ -703,11 +697,9 @@ export function ContactsPageClient({
       const job = body.data.job as ImportJobStatus;
       startedAsyncJob = true;
       setImportJob(job);
-      setImportNotice(
-        "Import started. You can stay on this page or come back later - progress updates automatically.",
-      );
+      setImportNotice(dict.messages.importStarted);
     } catch {
-      setError("Could not import contacts. Check your connection and try again.");
+      setError(dict.messages.couldNotImportConn);
     } finally {
       if (!startedAsyncJob) {
         setImporting(false);
@@ -725,8 +717,8 @@ export function ContactsPageClient({
   return (
     <PageShell>
       <PageHeader
-        title="Contacts"
-        description="Manage your contacts and greeting recipients."
+        title={dict.header.title}
+        description={dict.header.description}
         actions={
           <>
             {canExport ? (
@@ -736,7 +728,7 @@ export function ContactsPageClient({
                 disabled={exporting}
                 className={secondaryButtonClass}
               >
-                {exporting ? "Exporting…" : "Export CSV"}
+                {exporting ? dict.header.exporting : dict.header.exportCsv}
               </button>
             ) : null}
             <button
@@ -745,10 +737,10 @@ export function ContactsPageClient({
               disabled={importing}
               className={secondaryButtonClass}
             >
-              {importing ? "Importing…" : "Import CSV"}
+              {importing ? dict.header.importing : dict.header.importCsv}
             </button>
             <PrimaryButtonLink href="/dashboard/contacts/new">
-              + Add Contact
+              {dict.header.addContact}
             </PrimaryButtonLink>
           </>
         }
@@ -766,12 +758,15 @@ export function ContactsPageClient({
       (importJob.status === "PENDING" || importJob.status === "PROCESSING") ? (
         <Panel className="p-4">
           <p className="text-sm font-medium text-stone-900">
-            Importing {importJob.fileName}
+            {dict.importProgress.importingFile(importJob.fileName)}
           </p>
           <p className="mt-1 text-sm text-stone-600">
             {importJob.totalRows > 0
-              ? `${importJob.processedRows.toLocaleString("en-IN")} of ${importJob.totalRows.toLocaleString("en-IN")} rows processed`
-              : "Preparing file…"}
+              ? dict.importProgress.rowsProcessed(
+                  importJob.processedRows.toLocaleString("en-IN"),
+                  importJob.totalRows.toLocaleString("en-IN"),
+                )
+              : dict.importProgress.preparingFile}
           </p>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-200">
             <div
@@ -785,9 +780,10 @@ export function ContactsPageClient({
             />
           </div>
           <p className="mt-2 text-xs text-stone-500">
-            {(importJob.created ?? 0).toLocaleString("en-IN")} added,{" "}
-            {(importJob.updated ?? 0).toLocaleString("en-IN")} updated so far.
-            You can leave this page and return later.
+            {dict.importProgress.addedUpdatedSoFar(
+              (importJob.created ?? 0).toLocaleString("en-IN"),
+              (importJob.updated ?? 0).toLocaleString("en-IN"),
+            )}
           </p>
         </Panel>
       ) : null}
@@ -795,12 +791,12 @@ export function ContactsPageClient({
       {importSummary && importSummary.errors.length > 0 ? (
         <Panel className="p-4">
           <p className="text-sm font-medium text-stone-900">
-            Import details (showing up to {importSummary.errors.length} issues)
+            {dict.importDetails.heading(importSummary.errors.length)}
           </p>
           <ul className="mt-2 max-h-40 list-disc space-y-1 overflow-y-auto pl-5 text-sm text-stone-600">
             {importSummary.errors.slice(0, 20).map((item) => (
               <li key={`${item.row}-${item.message}`}>
-                Row {item.row}: {item.message}
+                {dict.importDetails.rowError(item.row, item.message)}
               </li>
             ))}
           </ul>
@@ -810,10 +806,10 @@ export function ContactsPageClient({
       <Panel className="p-4">
         <div className="flex flex-col gap-3 sm:flex-row">
           <label className="block min-w-0 flex-1 text-sm">
-            <span className="sr-only">Search contacts</span>
+            <span className="sr-only">{dict.filters.searchContacts}</span>
             <input
               className={inputClass}
-              placeholder="Search by name or mobile"
+              placeholder={dict.filters.searchPlaceholder}
               value={searchInput}
               onChange={(event) => {
                 setPage(1);
@@ -822,7 +818,7 @@ export function ContactsPageClient({
             />
           </label>
           <label className="block text-sm sm:w-44">
-            <span className="sr-only">Category filter</span>
+            <span className="sr-only">{dict.filters.categoryFilter}</span>
             <select
               className={inputClass}
               value={categoryId}
@@ -831,7 +827,7 @@ export function ContactsPageClient({
                 setCategoryId(event.target.value);
               }}
             >
-              <option value="all">All categories</option>
+              <option value="all">{dict.filters.allCategories}</option>
               {categories.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.name}
@@ -840,7 +836,7 @@ export function ContactsPageClient({
             </select>
           </label>
           <label className="block text-sm sm:w-44">
-            <span className="sr-only">Occasion filter</span>
+            <span className="sr-only">{dict.filters.occasionFilter}</span>
             <select
               className={inputClass}
               value={occasionId}
@@ -849,7 +845,7 @@ export function ContactsPageClient({
                 setOccasionId(event.target.value);
               }}
             >
-              <option value="all">All occasions</option>
+              <option value="all">{dict.filters.allOccasions}</option>
               {occasions.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.name}
@@ -858,7 +854,7 @@ export function ContactsPageClient({
             </select>
           </label>
           <label className="block text-sm sm:w-44">
-            <span className="sr-only">Status filter</span>
+            <span className="sr-only">{dict.filters.statusFilter}</span>
             <select
               className={inputClass}
               value={isActive}
@@ -867,9 +863,9 @@ export function ContactsPageClient({
                 setIsActive(event.target.value as "all" | "true" | "false");
               }}
             >
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-              <option value="all">All statuses</option>
+              <option value="true">{dict.filters.active}</option>
+              <option value="false">{dict.filters.inactive}</option>
+              <option value="all">{dict.filters.allStatuses}</option>
             </select>
           </label>
         </div>
@@ -880,10 +876,7 @@ export function ContactsPageClient({
 
       {selectedCount > 0 ? (
         <Panel className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-stone-700">
-            <span className="font-medium text-stone-900">{selectedCount}</span>{" "}
-            selected
-          </p>
+          <p className="text-sm text-stone-700">{dict.bulk.selected(selectedCount)}</p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -891,7 +884,7 @@ export function ContactsPageClient({
               onClick={() => void handleBulkStatus(true)}
               className={primaryButtonClass}
             >
-              {bulkUpdating ? "Updating…" : "Mark active"}
+              {bulkUpdating ? dict.bulk.updating : dict.bulk.markActive}
             </button>
             <button
               type="button"
@@ -899,7 +892,7 @@ export function ContactsPageClient({
               onClick={() => void handleBulkStatus(false)}
               className={secondaryButtonClass}
             >
-              Mark inactive
+              {dict.bulk.markInactive}
             </button>
             {canExport ? (
               <button
@@ -908,7 +901,7 @@ export function ContactsPageClient({
                 onClick={() => void handleBulkExport()}
                 className={secondaryButtonClass}
               >
-                Export selected
+                {dict.bulk.exportSelected}
               </button>
             ) : null}
             <button
@@ -917,7 +910,7 @@ export function ContactsPageClient({
               onClick={() => void handleBulkDelete()}
               className={secondaryButtonClass}
             >
-              Delete
+              {dict.bulk.delete}
             </button>
             <button
               type="button"
@@ -925,7 +918,7 @@ export function ContactsPageClient({
               onClick={() => setSelectedIds(new Set())}
               className={secondaryButtonClass}
             >
-              Clear selection
+              {dict.bulk.clearSelection}
             </button>
           </div>
         </Panel>
@@ -936,15 +929,19 @@ export function ContactsPageClient({
           <ContactsLoadingSkeleton />
         ) : contacts.length === 0 ? (
           <EmptyState
-            title={hasFilters ? "No matching contacts" : "No contacts yet"}
+            title={
+              hasFilters
+                ? dict.emptyState.noMatchingTitle
+                : dict.emptyState.noContactsTitle
+            }
             description={
               hasFilters
-                ? "Try a different search or clear the filters."
-                : "Start by adding your first contact or import them from CSV."
+                ? dict.emptyState.tryDifferentSearch
+                : dict.emptyState.startByAdding
             }
             actionHref={hasFilters ? undefined : "/dashboard/contacts/new"}
-            actionLabel={hasFilters ? undefined : "Add Contact"}
-            secondaryLabel={hasFilters ? undefined : "Import CSV"}
+            actionLabel={hasFilters ? undefined : dict.emptyState.addContactAction}
+            secondaryLabel={hasFilters ? undefined : dict.header.importCsv}
             secondaryOnClick={
               hasFilters ? undefined : () => setImportDialogOpen(true)
             }
@@ -965,22 +962,22 @@ export function ContactsPageClient({
                         }
                       }}
                       onChange={toggleSelectAllOnPage}
-                      aria-label="Select all contacts on this page"
+                      aria-label={dict.table.selectAllAria}
                     />
                   </th>
-                  <th className="px-4 py-2.5 font-medium">Name</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.table.colName}</th>
                   <th className="hidden px-4 py-2.5 font-medium md:table-cell">
-                    Category
+                    {dict.table.colCategory}
                   </th>
-                  <th className="px-4 py-2.5 font-medium">Phone</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.table.colPhone}</th>
                   <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
-                    Next Occasion
+                    {dict.table.colNextOccasion}
                   </th>
                   <th className="hidden px-4 py-2.5 font-medium md:table-cell">
-                    Status
+                    {dict.table.colStatus}
                   </th>
                   <th className="px-4 py-2.5 font-medium">
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">{dict.table.colActionsSr}</span>
                   </th>
                 </tr>
               </thead>
@@ -998,7 +995,7 @@ export function ContactsPageClient({
                         className="h-4 w-4 rounded border-stone-300"
                         checked={selectedIds.has(contact.id)}
                         onChange={() => toggleSelectOne(contact.id)}
-                        aria-label={`Select ${contact.name}`}
+                        aria-label={dict.table.selectOneAria(contact.name)}
                       />
                     </td>
                     <td className="px-4 py-2.5">
@@ -1007,7 +1004,7 @@ export function ContactsPageClient({
                       </div>
                     </td>
                     <td className="hidden px-4 py-2.5 text-stone-600 md:table-cell">
-                      {contact.categoryName ?? "—"}
+                      {contact.categoryName ?? dict.table.emptyDash}
                     </td>
                     <td className="px-4 py-2.5 text-stone-700">
                       {contact.mobile}
@@ -1015,7 +1012,7 @@ export function ContactsPageClient({
                     <td className="hidden px-4 py-2.5 text-stone-600 sm:table-cell">
                       {formatNearestOccasion(
                         contact.occasionDateDetails.map((detail) => ({
-                          name: detail.occasionName,
+                          name: translateOccasionName(detail.occasionName, locale),
                           month: detail.month,
                           day: detail.day,
                         })),
@@ -1023,7 +1020,7 @@ export function ContactsPageClient({
                     </td>
                     <td className="hidden px-4 py-2.5 md:table-cell">
                       <StatusBadge
-                        label={contact.isActive ? "Active" : "Inactive"}
+                        label={contact.isActive ? dict.table.active : dict.table.inactive}
                         tone={contact.isActive ? "success" : "neutral"}
                       />
                     </td>
@@ -1033,7 +1030,7 @@ export function ContactsPageClient({
                           href={`/dashboard/contacts/${contact.id}/edit`}
                           className={editButtonClass}
                         >
-                          Edit
+                          {dict.table.edit}
                         </Link>
                       </div>
                     </td>
@@ -1048,9 +1045,9 @@ export function ContactsPageClient({
       {meta && meta.totalPages > 1 ? (
         <div className="flex flex-col gap-3 text-sm text-stone-600 sm:flex-row sm:items-center sm:justify-between">
           <span>
-            Page {meta.page} of {meta.totalPages} ({meta.total} total)
+            {dict.pagination.pageOf(meta.page, meta.totalPages, meta.total)}
             {selectedCount > 0
-              ? ` · ${selectedCount} selected across pages`
+              ? dict.pagination.selectedAcrossPages(selectedCount)
               : ""}
           </span>
           <div className="flex gap-2">
@@ -1060,7 +1057,7 @@ export function ContactsPageClient({
               onClick={() => setPage((current) => current - 1)}
               className={secondaryButtonClass}
             >
-              Previous
+              {dict.pagination.previous}
             </button>
             <button
               type="button"
@@ -1068,7 +1065,7 @@ export function ContactsPageClient({
               onClick={() => setPage((current) => current + 1)}
               className={secondaryButtonClass}
             >
-              Next
+              {dict.pagination.next}
             </button>
           </div>
         </div>
