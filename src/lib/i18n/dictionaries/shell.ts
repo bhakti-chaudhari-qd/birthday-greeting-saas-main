@@ -58,7 +58,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/dashboard": "होम",
       "/dashboard/contacts": "कॉन्टैक्ट्स",
       "/dashboard/messages": "संदेश भेजें",
-      "/dashboard/activity": "Activity",
+      "/dashboard/activity": "एक्टिविटी",
       "/dashboard/settings/channels": "चैनल",
       "/dashboard/templates": "टेम्पलेट प्रबंधित करें",
       "/dashboard/settings/occasions": "अवसर प्रबंधन",

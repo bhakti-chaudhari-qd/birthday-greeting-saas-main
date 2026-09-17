@@ -11,7 +11,6 @@ const SYSTEM_OCCASION_NAMES: Record<Locale, Record<string, string>> = {
     Anniversary: "एनिवर्सरी",
   },
   mr: {
-    Birthday: "वाढदिवस",
     Anniversary: "ॲनिव्हर्सरी",
   },
 };
