@@ -875,13 +875,7 @@ export function ContactsPageClient({
         </div>
         {hint ? (
           <p className="mt-2 text-xs text-stone-500">{hint}</p>
-        ) : (
-          <p className="mt-2 text-xs text-stone-500">
-            Search waits briefly while you type. Selection is kept when you
-            change pages.
-            {canExport ? " Export follows your current filters." : ""}
-          </p>
-        )}
+        ) : null}
       </Panel>
 
       {selectedCount > 0 ? (
