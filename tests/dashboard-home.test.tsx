@@ -54,7 +54,7 @@ const readySummary: DashboardHomeSummary = {
         contactName: "Sagar",
         channel: "EMAIL",
         channelLabel: "Email",
-        status: "PENDING",
+        status: "pending",
       },
       {
         id: "q2",
@@ -63,7 +63,7 @@ const readySummary: DashboardHomeSummary = {
         contactName: "Maheen",
         channel: "WHATSAPP",
         channelLabel: "WhatsApp",
-        status: "PENDING",
+        status: "pending",
       },
       {
         id: "q3",
@@ -72,7 +72,7 @@ const readySummary: DashboardHomeSummary = {
         contactName: "Ishika",
         channel: "WHATSAPP",
         channelLabel: "WhatsApp",
-        status: "SENDING",
+        status: "sending",
       },
     ],
     totalCount: 8,
@@ -186,7 +186,7 @@ describe("dashboard home presentation", () => {
         <DashboardHome name="Ada Lovelace" summary={readySummary} canManage />,
       );
 
-      expect(html).toContain("Today&#x27;s Occasions");
+      expect(html).toContain("Today&#x27;s Scheduled");
       expect(html).toContain("4:30 PM");
       expect(html).toContain("Anniversary");
       expect(html).toContain("Sagar");

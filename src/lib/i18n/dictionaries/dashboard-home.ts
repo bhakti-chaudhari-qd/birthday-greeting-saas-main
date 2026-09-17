@@ -115,7 +115,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       noActionRequired: "No action required today.",
     },
     todaysOccasions: {
-      heading: "Today's Occasions",
+      heading: "Today's Scheduled",
       viewAll: "View all",
       empty: "No messages scheduled for today.",
     },
@@ -197,7 +197,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       noActionRequired: "आज कोई कार्रवाई ज़रूरी नहीं।",
     },
     todaysOccasions: {
-      heading: "आज के अवसर",
+      heading: "आज के शेड्यूल्ड",
       viewAll: "सभी देखें",
       empty: "आज के लिए कोई संदेश शेड्यूल नहीं है।",
     },
@@ -279,7 +279,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       noActionRequired: "आज कोणतीही कृती आवश्यक नाही.",
     },
     todaysOccasions: {
-      heading: "आजचे प्रसंग",
+      heading: "आजचे शेड्यूल्ड",
       viewAll: "सर्व पाहा",
       empty: "आजसाठी कोणताही संदेश शेड्यूल्ड नाही.",
     },
