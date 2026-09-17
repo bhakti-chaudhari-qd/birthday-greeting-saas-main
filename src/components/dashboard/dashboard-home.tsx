@@ -319,12 +319,12 @@ export function DashboardHome({
         </div>
         <button
           type="button"
-          aria-label={dict.refreshDashboard}
-          className="inline-flex shrink-0 items-center justify-center rounded-full border border-stone-300 bg-white p-2 text-stone-600 outline-none transition-colors hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-600 outline-none transition-colors hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           onClick={() => void refreshSummary()}
           disabled={refreshing}
         >
           <RefreshIcon spinning={refreshing} />
+          {dict.refreshDashboard}
         </button>
       </header>
 

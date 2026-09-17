@@ -107,8 +107,7 @@ describe("dashboard home presentation", () => {
     // Removed sections from the old reporting-style dashboard.
     expect(html).not.toContain("To greet");
     expect(html).not.toContain("Submitted");
-    expect(html).not.toContain(">Refresh<");
-    expect(html).toContain('aria-label="Refresh dashboard"');
+    expect(html).toContain("Refresh dashboard");
 
     // No shouting section headings and no emoji glyphs.
     expect(html).not.toContain("SYSTEM STATUS");
