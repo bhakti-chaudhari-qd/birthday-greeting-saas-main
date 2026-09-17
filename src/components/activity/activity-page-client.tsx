@@ -11,6 +11,9 @@ import {
   inputClass,
   secondaryButtonClass,
 } from "@/components/ui/page";
+import { getActivityDict, type ActivityDict } from "@/lib/i18n/dictionaries/activity";
+import { translateOccasionName } from "@/lib/i18n/occasion-labels";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { AMBIGUOUS_PROVIDER_OUTCOME } from "@/lib/queue/constants";
 import { formatDisplayDate } from "@/lib/ui/datetime";
 
@@ -70,12 +73,15 @@ const CHANNEL_LABEL: Record<Channel, string> = {
   EMAIL: "Email",
 };
 
-const STATUS_FILTER_LABEL: Record<ActivityStatusFilter, string> = {
-  all: "All statuses",
-  sent: "Sent",
-  failed: "Failed",
-  pending: "Pending",
-};
+function statusFilterLabel(
+  status: ActivityStatusFilter,
+  dict: ActivityDict,
+): string {
+  if (status === "all") return dict.filters.allStatuses;
+  if (status === "sent") return dict.filters.sent;
+  if (status === "failed") return dict.filters.failed;
+  return dict.filters.pending;
+}
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -160,11 +166,15 @@ function SummaryCard({
 /** Success reads "Success" (not the backend's raw "Sent"/"Delivered"); Sending shows as its own "Processing" tone. */
 function recipientStatusDisplay(
   recipient: ActivityRecipientRow,
+  dict: ActivityDict,
 ): { label: string; tone: "success" | "danger" | "warning" | "info" } {
-  if (recipient.status === "sent") return { label: "Success", tone: "success" };
-  if (recipient.status === "failed") return { label: "Failed", tone: "danger" };
-  if (recipient.statusLabel === "Sending") return { label: "Processing", tone: "info" };
-  return { label: "Pending", tone: "warning" };
+  if (recipient.status === "sent")
+    return { label: dict.group.statusSuccess, tone: "success" };
+  if (recipient.status === "failed")
+    return { label: dict.group.statusFailed, tone: "danger" };
+  if (recipient.statusLabel === "Sending")
+    return { label: dict.group.statusProcessing, tone: "info" };
+  return { label: dict.group.statusPending, tone: "warning" };
 }
 
 function RecipientRow({
@@ -178,7 +188,8 @@ function RecipientRow({
   onRetry: () => void;
   retrying: boolean;
 }) {
-  const display = recipientStatusDisplay(recipient);
+  const dict = getActivityDict(useLocale());
+  const display = recipientStatusDisplay(recipient, dict);
 
   return (
     <tr className="border-b border-stone-100 last:border-0">
@@ -210,7 +221,7 @@ function RecipientRow({
             disabled={retrying}
             onClick={onRetry}
           >
-            {retrying ? "Retrying…" : "Retry"}
+            {retrying ? dict.group.retrying : dict.group.retry}
           </button>
         ) : (
           <span className="text-stone-400">—</span>
@@ -221,9 +232,10 @@ function RecipientRow({
 }
 
 function ActivityLoadingSkeleton() {
+  const dict = getActivityDict(useLocale());
   return (
-    <div className="space-y-3" role="status" aria-label="Loading activity">
-      <span className="sr-only">Loading activity</span>
+    <div className="space-y-3" role="status" aria-label={dict.loadingAria}>
+      <span className="sr-only">{dict.loadingAria}</span>
       {Array.from({ length: 4 }, (_, index) => (
         <div
           key={index}
@@ -264,8 +276,10 @@ function GroupCard({
   retryingId: string | null;
   onRetry: (recipient: ActivityRecipientRow) => void;
 }) {
+  const locale = useLocale();
+  const dict = getActivityDict(locale);
   const dateLabel =
-    group.scheduledDate === todayDate ? "Today" : formatDisplayDate(group.scheduledDate);
+    group.scheduledDate === todayDate ? dict.group.today : formatDisplayDate(group.scheduledDate);
 
   return (
     <div className="rounded-xl border border-stone-200/80 bg-white px-5 py-4">
@@ -281,19 +295,19 @@ function GroupCard({
           className="shrink-0 text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           onClick={onToggleExpanded}
         >
-          {expanded ? "Hide Details" : "View Details ›"}
+          {expanded ? dict.group.hideDetails : dict.group.viewDetails}
         </button>
       </div>
 
       <div className="mt-2.5 flex flex-wrap gap-4 text-sm">
         <span className="text-emerald-700">
-          <span className="font-semibold">{group.counts.sent}</span> Sent
+          <span className="font-semibold">{group.counts.sent}</span> {dict.group.sentCount}
         </span>
         <span className="text-red-700">
-          <span className="font-semibold">{group.counts.failed}</span> Failed
+          <span className="font-semibold">{group.counts.failed}</span> {dict.group.failedCount}
         </span>
         <span className="text-amber-700">
-          <span className="font-semibold">{group.counts.pending}</span> Pending
+          <span className="font-semibold">{group.counts.pending}</span> {dict.group.pendingCount}
         </span>
       </div>
 
@@ -302,12 +316,12 @@ function GroupCard({
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-stone-200 bg-stone-50 text-stone-600">
               <tr>
-                <th className="px-3 py-2 font-medium">Recipient</th>
-                <th className="px-3 py-2 font-medium">Channel</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 font-medium">Time</th>
+                <th className="px-3 py-2 font-medium">{dict.group.colRecipient}</th>
+                <th className="px-3 py-2 font-medium">{dict.group.colChannel}</th>
+                <th className="px-3 py-2 font-medium">{dict.group.colStatus}</th>
+                <th className="px-3 py-2 font-medium">{dict.group.colTime}</th>
                 <th className="px-3 py-2 font-medium">
-                  <span className="sr-only">Details</span>
+                  <span className="sr-only">{dict.group.colDetailsSr}</span>
                 </th>
               </tr>
             </thead>
@@ -361,6 +375,7 @@ function MoreFiltersPopover({
   }, [open]);
 
   const active = Boolean(categoryId);
+  const dict = getActivityDict(useLocale());
 
   return (
     <div ref={rootRef} className="relative">
@@ -372,7 +387,7 @@ function MoreFiltersPopover({
         className={`${inputClass} flex items-center justify-between gap-2 text-left`}
       >
         <span className="flex items-center gap-1.5">
-          More Filters
+          {dict.filters.moreFilters}
           {active ? <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden /> : null}
         </span>
         <ChevronDownIcon />
@@ -383,13 +398,13 @@ function MoreFiltersPopover({
           className="absolute right-0 z-20 mt-1 w-56 rounded-xl border border-stone-200 bg-white p-3 shadow-lg"
         >
           <label className="block text-sm">
-            <span className="text-xs font-medium text-stone-700">Category</span>
+            <span className="text-xs font-medium text-stone-700">{dict.filters.category}</span>
             <select
               className={`${inputClass} mt-1`}
               value={categoryId}
               onChange={(event) => onChangeCategory(event.target.value)}
             >
-              <option value="">All groups</option>
+              <option value="">{dict.filters.allGroups}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -428,6 +443,8 @@ export function ActivityPageClient({
   initialEndDate,
   todayDate,
 }: ActivityPageClientProps) {
+  const locale = useLocale();
+  const dict = getActivityDict(locale);
   const { occasions } = useOccasions();
   const [searchInput, setSearchInput] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
@@ -480,7 +497,7 @@ export function ActivityPageClient({
         const response = await fetch(`/api/v1/activity/grouped?${params.toString()}`);
         const body = await response.json();
         if (!response.ok) {
-          setError(body.error?.message ?? "Could not load activity. Try again.");
+          setError(body.error?.message ?? dict.messages.couldNotLoadActivity);
           return;
         }
         const nextResult = body.data as GroupedActivityResult;
@@ -508,14 +525,14 @@ export function ActivityPageClient({
           setResult(nextResult);
         }
       } catch {
-        setError("Could not load activity. Check your connection and try again.");
+        setError(dict.messages.couldNotLoadActivityConn);
       } finally {
         if (!isLoadingMore) setLoading(false);
         setLoadingMore(false);
         setRefreshing(false);
       }
     },
-    [status, startDate, endDate, debouncedSearch, channel, occasionId, categoryId],
+    [status, startDate, endDate, debouncedSearch, channel, occasionId, categoryId, dict],
   );
 
   useEffect(() => {
@@ -550,10 +567,8 @@ export function ActivityPageClient({
   async function handleRetry(recipient: ActivityRecipientRow) {
     const isAmbiguous = recipient.lastErrorCode === AMBIGUOUS_PROVIDER_OUTCOME;
     const confirmed = isAmbiguous
-      ? window.confirm(
-          `Retry the greeting for ${recipient.contactName}?\n\nThis may send a second message if the first already went through.`,
-        )
-      : window.confirm(`Retry the greeting for ${recipient.contactName}?`);
+      ? window.confirm(dict.messages.retryConfirmAmbiguous(recipient.contactName))
+      : window.confirm(dict.messages.retryConfirm(recipient.contactName));
     if (!confirmed) {
       return;
     }
@@ -567,12 +582,12 @@ export function ActivityPageClient({
       });
       const body = await response.json();
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not retry greeting.");
+        setError(body.error?.message ?? dict.messages.couldNotRetry);
         return;
       }
       await loadActivity("refresh");
     } catch {
-      setError("Could not retry greeting. Check your connection and try again.");
+      setError(dict.messages.couldNotRetryConn);
     } finally {
       setRetryingId(null);
     }
@@ -582,11 +597,14 @@ export function ActivityPageClient({
   const groups = result?.groups ?? [];
   const hasMore = result?.pagination.hasMore ?? false;
   const isSingleDay = startDate === endDate;
-  const summaryPeriodLabel = isSingleDay
-    ? startDate === todayDate
-      ? "Today's"
-      : `${formatDisplayDate(startDate)}`
-    : `${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`;
+  const summaryTotalLabel =
+    isSingleDay && startDate === todayDate
+      ? dict.summary.todayTotal
+      : dict.summary.periodTotal(
+          isSingleDay
+            ? formatDisplayDate(startDate)
+            : `${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`,
+        );
   const hasFilters = Boolean(
     searchInput.trim() ||
       status !== "all" ||
@@ -601,14 +619,17 @@ export function ActivityPageClient({
   if (status !== "all") {
     chips.push({
       key: "status",
-      label: `Status: ${STATUS_FILTER_LABEL[status]}`,
+      label: `${dict.chips.statusPrefix} ${statusFilterLabel(status, dict)}`,
       onRemove: () => setStatus("all"),
     });
   }
   if (occasionId) {
+    const occasionName = occasions.find((occasion) => occasion.id === occasionId)?.name;
     chips.push({
       key: "occasion",
-      label: occasions.find((occasion) => occasion.id === occasionId)?.name ?? "Occasion",
+      label: occasionName
+        ? translateOccasionName(occasionName, locale)
+        : dict.chips.occasionFallback,
       onRemove: () => setOccasionId(""),
     });
   }
@@ -620,7 +641,8 @@ export function ActivityPageClient({
     });
   }
   if (categoryId) {
-    const categoryName = categories.find((c) => c.id === categoryId)?.name ?? "Category";
+    const categoryName =
+      categories.find((c) => c.id === categoryId)?.name ?? dict.chips.categoryFallback;
     chips.push({ key: "category", label: categoryName, onRemove: () => setCategoryId("") });
   }
 
@@ -628,10 +650,10 @@ export function ActivityPageClient({
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-900">Activity</h1>
-          <p className="mt-1.5 text-sm text-stone-600">
-            Track greeting deliveries and message history.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
+            {dict.header.title}
+          </h1>
+          <p className="mt-1.5 text-sm text-stone-600">{dict.header.subtitle}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {canManage ? (
@@ -639,12 +661,12 @@ export function ActivityPageClient({
               href={`/api/v1/activity/export?tab=${status === "failed" ? "failed" : status === "pending" ? "upcoming" : "sent"}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`}
               className={secondaryButtonClass}
             >
-              Export CSV
+              {dict.header.exportCsv}
             </a>
           ) : null}
           <button
             type="button"
-            aria-label="Refresh activity"
+            aria-label={dict.header.refreshAria}
             className="inline-flex items-center justify-center rounded-full border border-stone-300 bg-white p-2 text-stone-600 outline-none transition-colors hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             onClick={() => void loadActivity("refresh")}
             disabled={refreshing}
@@ -657,59 +679,59 @@ export function ActivityPageClient({
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard label={`${summaryPeriodLabel} Total`} value={summary.total} tone="neutral" />
-        <SummaryCard label="Sent Successfully" value={summary.sent} tone="success" />
-        <SummaryCard label="Failed" value={summary.failed} tone="danger" />
-        <SummaryCard label="Pending" value={summary.pending} tone="warning" />
+        <SummaryCard label={summaryTotalLabel} value={summary.total} tone="neutral" />
+        <SummaryCard label={dict.summary.sentSuccessfully} value={summary.sent} tone="success" />
+        <SummaryCard label={dict.summary.failed} value={summary.failed} tone="danger" />
+        <SummaryCard label={dict.summary.pending} value={summary.pending} tone="warning" />
       </div>
 
       <Panel className="p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <label className="block min-w-0 flex-1 text-sm">
-            <span className="sr-only">Search recipient</span>
+            <span className="sr-only">{dict.filters.searchRecipient}</span>
             <input
               className={inputClass}
-              placeholder="Search recipient..."
+              placeholder={dict.filters.searchPlaceholder}
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
             />
           </label>
           <label className="block text-sm sm:w-36">
-            <span className="sr-only">Status filter</span>
+            <span className="sr-only">{dict.filters.statusFilter}</span>
             <select
               className={inputClass}
               value={status}
               onChange={(event) => setStatus(event.target.value as ActivityStatusFilter)}
             >
-              <option value="all">All statuses</option>
-              <option value="sent">Sent</option>
-              <option value="failed">Failed</option>
-              <option value="pending">Pending</option>
+              <option value="all">{dict.filters.allStatuses}</option>
+              <option value="sent">{dict.filters.sent}</option>
+              <option value="failed">{dict.filters.failed}</option>
+              <option value="pending">{dict.filters.pending}</option>
             </select>
           </label>
           <label className="block text-sm sm:w-40">
-            <span className="sr-only">Occasion filter</span>
+            <span className="sr-only">{dict.filters.occasionFilter}</span>
             <select
               className={inputClass}
               value={occasionId}
               onChange={(event) => setOccasionId(event.target.value)}
             >
-              <option value="">All occasions</option>
+              <option value="">{dict.filters.allOccasions}</option>
               {occasions.map((occasion) => (
                 <option key={occasion.id} value={occasion.id}>
-                  {occasion.name}
+                  {translateOccasionName(occasion.name, locale)}
                 </option>
               ))}
             </select>
           </label>
           <label className="block text-sm sm:w-36">
-            <span className="sr-only">Channel filter</span>
+            <span className="sr-only">{dict.filters.channelFilter}</span>
             <select
               className={inputClass}
               value={channel}
               onChange={(event) => setChannel(event.target.value as "" | Channel)}
             >
-              <option value="">All channels</option>
+              <option value="">{dict.filters.allChannels}</option>
               <option value="WHATSAPP">WhatsApp</option>
               <option value="EMAIL">Email</option>
               <option value="SMS">SMS</option>
@@ -717,7 +739,7 @@ export function ActivityPageClient({
           </label>
           <div className="flex items-center gap-1.5">
             <label className="block text-sm sm:w-36">
-              <span className="sr-only">From date</span>
+              <span className="sr-only">{dict.filters.fromDate}</span>
               <input
                 type="date"
                 className={inputClass}
@@ -734,7 +756,7 @@ export function ActivityPageClient({
               –
             </span>
             <label className="block text-sm sm:w-36">
-              <span className="sr-only">To date</span>
+              <span className="sr-only">{dict.filters.toDate}</span>
               <input
                 type="date"
                 className={inputClass}
@@ -775,14 +797,16 @@ export function ActivityPageClient({
               <ClockHistoryIcon />
             </div>
             <div className="max-w-sm">
-              <h2 className="text-base font-semibold text-stone-900">No activity found</h2>
+              <h2 className="text-base font-semibold text-stone-900">
+                {dict.emptyState.title}
+              </h2>
               <p className="mt-1.5 text-sm leading-relaxed text-stone-600">
-                Greeting deliveries will appear here once automations start sending messages.
+                {dict.emptyState.description}
               </p>
             </div>
             {hasFilters ? (
               <button type="button" className={secondaryButtonClass} onClick={clearFilters}>
-                Clear Filters
+                {dict.emptyState.clearFilters}
               </button>
             ) : null}
           </div>
@@ -808,7 +832,7 @@ export function ActivityPageClient({
               onClick={() => void loadActivity("more")}
               disabled={loadingMore}
             >
-              {loadingMore ? "Loading more…" : "Load more activity"}
+              {loadingMore ? dict.loadMore.loading : dict.loadMore.loadMore}
             </button>
           ) : null}
         </div>
