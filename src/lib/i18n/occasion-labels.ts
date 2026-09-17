@@ -8,7 +8,6 @@ import type { Locale } from "./constants";
 const SYSTEM_OCCASION_NAMES: Record<Locale, Record<string, string>> = {
   en: {},
   hi: {
-    Birthday: "जन्मदिन",
     Anniversary: "एनिवर्सरी",
   },
   mr: {
