@@ -11,6 +11,13 @@ export type DashboardHomeDict = {
     retryQueue: string;
     retrying: string;
   };
+  alerts: {
+    automationPaused: { message: string; cta: string };
+    smsNotConfigured: { message: string; cta: string };
+    whatsappNotConnected: { message: string; cta: string };
+    failedToday: { message: (count: number) => string; cta: string };
+    greetingRoutesOff: { message: (count: number) => string; cta: string };
+  };
   systemStatus: {
     heading: string;
     automation: string;
@@ -61,6 +68,30 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
         `Some greetings could not be processed yesterday (${count} ${count === 1 ? "person" : "people"} missed).`,
       retryQueue: "Retry Queue",
       retrying: "Retrying…",
+    },
+    alerts: {
+      automationPaused: {
+        message: "Automation is paused - no active automations are configured.",
+        cta: "Configure",
+      },
+      smsNotConfigured: {
+        message: "SMS provider not configured.",
+        cta: "Configure",
+      },
+      whatsappNotConnected: {
+        message: "WhatsApp is not connected.",
+        cta: "Configure",
+      },
+      failedToday: {
+        message: (count) =>
+          count === 1 ? "1 failed greeting today." : `${count} failed greetings today.`,
+        cta: "Review failed",
+      },
+      greetingRoutesOff: {
+        message: (count) =>
+          `${count} ${count === 1 ? "person has" : "people have"} an occasion today, but greeting routes are off.`,
+        cta: "Set up automatic greetings",
+      },
     },
     systemStatus: {
       heading: "System Status",
@@ -120,6 +151,30 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       retryQueue: "कतार फिर से कोशिश करें",
       retrying: "फिर से कोशिश हो रही है…",
     },
+    alerts: {
+      automationPaused: {
+        message: "ऑटोमेशन रुका हुआ है - कोई सक्रिय ऑटोमेशन सेट नहीं है।",
+        cta: "सेट करें",
+      },
+      smsNotConfigured: {
+        message: "SMS प्रोवाइडर सेट नहीं है।",
+        cta: "सेट करें",
+      },
+      whatsappNotConnected: {
+        message: "WhatsApp कनेक्ट नहीं है।",
+        cta: "सेट करें",
+      },
+      failedToday: {
+        message: (count) =>
+          count === 1 ? "आज 1 ग्रीटिंग असफल रही।" : `आज ${count} ग्रीटिंग असफल रहीं।`,
+        cta: "असफल देखें",
+      },
+      greetingRoutesOff: {
+        message: (count) =>
+          `${count} ${count === 1 ? "व्यक्ति को" : "लोगों को"} आज अवसर है, लेकिन greeting routes बंद हैं।`,
+        cta: "ऑटोमेटिक ग्रीटिंग सेट करें",
+      },
+    },
     systemStatus: {
       heading: "सिस्टम स्टेटस",
       automation: "ऑटोमेशन",
@@ -177,6 +232,30 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
         `काल काही ग्रीटिंग प्रोसेस होऊ शकल्या नाहीत (${count} ${count === 1 ? "व्यक्ती" : "लोक"} चुकले).`,
       retryQueue: "रांग पुन्हा प्रयत्न करा",
       retrying: "पुन्हा प्रयत्न होत आहे…",
+    },
+    alerts: {
+      automationPaused: {
+        message: "ऑटोमेशन थांबले आहे - कोणतेही सक्रिय ऑटोमेशन सेट केलेले नाही.",
+        cta: "सेट करा",
+      },
+      smsNotConfigured: {
+        message: "SMS प्रोव्हायडर सेट केलेला नाही.",
+        cta: "सेट करा",
+      },
+      whatsappNotConnected: {
+        message: "WhatsApp कनेक्ट केलेले नाही.",
+        cta: "सेट करा",
+      },
+      failedToday: {
+        message: (count) =>
+          count === 1 ? "आज 1 ग्रीटिंग अयशस्वी झाली." : `आज ${count} ग्रीटिंग अयशस्वी झाल्या.`,
+        cta: "अयशस्वी पाहा",
+      },
+      greetingRoutesOff: {
+        message: (count) =>
+          `${count} ${count === 1 ? "व्यक्तीला" : "लोकांना"} आज प्रसंग आहे, पण greeting routes बंद आहेत.`,
+        cta: "ऑटोमॅटिक ग्रीटिंग सेट करा",
+      },
     },
     systemStatus: {
       heading: "सिस्टम स्टेटस",

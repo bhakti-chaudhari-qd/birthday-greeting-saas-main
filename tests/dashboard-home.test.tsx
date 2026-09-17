@@ -123,6 +123,8 @@ describe("dashboard home presentation", () => {
       channels: null,
       alerts: [
         {
+          kind: "failed_today",
+          count: 2,
           message: "2 failed greetings today.",
           href: "/dashboard/activity?tab=failed",
           cta: "Review failed",

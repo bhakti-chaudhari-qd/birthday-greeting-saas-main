@@ -17,7 +17,18 @@ import {
 import { getOccasionsDayView } from "@/lib/queue/occasions-day-view";
 import type { OccasionHumanStatus } from "@/lib/queue/occasions-status";
 
+export type DashboardHomeAlertKind =
+  | "automation_paused"
+  | "sms_not_configured"
+  | "whatsapp_not_connected"
+  | "failed_today"
+  | "greeting_routes_off";
+
 export type DashboardHomeAlert = {
+  /** Identifies which client-side dict entry to render - message/cta below are the English default for API consumers that don't localize. */
+  kind: DashboardHomeAlertKind;
+  /** Count used by failed_today and greeting_routes_off to pick singular/plural and fill the number. */
+  count?: number;
   message: string;
   href: string;
   cta: string;
@@ -298,6 +309,7 @@ export async function getDashboardHomeSummary(
 
   if (isAdmin && runningAutomations.length === 0) {
     alerts.push({
+      kind: "automation_paused",
       message: "Automation is paused - no active automations are configured.",
       href: "/dashboard/settings/greeting-routes",
       cta: "Configure",
@@ -307,6 +319,7 @@ export async function getDashboardHomeSummary(
 
   if (isAdmin && !smsConnected) {
     alerts.push({
+      kind: "sms_not_configured",
       message: "SMS provider not configured.",
       href: "/dashboard/settings/channels",
       cta: "Configure",
@@ -316,6 +329,7 @@ export async function getDashboardHomeSummary(
 
   if (isAdmin && !whatsappConnected) {
     alerts.push({
+      kind: "whatsapp_not_connected",
       message: "WhatsApp is not connected.",
       href: "/dashboard/settings/channels",
       cta: "Configure",
@@ -325,6 +339,8 @@ export async function getDashboardHomeSummary(
 
   if (failedTodayCount > 0) {
     alerts.push({
+      kind: "failed_today",
+      count: failedTodayCount,
       message:
         failedTodayCount === 1
           ? "1 failed greeting today."
@@ -350,6 +366,8 @@ export async function getDashboardHomeSummary(
     // enabled automated channel, so it stays 0 in the exact "nothing is set
     // up" case this alert exists to catch.
     alerts.push({
+      kind: "greeting_routes_off",
+      count: occasionsToday.summary.rawTotal,
       message: `${occasionsToday.summary.rawTotal} ${
         occasionsToday.summary.rawTotal === 1 ? "person has" : "people have"
       } an occasion today, but greeting routes are off.`,

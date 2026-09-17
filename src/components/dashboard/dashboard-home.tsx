@@ -5,7 +5,11 @@ import { useEffect, useRef, useState } from "react";
 
 import { EmptyState, InlineAlert, StatusBadge } from "@/components/ui/feedback";
 import { compactSecondaryButtonClass } from "@/components/ui/page";
-import { getDashboardHomeDict } from "@/lib/i18n/dictionaries/dashboard-home";
+import {
+  getDashboardHomeDict,
+  type DashboardHomeDict,
+} from "@/lib/i18n/dictionaries/dashboard-home";
+import { translateOccasionName } from "@/lib/i18n/occasion-labels";
 import { toDevanagari } from "@/lib/i18n/transliterate";
 import { useLocale } from "@/lib/i18n/use-locale";
 import type {
@@ -110,12 +114,13 @@ function ChannelStatusRow({
 }
 
 function AutomationRowCard({ row }: { row: RunningAutomationRow }) {
-  const dict = getDashboardHomeDict(useLocale()).runningAutomations;
+  const locale = useLocale();
+  const dict = getDashboardHomeDict(locale).runningAutomations;
   return (
     <div className="rounded-xl border border-stone-200/80 bg-white p-4 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-stone-900">
-          {row.occasionLabel}
+          {translateOccasionName(row.occasionLabel, locale)}
         </p>
         <StatusBadge label={dict.active} tone="success" />
       </div>
@@ -155,14 +160,15 @@ function upcomingStatusTone(
 }
 
 function UpcomingTodayRow({ item }: { item: UpcomingTodayItem }) {
-  const dict = getDashboardHomeDict(useLocale()).occasionStatus;
+  const locale = useLocale();
+  const dict = getDashboardHomeDict(locale).occasionStatus;
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm">
       <span className="w-20 shrink-0 font-medium text-stone-900">
         {item.timeLabel}
       </span>
       <span className="min-w-[6rem] flex-1 truncate text-stone-700">
-        {item.occasionLabel}
+        {translateOccasionName(item.occasionLabel, locale)}
       </span>
       <span className="min-w-[6rem] flex-1 truncate text-stone-700">
         {item.contactName}
@@ -176,7 +182,33 @@ function UpcomingTodayRow({ item }: { item: UpcomingTodayItem }) {
   );
 }
 
+function localizedAlertText(
+  alert: DashboardHomeAlert,
+  dict: DashboardHomeDict["alerts"],
+): { message: string; cta: string } {
+  const count = alert.count ?? 0;
+  switch (alert.kind) {
+    case "automation_paused":
+      return dict.automationPaused;
+    case "sms_not_configured":
+      return dict.smsNotConfigured;
+    case "whatsapp_not_connected":
+      return dict.whatsappNotConnected;
+    case "failed_today":
+      return { message: dict.failedToday.message(count), cta: dict.failedToday.cta };
+    case "greeting_routes_off":
+      return {
+        message: dict.greetingRoutesOff.message(count),
+        cta: dict.greetingRoutesOff.cta,
+      };
+    default:
+      return { message: alert.message, cta: alert.cta };
+  }
+}
+
 function AlertRow({ alert }: { alert: DashboardHomeAlert }) {
+  const dict = getDashboardHomeDict(useLocale()).alerts;
+  const { message, cta } = localizedAlertText(alert, dict);
   const isDanger = alert.tone === "danger";
   return (
     <div
@@ -190,10 +222,10 @@ function AlertRow({ alert }: { alert: DashboardHomeAlert }) {
         }`}
       >
         <StatusDot tone={isDanger ? "danger" : "warning"} />
-        {alert.message}
+        {message}
       </p>
       <Link href={alert.href} className={compactSecondaryButtonClass}>
-        {alert.cta}
+        {cta}
       </Link>
     </div>
   );
