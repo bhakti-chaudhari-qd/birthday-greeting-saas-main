@@ -199,7 +199,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
     todaysOccasions: {
       heading: "आज के शेड्यूल्ड",
       viewAll: "सभी देखें",
-      empty: "आज के लिए कोई संदेश शेड्यूल नहीं है।",
+      empty: "आज के लिए कोई मेसेज शेड्यूल नहीं है।",
     },
     runningAutomations: {
       heading: "चल रहे ऑटोमेशन",
@@ -281,7 +281,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
     todaysOccasions: {
       heading: "आजचे शेड्यूल्ड",
       viewAll: "सर्व पाहा",
-      empty: "आजसाठी कोणताही संदेश शेड्यूल्ड नाही.",
+      empty: "आजसाठी कोणताही मेसेज शेड्यूल्ड नाही.",
     },
     runningAutomations: {
       heading: "सुरू असलेले ऑटोमेशन",

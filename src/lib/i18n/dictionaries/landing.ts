@@ -217,7 +217,7 @@ const LANDING_DICT: Record<Locale, LandingDict> = {
       getStarted: "शुरू करें",
       contactUs: "संपर्क करें",
       filename: "birthday-greeting.pdf",
-      cardEyebrow: "एक खास संदेश",
+      cardEyebrow: "एक खास मेसेज",
       cardName: "Priya Sharma",
       cardHeadline: "जन्मदिन मुबारक",
       cardBody:

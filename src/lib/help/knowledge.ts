@@ -89,9 +89,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     answer:
       "1. Open Settings → Channels → SMS.\n2. Pick TEST for a safe trial, or Custom HTTP for your real gateway.\n3. Enter your provider's credentials (URL, keys) - these are encrypted at rest.\n4. Save, then send a test message to confirm delivery.\nLive Custom HTTP sending needs a verified email plus an ACTIVE paid plan or platform approval, and SMS often needs a DLT-approved template id.",
     answerHi:
-      "1. Settings → Channels → SMS खोलें।\n2. सुरक्षित ट्रायल के लिए TEST चुनें, या अपने असली गेटवे के लिए Custom HTTP।\n3. प्रोवाइडर विवरण (URL, keys) भरें - ये एन्क्रिप्टेड रहते हैं।\n4. Save करें, फिर एक टेस्ट संदेश भेजकर डिलीवरी जाँचें।\nलाइव Custom HTTP को verified email और ACTIVE पेड प्लान या प्लेटफ़ॉर्म अनुमति चाहिए; SMS को अक्सर DLT-approved टेम्पलेट id चाहिए।",
+      "1. Settings → Channels → SMS खोलें।\n2. सुरक्षित ट्रायल के लिए TEST चुनें, या अपने असली गेटवे के लिए Custom HTTP।\n3. प्रोवाइडर विवरण (URL, keys) भरें - ये एन्क्रिप्टेड रहते हैं।\n4. Save करें, फिर एक टेस्ट मेसेज भेजकर डिलीवरी जाँचें।\nलाइव Custom HTTP को verified email और ACTIVE पेड प्लान या प्लेटफ़ॉर्म अनुमति चाहिए; SMS को अक्सर DLT-approved टेम्पलेट id चाहिए।",
     answerMr:
-      "1. Settings → Channels → SMS उघडा.\n2. सुरक्षित ट्रायलसाठी TEST निवडा, किंवा तुमच्या खऱ्या गेटवेसाठी Custom HTTP.\n3. प्रोव्हायडर तपशील (URL, keys) भरा - हे एन्क्रिप्टेड राहतात.\n4. Save करा, नंतर टेस्ट संदेश पाठवून डिलिव्हरी तपासा.\nलाइव्ह Custom HTTP ला verified email आणि ACTIVE पेड प्लान किंवा प्लॅटफॉर्म परवानगी हवी; SMS ला अनेकदा DLT-approved टेम्पलेट id लागतो.",
+      "1. Settings → Channels → SMS उघडा.\n2. सुरक्षित ट्रायलसाठी TEST निवडा, किंवा तुमच्या खऱ्या गेटवेसाठी Custom HTTP.\n3. प्रोव्हायडर तपशील (URL, keys) भरा - हे एन्क्रिप्टेड राहतात.\n4. Save करा, नंतर टेस्ट मेसेज पाठवून डिलिव्हरी तपासा.\nलाइव्ह Custom HTTP ला verified email आणि ACTIVE पेड प्लान किंवा प्लॅटफॉर्म परवानगी हवी; SMS ला अनेकदा DLT-approved टेम्पलेट id लागतो.",
     hrefs: [{ label: "Channels (SMS)", href: "/dashboard/settings/channels" }],
   },
   {
@@ -176,8 +176,8 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "send messages",
     ],
     leadIn: "To send a message right now:",
-    leadInHi: "अभी संदेश भेजने के लिए:",
-    leadInMr: "आत्ताच संदेश पाठवण्यासाठी:",
+    leadInHi: "अभी मेसेज भेजने के लिए:",
+    leadInMr: "आत्ताच मेसेज पाठवण्यासाठी:",
     answer:
       "1. Open Send Messages.\n2. Choose a channel (SMS, WhatsApp, or Email) and pick or create a template.\n3. Select contacts individually, or by filter/category.\n4. Review the preview, then queue the send - large audiences go out in batches.\nOwners only. Your subscription must be ACTIVE and the channel must be configured first.",
     answerHi:
@@ -210,9 +210,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     answer:
       "Start with three steps: (1) add or import contacts, (2) create a greeting under Send Messages, (3) review Home and Activity. Organization Owners can connect SMS/WhatsApp under Settings and use Automatic Greetings to schedule birthday or anniversary messages.",
     answerHi:
-      "तीन कदमों से शुरू करें: (1) कॉन्टैक्ट जोड़ें या इंपोर्ट करें, (2) Send Messages से ग्रीटिंग बनाएँ, (3) Home और Activity देखें। Organization Owner Settings में SMS/WhatsApp जोड़कर Automatic Greetings सेट करें, ताकि जन्मदिन/वर्षगाँठ संदेश अपने आप जाएँ।",
+      "तीन कदमों से शुरू करें: (1) कॉन्टैक्ट जोड़ें या इंपोर्ट करें, (2) Send Messages से ग्रीटिंग बनाएँ, (3) Home और Activity देखें। Organization Owner Settings में SMS/WhatsApp जोड़कर Automatic Greetings सेट करें, ताकि जन्मदिन/वर्षगाँठ मेसेज अपने आप जाएँ।",
     answerMr:
-      "तीन पावलांपासून सुरू करा: (1) कॉन्टॅक्ट जोडा किंवा इंपोर्ट करा, (2) Send Messages ने ग्रीटिंग तयार करा, (3) Home आणि Activity पाहा. Organization Owner ने Settings मध्ये SMS/WhatsApp जोडून Automatic Greetings सेट करावेत, जेणेकरून वाढदिवस/वर्धापनदिन संदेश आपोआप जातील.",
+      "तीन पावलांपासून सुरू करा: (1) कॉन्टॅक्ट जोडा किंवा इंपोर्ट करा, (2) Send Messages ने ग्रीटिंग तयार करा, (3) Home आणि Activity पाहा. Organization Owner ने Settings मध्ये SMS/WhatsApp जोडून Automatic Greetings सेट करावेत, जेणेकरून वाढदिवस/वर्धापनदिन मेसेज आपोआप जातील.",
     hrefs: [
       { label: "Contacts", href: "/dashboard/contacts" },
       { label: "Send Messages", href: "/dashboard/messages/send" },
@@ -290,9 +290,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     answer:
       "Owners (Organization Admins) can send messages, configure SMS/WhatsApp, manage automations, create/edit templates, export contacts, and manage billing. Staff can manage contacts, view templates, and see the queue and delivery history - but they cannot send, change channel settings, or open billing.",
     answerHi:
-      "Owners (Organization Admins) संदेश भेज सकते हैं, SMS/WhatsApp सेट कर सकते हैं, ऑटोमेशन चला सकते हैं, टेम्पलेट बना/बदल सकते हैं, कॉन्टैक्ट एक्सपोर्ट और बिलिंग देख सकते हैं। Staff कॉन्टैक्ट संभाल सकते हैं, टेम्पलेट देख सकते हैं, कतार और डिलीवरी इतिहास देख सकते हैं-लेकिन भेज नहीं सकते, चैनल सेटिंग नहीं बदल सकते, बिलिंग नहीं खोल सकते।",
+      "Owners (Organization Admins) मेसेज भेज सकते हैं, SMS/WhatsApp सेट कर सकते हैं, ऑटोमेशन चला सकते हैं, टेम्पलेट बना/बदल सकते हैं, कॉन्टैक्ट एक्सपोर्ट और बिलिंग देख सकते हैं। Staff कॉन्टैक्ट संभाल सकते हैं, टेम्पलेट देख सकते हैं, कतार और डिलीवरी इतिहास देख सकते हैं-लेकिन भेज नहीं सकते, चैनल सेटिंग नहीं बदल सकते, बिलिंग नहीं खोल सकते।",
     answerMr:
-      "Owners (Organization Admins) संदेश पाठवू शकतात, SMS/WhatsApp सेट करू शकतात, ऑटोमेशन चालवू शकतात, टेम्पलेट तयार/बदलू शकतात, कॉन्टॅक्ट एक्सपोर्ट आणि बिलिंग पाहू शकतात. Staff कॉन्टॅक्ट हाताळू शकतात, टेम्पलेट पाहू शकतात, रांग आणि डिलिव्हरी इतिहास पाहू शकतात-पण पाठवू शकत नाहीत, चॅनेल सेटिंग बदलू शकत नाहीत, बिलिंग उघडू शकत नाहीत.",
+      "Owners (Organization Admins) मेसेज पाठवू शकतात, SMS/WhatsApp सेट करू शकतात, ऑटोमेशन चालवू शकतात, टेम्पलेट तयार/बदलू शकतात, कॉन्टॅक्ट एक्सपोर्ट आणि बिलिंग पाहू शकतात. Staff कॉन्टॅक्ट हाताळू शकतात, टेम्पलेट पाहू शकतात, रांग आणि डिलिव्हरी इतिहास पाहू शकतात-पण पाठवू शकत नाहीत, चॅनेल सेटिंग बदलू शकत नाहीत, बिलिंग उघडू शकत नाहीत.",
     hrefs: [{ label: "Dashboard home", href: "/dashboard" }],
   },
   {
@@ -341,9 +341,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     answer:
       "Open Send Messages and create or pick a saved message for Email or WhatsApp. For SMS, use provider-approved templates via Advanced SMS Setup under Channels. Use {{name}} so each recipient gets their own name.",
     answerHi:
-      "Send Messages खोलें और Email/WhatsApp के लिए संदेश बनाएँ या चुनें। SMS के लिए Channels में Advanced SMS Setup से प्रोवाइडर-approved टेम्पलेट इस्तेमाल करें। {{name}} इस्तेमाल करें ताकि हर प्राप्तकर्ता का नाम आए।",
+      "Send Messages खोलें और Email/WhatsApp के लिए मेसेज बनाएँ या चुनें। SMS के लिए Channels में Advanced SMS Setup से प्रोवाइडर-approved टेम्पलेट इस्तेमाल करें। {{name}} इस्तेमाल करें ताकि हर प्राप्तकर्ता का नाम आए।",
     answerMr:
-      "Send Messages उघडा आणि Email/WhatsApp साठी संदेश तयार करा किंवा निवडा. SMS साठी Channels मधील Advanced SMS Setup ने प्रोव्हायडर-approved टेम्पलेट वापरा. {{name}} वापरा जेणेकरून प्रत्येक प्राप्तकर्त्याचे नाव येईल.",
+      "Send Messages उघडा आणि Email/WhatsApp साठी मेसेज तयार करा किंवा निवडा. SMS साठी Channels मधील Advanced SMS Setup ने प्रोव्हायडर-approved टेम्पलेट वापरा. {{name}} वापरा जेणेकरून प्रत्येक प्राप्तकर्त्याचे नाव येईल.",
     hrefs: [
       { label: "Send Messages", href: "/dashboard/messages/send" },
       { label: "Channels", href: "/dashboard/settings/channels" },
@@ -411,14 +411,14 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "failed",
     ],
     leadIn: "To check scheduled and sent messages:",
-    leadInHi: "शेड्यूल्ड और भेजे गए संदेश देखने के लिए:",
-    leadInMr: "शेड्युल्ड आणि पाठवलेले संदेश तपासण्यासाठी:",
+    leadInHi: "शेड्यूल्ड और भेजे गए मेसेज देखने के लिए:",
+    leadInMr: "शेड्युल्ड आणि पाठवलेले मेसेज तपासण्यासाठी:",
     answer:
       "Activity → Upcoming lists people due on the selected date for automatic greetings, including Scheduled before the send time. After queueing you also see Pending / Sending. Activity → Submitted shows messages the provider accepted for that greeting day - that is not the same as delivered to the phone. Use the Date filter to review other days. Failed items may be retryable by Owners depending on status and plan gates.",
     answerHi:
-      "Activity → Upcoming में चुनी गई तिथि के स्वचालित ग्रीटिंग वाले लोग दिखते हैं, भेजने के समय से पहले Scheduled सहित। कतार में आने के बाद Pending / Sending भी दिखता है। Activity → Submitted में उस दिन प्रोवाइडर द्वारा स्वीकार किए गए संदेश दिखते हैं - यह फ़ोन पर डिलीवर होने की पुष्टि नहीं है। अन्य दिन देखने के लिए Date फ़िल्टर इस्तेमाल करें। असफल आइटम स्थिति और प्लान के अनुसार Owners दोबारा कोशिश कर सकते हैं।",
+      "Activity → Upcoming में चुनी गई तिथि के स्वचालित ग्रीटिंग वाले लोग दिखते हैं, भेजने के समय से पहले Scheduled सहित। कतार में आने के बाद Pending / Sending भी दिखता है। Activity → Submitted में उस दिन प्रोवाइडर द्वारा स्वीकार किए गए मेसेज दिखते हैं - यह फ़ोन पर डिलीवर होने की पुष्टि नहीं है। अन्य दिन देखने के लिए Date फ़िल्टर इस्तेमाल करें। असफल आइटम स्थिति और प्लान के अनुसार Owners दोबारा कोशिश कर सकते हैं।",
     answerMr:
-      "Activity → Upcoming मध्ये निवडलेल्या दिवसासाठी स्वयंचलित ग्रीटिंगचे लोक दिसतात, पाठवण्याच्या वेळेपूर्वी Scheduled सह. रांगेत आल्यानंतर Pending / Sendingही दिसते. Activity → Submitted मध्ये त्या ग्रीटिंग दिवसासाठी प्रोव्हायडरने स्वीकारलेले संदेश दिसतात - हे फोनवर डिलिव्हर झाल्याची खात्री नाही. इतर दिवस पाहण्यासाठी Date फिल्टर वापरा. अयशस्वी आयटम स्थिती आणि प्लाननुसार Owners पुन्हा प्रयत्न करू शकतात.",
+      "Activity → Upcoming मध्ये निवडलेल्या दिवसासाठी स्वयंचलित ग्रीटिंगचे लोक दिसतात, पाठवण्याच्या वेळेपूर्वी Scheduled सह. रांगेत आल्यानंतर Pending / Sendingही दिसते. Activity → Submitted मध्ये त्या ग्रीटिंग दिवसासाठी प्रोव्हायडरने स्वीकारलेले मेसेज दिसतात - हे फोनवर डिलिव्हर झाल्याची खात्री नाही. इतर दिवस पाहण्यासाठी Date फिल्टर वापरा. अयशस्वी आयटम स्थिती आणि प्लाननुसार Owners पुन्हा प्रयत्न करू शकतात.",
     hrefs: [
       { label: "Upcoming", href: "/dashboard/activity?tab=upcoming" },
       { label: "Submitted", href: "/dashboard/activity?tab=sent" },
@@ -441,8 +441,8 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       "भेज नहीं",
     ],
     leadIn: "Why you can't send messages:",
-    leadInHi: "संदेश क्यों नहीं भेज पा रहे:",
-    leadInMr: "संदेश का पाठवता येत नाही:",
+    leadInHi: "मेसेज क्यों नहीं भेज पा रहे:",
+    leadInMr: "मेसेज का पाठवता येत नाही:",
     answer:
       "Common reasons: (1) you are Staff - only Owners can send, (2) subscription is not ACTIVE (unpaid/cancelled blocks send), (3) SMS/WhatsApp is not configured for that channel, (4) live Custom HTTP needs a verified email plus a paid ACTIVE plan or platform approval, (5) the queue worker is not draining pending items. Check Billing, channel settings, and Scheduled activity.",
     answerHi:
@@ -478,9 +478,9 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     answer:
       "Organizations use FREE, STARTER, PRO, or CUSTOM plans. Each plan has a contact limit. Billing is under Settings → Billing (Owners only). Upgrades use Razorpay when keys are configured. If the subscription is not ACTIVE, generating and sending messages is blocked until billing is fixed.",
     answerHi:
-      "संगठन FREE, STARTER, PRO या CUSTOM प्लान इस्तेमाल करते हैं। हर प्लान की कॉन्टैक्ट सीमा होती है। बिलिंग Settings → Billing में है (केवल Owners)। अपग्रेड Razorpay से होता है जब कुंजियाँ सेट हों। सब्सक्रिप्शन ACTIVE न हो तो संदेश बनाना/भेजना बिलिंग ठीक होने तक रुक जाता है।",
+      "संगठन FREE, STARTER, PRO या CUSTOM प्लान इस्तेमाल करते हैं। हर प्लान की कॉन्टैक्ट सीमा होती है। बिलिंग Settings → Billing में है (केवल Owners)। अपग्रेड Razorpay से होता है जब कुंजियाँ सेट हों। सब्सक्रिप्शन ACTIVE न हो तो मेसेज बनाना/भेजना बिलिंग ठीक होने तक रुक जाता है।",
     answerMr:
-      "संस्था FREE, STARTER, PRO किंवा CUSTOM प्लान वापरतात. प्रत्येक प्लानला कॉन्टॅक्ट मर्यादा असते. बिलिंग Settings → Billing मध्ये आहे (फक्त Owners). अपग्रेड Razorpay ने होते जेव्हा कळा सेट असतात. सब्सक्रिप्शन ACTIVE नसेल तर संदेश तयार/पाठवणे बिलिंग दुरुस्त होईपर्यंत थांबते.",
+      "संस्था FREE, STARTER, PRO किंवा CUSTOM प्लान वापरतात. प्रत्येक प्लानला कॉन्टॅक्ट मर्यादा असते. बिलिंग Settings → Billing मध्ये आहे (फक्त Owners). अपग्रेड Razorpay ने होते जेव्हा कळा सेट असतात. सब्सक्रिप्शन ACTIVE नसेल तर मेसेज तयार/पाठवणे बिलिंग दुरुस्त होईपर्यंत थांबते.",
     hrefs: [{ label: "Billing", href: "/dashboard/settings/billing" }],
   },
   {
@@ -505,8 +505,8 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     suggest: false,
     keywords: ["staff send", "can staff", "staff permission", "staff role"],
     leadIn: "Whether Staff can send messages:",
-    leadInHi: "क्या Staff संदेश भेज सकता है:",
-    leadInMr: "Staff संदेश पाठवू शकतो का:",
+    leadInHi: "क्या Staff मेसेज भेज सकता है:",
+    leadInMr: "Staff मेसेज पाठवू शकतो का:",
     answer:
       "No. Staff can manage contacts and view templates, queue, and deliveries. Only Owners can manually send, change channel or Automatic Greetings settings, export contacts, edit templates, and manage billing.",
     answerHi:

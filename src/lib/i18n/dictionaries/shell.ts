@@ -57,7 +57,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
     navLabelsByHref: {
       "/dashboard": "होम",
       "/dashboard/contacts": "कॉन्टैक्ट्स",
-      "/dashboard/messages": "संदेश भेजें",
+      "/dashboard/messages": "मेसेज भेजें",
       "/dashboard/activity": "एक्टिविटी",
       "/dashboard/settings/channels": "चैनल",
       "/dashboard/templates": "टेम्पलेट",
@@ -86,7 +86,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
     navLabelsByHref: {
       "/dashboard": "होम",
       "/dashboard/contacts": "कॉन्टॅक्ट्स",
-      "/dashboard/messages": "संदेश पाठवा",
+      "/dashboard/messages": "मेसेज पाठवा",
       "/dashboard/activity": "अ‍ॅक्टिव्हिटी",
       "/dashboard/settings/channels": "चॅनेल्स",
       "/dashboard/templates": "टेम्पलेट",
