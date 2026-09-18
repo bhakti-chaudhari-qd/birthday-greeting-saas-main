@@ -23,6 +23,7 @@ import { DashboardHome } from "@/components/dashboard/dashboard-home";
 
 const readySummary: DashboardHomeSummary = {
   todayDateLabel: "Friday, 17 July 2026",
+  todayDateIso: "2026-07-17",
   automation: { running: true, nextRunLabel: "6:15 PM" },
   scheduledTodayCount: 12,
   activeContactsCount: 528,

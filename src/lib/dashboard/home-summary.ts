@@ -66,6 +66,8 @@ export type DashboardUpcomingToday = {
 
 export type DashboardHomeSummary = {
   todayDateLabel: string;
+  /** Same day as todayDateLabel, as YYYY-MM-DD - lets the client reformat it in the selected language. */
+  todayDateIso: string;
   automation: {
     running: boolean;
     nextRunLabel: string | null;
@@ -379,6 +381,7 @@ export async function getDashboardHomeSummary(
 
   return {
     todayDateLabel: formatHeroDateLabel(todayDate),
+    todayDateIso: todayDate,
     automation: {
       running: runningAutomations.length > 0,
       nextRunLabel,

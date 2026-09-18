@@ -9,6 +9,7 @@ import {
   getDashboardHomeDict,
   type DashboardHomeDict,
 } from "@/lib/i18n/dictionaries/dashboard-home";
+import { formatLongDate } from "@/lib/i18n/format-date";
 import { translateOccasionName } from "@/lib/i18n/occasion-labels";
 import { toDevanagari } from "@/lib/i18n/transliterate";
 import { useLocale } from "@/lib/i18n/use-locale";
@@ -346,7 +347,9 @@ export function DashboardHome({
           </h1>
           <p className="mt-1.5 text-sm text-stone-500">{dict.subtitle}</p>
           <p className="mt-0.5 text-xs text-stone-400">
-            {summary.todayDateLabel}
+            {locale === "en"
+              ? summary.todayDateLabel
+              : formatLongDate(summary.todayDateIso, locale)}
           </p>
         </div>
         <button
