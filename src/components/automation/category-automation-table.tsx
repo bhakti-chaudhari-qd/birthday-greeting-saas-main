@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useOccasions } from "@/components/occasions/use-occasions";
 import { InlineAlert } from "@/components/ui/feedback";
@@ -22,6 +22,12 @@ import {
   hour12ToHour24,
   hour24ToHour12,
 } from "@/lib/automation/send-time";
+import {
+  getGreetingRoutesDict,
+  type GreetingRoutesDict,
+} from "@/lib/i18n/dictionaries/greeting-routes";
+import { translateOccasionName } from "@/lib/i18n/occasion-labels";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { templateMatchesAutomationCategory } from "@/lib/templates/serialize";
 
 type TemplateOption = {
@@ -58,9 +64,12 @@ function templatesForCategory(
   );
 }
 
-function templateOptionLabel(template: TemplateOption) {
+function templateOptionLabel(
+  template: TemplateOption,
+  dict: GreetingRoutesDict,
+) {
   if (!template.categoryName) {
-    return `${template.name} (All groups)`;
+    return `${template.name} (${dict.table.allGroupsSuffix})`;
   }
   return `${template.name} (${template.categoryName})`;
 }
@@ -229,6 +238,7 @@ function TimeSelects({
   onChange: (hour: number | null, minute: number | null) => void;
   categoryName: string;
 }) {
+  const dict = getGreetingRoutesDict(useLocale()).table;
   const timeSet = sendHour !== null && sendMinute !== null;
   const [customMinuteOpen, setCustomMinuteOpen] = useState(false);
   const { hour12, period } = hour24ToHour12(timeSet ? sendHour : 9);
@@ -248,16 +258,16 @@ function TimeSelects({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-xs font-medium uppercase tracking-wide text-stone-500">
-        Send at
+        {dict.sendAt}
       </span>
       {!timeSet ? (
         <button
           type="button"
           className="rounded-lg border border-dashed border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 hover:border-stone-400 hover:bg-stone-50"
           onClick={() => onChange(9, 0)}
-          aria-label={`Set send time for ${categoryName}`}
+          aria-label={dict.setSendTimeAria(categoryName)}
         >
-          Not set — choose time
+          {dict.notSetChooseTime}
         </button>
       ) : (
         <>
@@ -279,7 +289,7 @@ function TimeSelects({
                   }
                   onChange(nextHour, nextMinute);
                 }}
-                aria-label={`Custom send time for ${categoryName}`}
+                aria-label={dict.customSendTimeAria(categoryName)}
               />
             ) : (
               <>
@@ -290,7 +300,7 @@ function TimeSelects({
                     const nextHour12 = Number(event.target.value);
                     onChange(hour12ToHour24(nextHour12, period), sendMinute);
                   }}
-                  aria-label={`Send hour for ${categoryName}`}
+                  aria-label={dict.sendHourAria(categoryName)}
                 >
                   {Array.from({ length: 12 }, (_, index) => index + 1).map(
                     (hour) => (
@@ -315,14 +325,14 @@ function TimeSelects({
                 setCustomMinuteOpen(false);
                 onChange(sendHour, Number(event.target.value));
               }}
-              aria-label={`Send minute for ${categoryName}`}
+              aria-label={dict.sendMinuteAria(categoryName)}
             >
               {QUICK_MINUTES.map((minute) => (
                 <option key={minute} value={minute}>
                   {String(minute).padStart(2, "0")}
                 </option>
               ))}
-              <option value="custom">Custom</option>
+              <option value="custom">{dict.custom}</option>
             </select>
             {quickMinuteValue !== "custom" ? (
               <select
@@ -332,21 +342,21 @@ function TimeSelects({
                   const nextPeriod = event.target.value as "AM" | "PM";
                   onChange(hour12ToHour24(hour12, nextPeriod), sendMinute);
                 }}
-                aria-label={`AM or PM for ${categoryName}`}
+                aria-label={dict.amPmAria(categoryName)}
               >
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>
               </select>
             ) : null}
           </div>
-          <span className="text-xs text-stone-500">IST</span>
+          <span className="text-xs text-stone-500">{dict.ist}</span>
           <button
             type="button"
             className="text-xs font-medium text-stone-500 underline-offset-2 hover:text-stone-800 hover:underline"
             onClick={() => onChange(null, null)}
-            aria-label={`Clear send time for ${categoryName}`}
+            aria-label={dict.clearSendTimeAria(categoryName)}
           >
-            Clear
+            {dict.clear}
           </button>
         </>
       )}
@@ -374,6 +384,8 @@ function ChannelRow({
   /** Shown when enabled and there is no template picker (e.g. Email / Call). */
   statusWhenOn?: string;
 }) {
+  const fullDict = getGreetingRoutesDict(useLocale());
+  const dict = fullDict.table;
   const hasTemplates = Boolean(templates && onTemplateChange);
 
   return (
@@ -385,7 +397,7 @@ function ChannelRow({
             className="size-4 rounded border-stone-300 text-primary focus:ring-primary"
             checked={enabled}
             onChange={(event) => onEnabledChange(event.target.checked)}
-            aria-label={`Enable ${label} for ${categoryName}`}
+            aria-label={dict.enableChannelAria(label, categoryName)}
           />
           <span className="font-medium">{label}</span>
         </label>
@@ -396,12 +408,12 @@ function ChannelRow({
             onChange={(event) =>
               onTemplateChange?.(event.target.value || null)
             }
-            aria-label={`${label} template for ${categoryName}`}
+            aria-label={dict.channelTemplateAria(label, categoryName)}
           >
-            <option value="">Choose a template…</option>
+            <option value="">{dict.chooseTemplate}</option>
             {templates!.map((template) => (
               <option key={template.id} value={template.id}>
-                {templateOptionLabel(template)}
+                {templateOptionLabel(template, fullDict)}
               </option>
             ))}
           </select>
@@ -415,6 +427,9 @@ function ChannelRow({
 }
 
 export function CategoryAutomationTable() {
+  const locale = useLocale();
+  const fullDict = getGreetingRoutesDict(locale);
+  const dict = fullDict.table;
   const { occasions } = useOccasions();
   const [occasionId, setOccasionId] = useState<string>(() => {
     if (typeof window === "undefined") return "";
@@ -447,7 +462,7 @@ export function CategoryAutomationTable() {
     }
   }, [occasions]);
 
-  const loadAll = useCallback(async () => {
+  async function loadAll() {
     if (occasions.length === 0) {
       return;
     }
@@ -463,7 +478,7 @@ export function CategoryAutomationTable() {
           const body = await response.json();
           if (!response.ok) {
             throw new Error(
-              body.error?.message ?? "Failed to load category routes",
+              body.error?.message ?? fullDict.messages.failedToLoad,
             );
           }
           return { type: occasion.id, data: body.data };
@@ -509,25 +524,27 @@ export function CategoryAutomationTable() {
 
       setDrafts(nextDrafts);
       if (suggestionApplied) {
-        setSuccess(
-          "Your message is selected. Turn on the channel for the groups that should receive it, then Save.",
-        );
+        setSuccess(fullDict.messages.templateSelectedNotice);
       }
     } catch (loadError) {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Failed to load category routes",
+          : fullDict.messages.failedToLoad,
       );
     } finally {
       setLoading(false);
     }
-  }, [occasions, suggestedTemplateId]);
+  }
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadAll(), 0);
     return () => window.clearTimeout(timer);
-  }, [loadAll]);
+    // loadAll is a plain function (recreated every render, closes over
+    // current dict/state) - intentionally excluded so this effect only
+    // re-fires when the occasions list or suggested template actually change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [occasions, suggestedTemplateId]);
 
   const activeDraft = drafts[occasionId];
   const rows = useMemo(() => activeDraft?.rows ?? [], [activeDraft?.rows]);
@@ -600,7 +617,7 @@ export function CategoryAutomationTable() {
     });
 
     if (occasionPayloads.length === 0) {
-      setError("Nothing to save yet. Wait for categories to load.");
+      setError(fullDict.messages.nothingToSave);
       return;
     }
 
@@ -615,7 +632,7 @@ export function CategoryAutomationTable() {
       });
       const body = await response.json();
       if (!response.ok) {
-        setError(body.error?.message ?? "Failed to save greeting routes");
+        setError(body.error?.message ?? fullDict.messages.failedToSave);
         return;
       }
 
@@ -656,9 +673,9 @@ export function CategoryAutomationTable() {
         }
         return next;
       });
-      setSuccess("All automatic greetings saved.");
+      setSuccess(fullDict.messages.allSaved);
     } catch {
-      setError("Failed to save greeting routes");
+      setError(fullDict.messages.failedToSave);
     } finally {
       setSaving(false);
     }
@@ -676,7 +693,7 @@ export function CategoryAutomationTable() {
 
   return (
     <Panel className="space-y-5 p-6">
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Occasion">
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label={dict.occasionTabsAria}>
         {occasions.map((occasion) => (
           <button
             key={occasion.id}
@@ -690,25 +707,20 @@ export function CategoryAutomationTable() {
             }
             onClick={() => setOccasionId(occasion.id)}
           >
-            {occasion.name}
+            {translateOccasionName(occasion.name, locale)}
           </button>
         ))}
       </div>
 
-      <p className="text-sm text-stone-600">
-        Switch occasions to edit their automatic greetings. One Save keeps all
-        of them.
-      </p>
+      <p className="text-sm text-stone-600">{dict.subtitle}</p>
 
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
       {success ? <InlineAlert tone="success">{success}</InlineAlert> : null}
 
       {loading ? (
-        <p className="text-sm text-stone-600">Loading categories…</p>
+        <p className="text-sm text-stone-600">{dict.loading}</p>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-stone-600">
-          No categories yet. Add categories on the Contacts page first.
-        </p>
+        <p className="text-sm text-stone-600">{dict.noCategories}</p>
       ) : (
         <ul className="divide-y divide-stone-200 border-y border-stone-200">
           {displayRows.map((row) => {
@@ -731,25 +743,24 @@ export function CategoryAutomationTable() {
                   <div>
                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                       <h3 className="text-base font-semibold text-stone-900">
-                        {row.categoryName}
+                        {isAll ? dict.allCategoryName : row.categoryName}
                       </h3>
                       {active ? (
                         <span className="text-xs font-medium text-emerald-700">
                           {row.sendHour !== null && row.sendMinute !== null
-                            ? `Active · ${formatAutomationSendTimeLabel(row.sendHour, row.sendMinute)} IST`
-                            : "Active · Not Set - Choose Time"}
+                            ? dict.activeAt(
+                                formatAutomationSendTimeLabel(row.sendHour, row.sendMinute),
+                              )
+                            : dict.activeNotSet}
                         </span>
                       ) : (
-                        <span className="text-xs text-stone-400">Not sending</span>
+                        <span className="text-xs text-stone-400">{dict.notSending}</span>
                       )}
                     </div>
                     {isAll ? (
                       <p className="mt-1 text-sm text-stone-600">
-                        Applies the same greeting to every group for this
-                        occasion.
-                        {groupsDiffer
-                          ? " Groups currently differ - edit All to set them the same."
-                          : ""}
+                        {dict.allRowDescription}
+                        {groupsDiffer ? dict.groupsDiffer : ""}
                       </p>
                     ) : null}
                   </div>
@@ -768,7 +779,7 @@ export function CategoryAutomationTable() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <ChannelRow
-                    label="SMS"
+                    label={dict.channels.sms}
                     enabled={row.smsEnabled}
                     templateId={row.smsTemplateId}
                     templates={templatesForCategory(smsTemplates, row.categoryId)}
@@ -787,7 +798,7 @@ export function CategoryAutomationTable() {
                     }
                   />
                   <ChannelRow
-                    label="WhatsApp"
+                    label={dict.channels.whatsapp}
                     enabled={row.whatsappEnabled}
                     templateId={row.whatsappTemplateId}
                     templates={templatesForCategory(
@@ -811,7 +822,7 @@ export function CategoryAutomationTable() {
                     }
                   />
                   <ChannelRow
-                    label="Email"
+                    label={dict.channels.email}
                     enabled={row.emailEnabled}
                     templateId={row.emailTemplateId}
                     templates={templatesForCategory(
@@ -833,7 +844,7 @@ export function CategoryAutomationTable() {
                     }
                   />
                   <ChannelRow
-                    label="Call"
+                    label={dict.channels.call}
                     enabled={row.callEnabled}
                     categoryName={row.categoryName}
                     onEnabledChange={(callEnabled) =>
@@ -842,7 +853,7 @@ export function CategoryAutomationTable() {
                         withDefaultSendTimeWhenActive(row, { callEnabled }),
                       )
                     }
-                    statusWhenOn="Delivery coming soon"
+                    statusWhenOn={dict.callComingSoon}
                   />
                 </div>
               </li>
@@ -858,7 +869,7 @@ export function CategoryAutomationTable() {
           disabled={!canSave}
           onClick={() => void handleSave()}
         >
-          {saving ? "Saving…" : "Save"}
+          {saving ? dict.saving : dict.save}
         </button>
       </div>
     </Panel>
