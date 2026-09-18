@@ -1,8 +1,11 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ContactDeleteButton } from "@/components/contacts/contact-delete-button";
 import { ContactForm } from "@/components/contacts/contact-form";
+import {
+  ContactFormBackLink,
+  ContactFormPageTitle,
+} from "@/components/contacts/contact-form-page-header";
 import { getAuthContext } from "@/lib/auth/context";
 import { ContactNotFoundError } from "@/lib/contacts/errors";
 import { getContactById, serializeContact } from "@/lib/contacts/service";
@@ -35,16 +38,11 @@ export default async function EditContactPage({ params }: EditContactPageProps) 
 
   return (
     <main className="mx-auto max-w-xl px-4 py-6 sm:px-6 sm:py-8">
-      <Link
-        href="/dashboard/contacts"
-        className="inline-flex items-center gap-1 text-sm font-medium text-stone-600 outline-none hover:text-stone-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-      >
-        <span aria-hidden>←</span> Back
-      </Link>
+      <ContactFormBackLink />
 
       <div className="mb-6 mt-2 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
-          Edit Contact
+          <ContactFormPageTitle mode="edit" />
         </h1>
         <ContactDeleteButton
           contactId={contact.id}

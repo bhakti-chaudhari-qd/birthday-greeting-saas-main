@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { compactSecondaryButtonClass } from "@/components/ui/page";
+import { getContactsDict } from "@/lib/i18n/dictionaries/contacts";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type ContactDeleteButtonProps = {
   contactId: string;
@@ -23,11 +25,10 @@ export function ContactDeleteButton({
 }: ContactDeleteButtonProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const dict = getContactsDict(useLocale()).deleteButton;
 
   async function handleDelete() {
-    const confirmed = window.confirm(
-      `Delete ${contactName}? This permanently removes the contact and related scheduled/delivery history.`,
-    );
+    const confirmed = window.confirm(dict.confirmDelete(contactName));
 
     if (!confirmed) {
       return;
@@ -42,9 +43,7 @@ export function ContactDeleteButton({
 
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        window.alert(
-          body?.error?.message ?? "Could not delete contact. Try again.",
-        );
+        window.alert(body?.error?.message ?? dict.couldNotDelete);
         return;
       }
 
@@ -55,7 +54,7 @@ export function ContactDeleteButton({
         router.refresh();
       }
     } catch {
-      window.alert("Could not delete contact. Check your connection and try again.");
+      window.alert(dict.couldNotDeleteConn);
     } finally {
       setDeleting(false);
     }
@@ -74,7 +73,7 @@ export function ContactDeleteButton({
         .filter(Boolean)
         .join(" ")}
     >
-      {deleting ? "Deleting…" : "Delete"}
+      {deleting ? dict.deleting : dict.delete}
     </button>
   );
 }

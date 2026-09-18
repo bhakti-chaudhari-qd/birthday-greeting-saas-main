@@ -19,6 +19,9 @@ import {
   sanitizeMobileInput,
 } from "@/lib/contacts/mobile";
 import { fetchOrganizationCategories } from "@/lib/client/organization-reference-data";
+import { getContactsDict } from "@/lib/i18n/dictionaries/contacts";
+import { translateOccasionName } from "@/lib/i18n/occasion-labels";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type ContactFormValues = {
   name: string;
@@ -106,6 +109,8 @@ function hasOptionalValues(values: ContactFormValues): boolean {
 export function ContactForm({ mode, contactId, initialValues }: ContactFormProps) {
   const router = useRouter();
   const { showToast } = useToast();
+  const locale = useLocale();
+  const dict = getContactsDict(locale).form;
   const [values, setValues] = useState<ContactFormValues>({
     ...defaultValues,
     ...initialValues,
@@ -184,12 +189,16 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
         .filter(Boolean)
         .join(" and ");
       warnings.push(
-        `${occasion.occasionName} today. Automatic ${channelLabels} greeting may send after ${occasion.sendTimeLabel}.`,
+        dict.automationWarning(
+          translateOccasionName(occasion.occasionName, locale),
+          channelLabels,
+          occasion.sendTimeLabel,
+        ),
       );
     }
 
     return warnings;
-  }, [automation, values.occasionDates]);
+  }, [automation, values.occasionDates, dict, locale]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -248,11 +257,11 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Failed to save contact");
+        setError(body.error?.message ?? dict.failedToSaveContact);
         return;
       }
 
-      showToast("Contact saved successfully.");
+      showToast(dict.contactSavedSuccessfully);
 
       const savedId = mode === "create" ? (body.data?.id as string | undefined) : undefined;
       router.push(
@@ -262,7 +271,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
       );
       router.refresh();
     } catch {
-      setError("Failed to save contact");
+      setError(dict.failedToSaveContact);
     } finally {
       setIsSubmitting(false);
     }
@@ -279,18 +288,18 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
                 href="/dashboard"
                 className="font-medium text-primary underline"
               >
-                Today
+                {dict.todayLink}
               </Link>
             </InlineAlert>
           ))}
 
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-semibold text-stone-900">
-              Basic Information
+              {dict.basicInformation}
             </h2>
 
             <label className="block text-sm">
-              <span className="font-medium text-stone-800">Name *</span>
+              <span className="font-medium text-stone-800">{dict.name}</span>
               <input
                 className={`${inputClass} mt-1`}
                 value={values.name}
@@ -302,7 +311,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
             </label>
 
             <label className="block text-sm">
-              <span className="font-medium text-stone-800">Mobile *</span>
+              <span className="font-medium text-stone-800">{dict.mobile}</span>
               <div className="mt-1 flex overflow-hidden rounded-lg border border-stone-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
                 <span
                   className="flex shrink-0 items-center border-r border-stone-200 bg-stone-50 px-3 text-sm font-medium text-stone-600"
@@ -319,7 +328,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
                       mobile: sanitizeMobileInput(event.target.value),
                     }))
                   }
-                  placeholder="Phone Number"
+                  placeholder={dict.phoneNumberPlaceholder}
                   inputMode="numeric"
                   autoComplete="tel-national"
                   pattern="[6-9][0-9]{9}"
@@ -330,12 +339,12 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
                 />
               </div>
               <span className="mt-1 block text-xs text-stone-500">
-                10 digits. Country code (+91) is added automatically.
+                {dict.mobileHint}
               </span>
             </label>
 
             <label className="block text-sm">
-              <span className="font-medium text-stone-800">Email</span>
+              <span className="font-medium text-stone-800">{dict.email}</span>
               <input
                 className={`${inputClass} mt-1`}
                 type="email"
@@ -346,7 +355,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
                     email: event.target.value,
                   }))
                 }
-                placeholder="Needed for email greetings"
+                placeholder={dict.emailPlaceholder}
                 autoComplete="email"
               />
             </label>
@@ -355,7 +364,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
               {occasions.map((occasion) => (
                 <label key={occasion.id} className="block text-sm">
                   <span className="font-medium text-stone-800">
-                    {occasion.name}
+                    {translateOccasionName(occasion.name, locale)}
                   </span>
                   <input
                     className={`${inputClass} mt-1`}
@@ -376,7 +385,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
             </div>
 
             <div className="block text-sm">
-              <span className="font-medium text-stone-800">Category *</span>
+              <span className="font-medium text-stone-800">{dict.category}</span>
               <div className="mt-1 flex gap-2">
                 <select
                   className={inputClass}
@@ -388,7 +397,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
                     }))
                   }
                 >
-                  <option value="">No category</option>
+                  <option value="">{dict.noCategory}</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -400,7 +409,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
                   onClick={() => setCategoryModalOpen(true)}
                   className={`${secondaryButtonClass} shrink-0 whitespace-nowrap`}
                 >
-                  + New Category
+                  {dict.newCategoryAction}
                 </button>
               </div>
             </div>
@@ -409,7 +418,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
           {fieldDefinitions.length > 0 ? (
             <div className="border-t border-stone-200 pt-4">
               <h2 className="text-sm font-semibold text-stone-900">
-                Additional Information
+                {dict.additionalInformation}
               </h2>
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {fieldDefinitions.map((field) => (
@@ -441,7 +450,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
               onClick={() => setMoreDetailsOpen((current) => !current)}
               className="flex w-full items-center justify-between text-left text-sm font-semibold text-stone-900 outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              More Details (Optional)
+              {dict.moreDetails}
               <span aria-hidden className="text-xs text-stone-400">
                 {moreDetailsOpen ? "▴" : "▾"}
               </span>
@@ -450,7 +459,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
             {moreDetailsOpen ? (
               <div className="mt-4 flex flex-col gap-4">
                 <label className="block text-sm">
-                  <span className="font-medium text-stone-800">Notes</span>
+                  <span className="font-medium text-stone-800">{dict.notes}</span>
                   <textarea
                     className={`${inputClass} mt-1`}
                     rows={2}
@@ -461,7 +470,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
                         note: event.target.value,
                       }))
                     }
-                    placeholder="Optional note about this contact"
+                    placeholder={dict.notesPlaceholder}
                     maxLength={1000}
                   />
                 </label>
@@ -478,7 +487,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
                     }
                   />
                   <span className="font-medium text-stone-800">
-                    Active (receives automatic greetings)
+                    {dict.activeLabel}
                   </span>
                 </label>
               </div>
@@ -490,10 +499,10 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
 
         <div className="sticky bottom-0 flex justify-end gap-2 border-t border-stone-200 bg-white px-6 py-4">
           <Link href="/dashboard/contacts" className={secondaryButtonClass}>
-            Cancel
+            {dict.cancel}
           </Link>
           <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
-            {isSubmitting ? "Saving…" : "Save Contact"}
+            {isSubmitting ? dict.saving : dict.saveContact}
           </button>
         </div>
       </form>

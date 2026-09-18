@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/page";
 import { invalidateOrganizationCategories } from "@/lib/client/organization-reference-data";
+import { getContactsDict } from "@/lib/i18n/dictionaries/contacts";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export type OrgCategory = {
   id: string;
@@ -25,6 +27,7 @@ export function CreateCategoryModal({
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const dict = getContactsDict(useLocale()).categoryModal;
 
   function handleClose() {
     setName("");
@@ -35,7 +38,7 @@ export function CreateCategoryModal({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!name.trim()) {
-      setError("Category name is required");
+      setError(dict.categoryNameRequired);
       return;
     }
 
@@ -51,7 +54,7 @@ export function CreateCategoryModal({
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not create category");
+        setError(body.error?.message ?? dict.couldNotCreateCategory);
         return;
       }
 
@@ -59,22 +62,22 @@ export function CreateCategoryModal({
       onCreated(body.data as OrgCategory);
       setName("");
     } catch {
-      setError("Could not create category. Check your connection and try again.");
+      setError(dict.couldNotCreateCategoryConn);
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Create Category">
+    <Modal open={open} onClose={handleClose} title={dict.title}>
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Category Name</span>
+          <span className="font-medium text-stone-800">{dict.categoryName}</span>
           <input
             className={`${inputClass} mt-1`}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="e.g. Dealer, Gold, Supplier"
+            placeholder={dict.categoryNamePlaceholder}
             maxLength={50}
             autoFocus
           />
@@ -89,10 +92,10 @@ export function CreateCategoryModal({
             onClick={handleClose}
             disabled={submitting}
           >
-            Cancel
+            {dict.cancel}
           </button>
           <button type="submit" className={primaryButtonClass} disabled={submitting}>
-            {submitting ? "Creating…" : "Create"}
+            {submitting ? dict.creating : dict.create}
           </button>
         </div>
       </form>

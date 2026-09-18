@@ -100,6 +100,51 @@ export type ContactsDict = {
     next: string;
   };
   loadingAria: string;
+  form: {
+    back: string;
+    addContactTitle: string;
+    editContactTitle: string;
+    automationWarning: (occasionName: string, channels: string, sendTime: string) => string;
+    todayLink: string;
+    basicInformation: string;
+    name: string;
+    mobile: string;
+    phoneNumberPlaceholder: string;
+    mobileHint: string;
+    email: string;
+    emailPlaceholder: string;
+    category: string;
+    noCategory: string;
+    newCategoryAction: string;
+    additionalInformation: string;
+    moreDetails: string;
+    notes: string;
+    notesPlaceholder: string;
+    activeLabel: string;
+    cancel: string;
+    saveContact: string;
+    saving: string;
+    failedToSaveContact: string;
+    contactSavedSuccessfully: string;
+  };
+  categoryModal: {
+    title: string;
+    categoryName: string;
+    categoryNamePlaceholder: string;
+    categoryNameRequired: string;
+    couldNotCreateCategory: string;
+    couldNotCreateCategoryConn: string;
+    cancel: string;
+    create: string;
+    creating: string;
+  };
+  deleteButton: {
+    confirmDelete: (name: string) => string;
+    delete: string;
+    deleting: string;
+    couldNotDelete: string;
+    couldNotDeleteConn: string;
+  };
 };
 
 const CONTACTS_DICT: Record<Locale, ContactsDict> = {
@@ -208,6 +253,54 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       next: "Next",
     },
     loadingAria: "Loading contacts",
+    form: {
+      back: "Back",
+      addContactTitle: "Add Contact",
+      editContactTitle: "Edit Contact",
+      automationWarning: (occasionName, channels, sendTime) =>
+        `${occasionName} today. Automatic ${channels} greeting may send after ${sendTime}.`,
+      todayLink: "Today",
+      basicInformation: "Basic Information",
+      name: "Name *",
+      mobile: "Mobile *",
+      phoneNumberPlaceholder: "Phone Number",
+      mobileHint: "10 digits. Country code (+91) is added automatically.",
+      email: "Email",
+      emailPlaceholder: "Needed for email greetings",
+      category: "Category *",
+      noCategory: "No category",
+      newCategoryAction: "+ New Category",
+      additionalInformation: "Additional Information",
+      moreDetails: "More Details (Optional)",
+      notes: "Notes",
+      notesPlaceholder: "Optional note about this contact",
+      activeLabel: "Active (receives automatic greetings)",
+      cancel: "Cancel",
+      saveContact: "Save Contact",
+      saving: "Saving…",
+      failedToSaveContact: "Failed to save contact",
+      contactSavedSuccessfully: "Contact saved successfully.",
+    },
+    categoryModal: {
+      title: "Create Category",
+      categoryName: "Category Name",
+      categoryNamePlaceholder: "e.g. Dealer, Gold, Supplier",
+      categoryNameRequired: "Category name is required",
+      couldNotCreateCategory: "Could not create category",
+      couldNotCreateCategoryConn:
+        "Could not create category. Check your connection and try again.",
+      cancel: "Cancel",
+      create: "Create",
+      creating: "Creating…",
+    },
+    deleteButton: {
+      confirmDelete: (name) =>
+        `Delete ${name}? This permanently removes the contact and related scheduled/delivery history.`,
+      delete: "Delete",
+      deleting: "Deleting…",
+      couldNotDelete: "Could not delete contact. Try again.",
+      couldNotDeleteConn: "Could not delete contact. Check your connection and try again.",
+    },
   },
   hi: {
     header: {
@@ -314,6 +407,54 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       next: "अगला",
     },
     loadingAria: "कॉन्टैक्ट लोड हो रहे हैं",
+    form: {
+      back: "पीछे",
+      addContactTitle: "कॉन्टैक्ट जोड़ें",
+      editContactTitle: "कॉन्टैक्ट एडिट करें",
+      automationWarning: (occasionName, channels, sendTime) =>
+        `आज ${occasionName} है। ऑटोमेटिक ${channels} ग्रीटिंग ${sendTime} के बाद भेजी जा सकती है।`,
+      todayLink: "आज",
+      basicInformation: "बेसिक जानकारी",
+      name: "नाम *",
+      mobile: "मोबाइल *",
+      phoneNumberPlaceholder: "फ़ोन नंबर",
+      mobileHint: "10 अंक। कंट्री कोड (+91) अपने आप जुड़ जाता है।",
+      email: "ईमेल",
+      emailPlaceholder: "ईमेल ग्रीटिंग के लिए ज़रूरी",
+      category: "श्रेणी *",
+      noCategory: "कोई श्रेणी नहीं",
+      newCategoryAction: "+ नई श्रेणी",
+      additionalInformation: "अतिरिक्त जानकारी",
+      moreDetails: "अधिक विवरण (वैकल्पिक)",
+      notes: "नोट्स",
+      notesPlaceholder: "इस कॉन्टैक्ट के बारे में वैकल्पिक नोट",
+      activeLabel: "एक्टिव (ऑटोमेटिक ग्रीटिंग पाता है)",
+      cancel: "रद्द करें",
+      saveContact: "कॉन्टैक्ट सेव करें",
+      saving: "सेव हो रहा है…",
+      failedToSaveContact: "कॉन्टैक्ट सेव नहीं हो सका",
+      contactSavedSuccessfully: "कॉन्टैक्ट सेव हो गया।",
+    },
+    categoryModal: {
+      title: "श्रेणी बनाएँ",
+      categoryName: "श्रेणी का नाम",
+      categoryNamePlaceholder: "जैसे Dealer, Gold, Supplier",
+      categoryNameRequired: "श्रेणी का नाम ज़रूरी है",
+      couldNotCreateCategory: "श्रेणी नहीं बन सकी",
+      couldNotCreateCategoryConn:
+        "श्रेणी नहीं बन सकी। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
+      cancel: "रद्द करें",
+      create: "बनाएँ",
+      creating: "बन रही है…",
+    },
+    deleteButton: {
+      confirmDelete: (name) =>
+        `${name} को हटाएँ? इससे कॉन्टैक्ट और उससे जुड़ा शेड्यूल्ड/डिलीवरी इतिहास हमेशा के लिए मिट जाएगा।`,
+      delete: "हटाएँ",
+      deleting: "हट रहा है…",
+      couldNotDelete: "कॉन्टैक्ट हटाया नहीं जा सका। फिर कोशिश करें।",
+      couldNotDeleteConn: "कॉन्टैक्ट हटाया नहीं जा सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
+    },
   },
   mr: {
     header: {
@@ -420,6 +561,54 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       next: "पुढील",
     },
     loadingAria: "कॉन्टॅक्ट लोड होत आहेत",
+    form: {
+      back: "मागे",
+      addContactTitle: "कॉन्टॅक्ट जोडा",
+      editContactTitle: "कॉन्टॅक्ट एडिट करा",
+      automationWarning: (occasionName, channels, sendTime) =>
+        `आज ${occasionName} आहे. ऑटोमॅटिक ${channels} ग्रीटिंग ${sendTime} नंतर पाठवली जाऊ शकते.`,
+      todayLink: "आज",
+      basicInformation: "बेसिक माहिती",
+      name: "नाव *",
+      mobile: "मोबाइल *",
+      phoneNumberPlaceholder: "फोन नंबर",
+      mobileHint: "10 अंक. कंट्री कोड (+91) आपोआप जोडला जातो.",
+      email: "ईमेल",
+      emailPlaceholder: "ईमेल ग्रीटिंगसाठी आवश्यक",
+      category: "श्रेणी *",
+      noCategory: "श्रेणी नाही",
+      newCategoryAction: "+ नवीन श्रेणी",
+      additionalInformation: "अतिरिक्त माहिती",
+      moreDetails: "अधिक तपशील (ऐच्छिक)",
+      notes: "नोट्स",
+      notesPlaceholder: "या कॉन्टॅक्टबद्दल ऐच्छिक नोंद",
+      activeLabel: "अ‍ॅक्टिव्ह (ऑटोमॅटिक ग्रीटिंग मिळते)",
+      cancel: "रद्द करा",
+      saveContact: "कॉन्टॅक्ट सेव्ह करा",
+      saving: "सेव्ह होत आहे…",
+      failedToSaveContact: "कॉन्टॅक्ट सेव्ह होऊ शकला नाही",
+      contactSavedSuccessfully: "कॉन्टॅक्ट सेव्ह झाला.",
+    },
+    categoryModal: {
+      title: "श्रेणी तयार करा",
+      categoryName: "श्रेणीचे नाव",
+      categoryNamePlaceholder: "उदा. Dealer, Gold, Supplier",
+      categoryNameRequired: "श्रेणीचे नाव आवश्यक आहे",
+      couldNotCreateCategory: "श्रेणी तयार होऊ शकली नाही",
+      couldNotCreateCategoryConn:
+        "श्रेणी तयार होऊ शकली नाही. तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.",
+      cancel: "रद्द करा",
+      create: "तयार करा",
+      creating: "तयार होत आहे…",
+    },
+    deleteButton: {
+      confirmDelete: (name) =>
+        `${name} हटवायचा? यामुळे कॉन्टॅक्ट आणि त्याच्याशी संबंधित शेड्यूल्ड/डिलिव्हरी इतिहास कायमचा हटेल.`,
+      delete: "हटवा",
+      deleting: "हटत आहे…",
+      couldNotDelete: "कॉन्टॅक्ट हटवता आला नाही. पुन्हा प्रयत्न करा.",
+      couldNotDeleteConn: "कॉन्टॅक्ट हटवता आला नाही. तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.",
+    },
   },
 };
 
