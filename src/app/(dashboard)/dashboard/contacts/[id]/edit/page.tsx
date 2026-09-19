@@ -60,6 +60,7 @@ export default async function EditContactPage({ params }: EditContactPageProps) 
           email: contact.email ?? "",
           occasionDates: serialized.occasionDates,
           categoryId: contact.categoryId ?? "",
+          categoryTagIds: serialized.categoryTagIds,
           address: contact.address ?? "",
           note: contact.note ?? "",
           attributes: serialized.attributes as Record<string, string>,

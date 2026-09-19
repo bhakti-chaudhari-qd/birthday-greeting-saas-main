@@ -269,3 +269,25 @@ export async function resolveContactCategoryId(
 
   return undefined;
 }
+
+/** Resolves extra category tag ids (must belong to the org), deduped. */
+export async function resolveContactCategoryTagIds(
+  organizationId: string,
+  categoryIds: string[],
+  tx: Prisma.TransactionClient | typeof prisma = prisma,
+): Promise<string[]> {
+  const uniqueIds = [...new Set(categoryIds)];
+  if (uniqueIds.length === 0) {
+    return [];
+  }
+
+  const found = await tx.contactCategoryDefinition.findMany({
+    where: { id: { in: uniqueIds }, organizationId },
+    select: { id: true },
+  });
+  if (found.length !== uniqueIds.length) {
+    throw new ContactCategoryValidationError("Selected category was not found");
+  }
+
+  return found.map((row) => row.id);
+}

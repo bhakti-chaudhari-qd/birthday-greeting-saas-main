@@ -116,6 +116,8 @@ export type ContactsDict = {
     category: string;
     noCategory: string;
     newCategoryAction: string;
+    additionalCategories: string;
+    additionalCategoriesHint: string;
     additionalInformation: string;
     moreDetails: string;
     notes: string;
@@ -270,6 +272,9 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       category: "Category *",
       noCategory: "No category",
       newCategoryAction: "+ New Category",
+      additionalCategories: "Additional Categories",
+      additionalCategoriesHint:
+        "Optional. Tag this contact with more categories (e.g. also Relative). The main category above is used for automatic greetings.",
       additionalInformation: "Additional Information",
       moreDetails: "More Details (Optional)",
       notes: "Notes",
@@ -424,6 +429,9 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       category: "श्रेणी *",
       noCategory: "कोई श्रेणी नहीं",
       newCategoryAction: "+ नई श्रेणी",
+      additionalCategories: "अतिरिक्त श्रेणियाँ",
+      additionalCategoriesHint:
+        "वैकल्पिक। इस कॉन्टैक्ट को और श्रेणियाँ भी टैग करें (जैसे Relative भी)। ऊपर की मुख्य श्रेणी ऑटोमेटिक ग्रीटिंग के लिए इस्तेमाल होती है।",
       additionalInformation: "अतिरिक्त जानकारी",
       moreDetails: "अधिक विवरण (वैकल्पिक)",
       notes: "नोट्स",
@@ -578,6 +586,9 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       category: "श्रेणी *",
       noCategory: "श्रेणी नाही",
       newCategoryAction: "+ नवीन श्रेणी",
+      additionalCategories: "अतिरिक्त श्रेण्या",
+      additionalCategoriesHint:
+        "ऐच्छिक. या कॉन्टॅक्टला आणखी श्रेण्या टॅग करा (उदा. Relative सुद्धा). वरील मुख्य श्रेणी ऑटोमॅटिक ग्रीटिंगसाठी वापरली जाते.",
       additionalInformation: "अतिरिक्त माहिती",
       moreDetails: "अधिक तपशील (ऐच्छिक)",
       notes: "नोट्स",

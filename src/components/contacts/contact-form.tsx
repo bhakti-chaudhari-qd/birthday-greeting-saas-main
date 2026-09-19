@@ -29,6 +29,8 @@ type ContactFormValues = {
   email: string;
   occasionDates: Record<string, string>;
   categoryId: string;
+  /** Extra categories beyond the primary categoryId (e.g. also "Relative"). */
+  categoryTagIds: string[];
   address: string;
   note: string;
   attributes: Record<string, string>;
@@ -61,6 +63,7 @@ const defaultValues: ContactFormValues = {
   email: "",
   occasionDates: {},
   categoryId: "",
+  categoryTagIds: [],
   address: "",
   note: "",
   attributes: {},
@@ -234,6 +237,7 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
       email: values.email.trim() || null,
       occasionDates,
       categoryId: values.categoryId || null,
+      categoryTagIds: values.categoryTagIds,
       address: values.address.trim() || null,
       note: values.note.trim() || null,
       attributes: Object.fromEntries(
@@ -394,6 +398,9 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
                     setValues((current) => ({
                       ...current,
                       categoryId: event.target.value,
+                      categoryTagIds: current.categoryTagIds.filter(
+                        (id) => id !== event.target.value,
+                      ),
                     }))
                   }
                 >
@@ -413,6 +420,51 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
                 </button>
               </div>
             </div>
+
+            {categories.length > 0 ? (
+              <div className="block text-sm">
+                <span className="font-medium text-stone-800">
+                  {dict.additionalCategories}
+                </span>
+                <span className="mt-0.5 block text-xs text-stone-500">
+                  {dict.additionalCategoriesHint}
+                </span>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {categories
+                    .filter((category) => category.id !== values.categoryId)
+                    .map((category) => {
+                      const checked = values.categoryTagIds.includes(category.id);
+                      return (
+                        <label
+                          key={category.id}
+                          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-sm ${
+                            checked
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-stone-300 text-stone-700 hover:bg-stone-50"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={checked}
+                            onChange={(event) =>
+                              setValues((current) => ({
+                                ...current,
+                                categoryTagIds: event.target.checked
+                                  ? [...current.categoryTagIds, category.id]
+                                  : current.categoryTagIds.filter(
+                                      (id) => id !== category.id,
+                                    ),
+                              }))
+                            }
+                          />
+                          {category.name}
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {fieldDefinitions.length > 0 ? (

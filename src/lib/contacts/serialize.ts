@@ -10,6 +10,9 @@ import { formatOccasionDate } from "@/lib/contacts/dates";
 
 type ContactWithCategory = Contact & {
   category?: Pick<ContactCategoryDefinition, "id" | "name"> | null;
+  categoryTags?: Array<{
+    category: Pick<ContactCategoryDefinition, "id" | "name">;
+  }>;
   occasionDates?: Array<
     Pick<ContactOccasionDate, "occasionId" | "date" | "month" | "day"> & {
       occasion: Pick<Occasion, "id" | "name">;
@@ -39,6 +42,11 @@ export function serializeContact(contact: ContactWithCategory) {
     });
   }
 
+  const categoryTags = (contact.categoryTags ?? []).map((tag) => ({
+    id: tag.category.id,
+    name: tag.category.name,
+  }));
+
   return {
     id: contact.id,
     name: contact.name,
@@ -51,6 +59,16 @@ export function serializeContact(contact: ContactWithCategory) {
       ? { id: contact.category.id, name: contact.category.name }
       : null,
     categoryName: contact.category?.name ?? null,
+    /** Extra categories beyond the primary one - does not include `category`. */
+    categoryTags,
+    categoryTagIds: categoryTags.map((tag) => tag.id),
+    /** Primary category + all tags, deduped - convenience for display/filtering. */
+    allCategories: contact.category
+      ? [
+          { id: contact.category.id, name: contact.category.name },
+          ...categoryTags.filter((tag) => tag.id !== contact.category!.id),
+        ]
+      : categoryTags,
     address: contact.address,
     note: contact.note,
     attributes:
@@ -85,7 +103,15 @@ export function buildContactListWhere(
   }
 
   if (query.categoryId) {
-    where.categoryId = query.categoryId;
+    where.AND = [
+      ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+      {
+        OR: [
+          { categoryId: query.categoryId },
+          { categoryTags: { some: { categoryId: query.categoryId } } },
+        ],
+      },
+    ];
   }
 
   if (query.occasionId) {

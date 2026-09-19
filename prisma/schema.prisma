@@ -229,11 +229,30 @@ model Contact {
   category      ContactCategoryDefinition? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   occasionDates ContactOccasionDate[]
   sendQueues    SendQueue[]
+  categoryTags  ContactCategoryTag[]
 
   @@unique([organizationId, mobile])
   @@unique([organizationId, email])
   @@index([organizationId, isActive])
   @@index([organizationId, categoryId])
+}
+
+/// Extra category tags on a contact beyond its primary `Contact.categoryId`
+/// (e.g. a contact whose primary category is Friend can also be tagged
+/// Relative). Automatic-greeting routing still uses only the primary
+/// category (CategoryAutomationRule.categoryId); tags here only widen what
+/// category filters/bulk actions/manual sends match against.
+model ContactCategoryTag {
+  id         String   @id @default(cuid())
+  contactId  String
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  contact  Contact                   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  category ContactCategoryDefinition @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, categoryId])
+  @@index([categoryId])
 }
 
 model ContactFieldDefinition {
@@ -357,6 +376,7 @@ model ContactCategoryDefinition {
   contacts          Contact[]
   automationRules   CategoryAutomationRule[]
   messageTemplates  MessageTemplate[]
+  contactTags       ContactCategoryTag[]
 
   @@unique([organizationId, name])
   @@index([organizationId])

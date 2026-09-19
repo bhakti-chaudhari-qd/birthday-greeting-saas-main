@@ -50,6 +50,8 @@ type Contact = {
   }>;
   categoryId: string | null;
   categoryName: string | null;
+  /** Primary category plus any extra category tags, deduped. */
+  allCategories: Array<{ id: string; name: string }>;
   address: string | null;
   isActive: boolean;
 };
@@ -1004,7 +1006,20 @@ export function ContactsPageClient({
                       </div>
                     </td>
                     <td className="hidden px-4 py-2.5 text-stone-600 md:table-cell">
-                      {contact.categoryName ?? dict.table.emptyDash}
+                      {contact.allCategories.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {contact.allCategories.map((category) => (
+                            <span
+                              key={category.id}
+                              className="inline-flex items-center rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-700"
+                            >
+                              {category.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        dict.table.emptyDash
+                      )}
                     </td>
                     <td className="px-4 py-2.5 text-stone-700">
                       {contact.mobile}

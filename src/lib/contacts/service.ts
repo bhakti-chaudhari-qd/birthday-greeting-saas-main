@@ -14,6 +14,7 @@ import type {
 import {
   ContactCategoryValidationError,
   resolveContactCategoryId,
+  resolveContactCategoryTagIds,
 } from "./categories";
 import {
   ContactConflictError,
@@ -31,6 +32,9 @@ import { buildContactListWhere, serializeContact } from "./serialize";
 
 const contactWithCategory = {
   category: { select: { id: true, name: true } },
+  categoryTags: {
+    include: { category: { select: { id: true, name: true } } },
+  },
   occasionDates: {
     include: { occasion: { select: { id: true, name: true } } },
   },
@@ -97,6 +101,7 @@ function mapContactInput(
     name: input.name !== undefined ? input.name.trim() : undefined,
     categoryId: input.categoryId,
     categoryName: input.categoryName,
+    categoryTagIds: input.categoryTagIds,
     address: normalizeOptionalText(input.address),
     note: normalizeOptionalText(input.note),
     attributes: normalizeAttributes(input.attributes),
@@ -202,6 +207,32 @@ async function applyContactOccasionDates(
   }
 }
 
+/** Replaces a contact's extra category tags, excluding its primary category (already implied). */
+async function applyContactCategoryTags(
+  tx: Prisma.TransactionClient | typeof prisma,
+  contactId: string,
+  primaryCategoryId: string | null,
+  tagIds: string[] | undefined,
+) {
+  if (tagIds === undefined) {
+    return;
+  }
+
+  const filteredTagIds = tagIds.filter((id) => id !== primaryCategoryId);
+
+  await tx.contactCategoryTag.deleteMany({
+    where: { contactId, categoryId: { notIn: filteredTagIds } },
+  });
+
+  for (const categoryId of filteredTagIds) {
+    await tx.contactCategoryTag.upsert({
+      where: { contactId_categoryId: { contactId, categoryId } },
+      create: { contactId, categoryId },
+      update: {},
+    });
+  }
+}
+
 export async function createContact(
   organizationId: string,
   input: CreateContactInput,
@@ -218,12 +249,19 @@ export async function createContact(
   await assertContactAttributesAllowed(organizationId, mapped.attributes ?? {});
 
   let categoryId: string | null = null;
+  let categoryTagIds: string[] = [];
   try {
     const resolved = await resolveContactCategoryId(organizationId, {
       categoryId: mapped.categoryId,
       categoryName: mapped.categoryName,
     });
     categoryId = resolved === undefined ? null : resolved;
+    if (mapped.categoryTagIds) {
+      categoryTagIds = await resolveContactCategoryTagIds(
+        organizationId,
+        mapped.categoryTagIds,
+      );
+    }
   } catch (error) {
     handleContactWriteError(error);
   }
@@ -252,6 +290,7 @@ export async function createContact(
           contact.id,
           mapped.occasionDates,
         );
+        await applyContactCategoryTags(tx, contact.id, categoryId, categoryTagIds);
         return tx.contact.findUniqueOrThrow({
           where: { id: contact.id },
           include: contactWithCategory,
@@ -267,6 +306,7 @@ export async function createContact(
         contact.id,
         mapped.occasionDates,
       );
+      await applyContactCategoryTags(tx, contact.id, categoryId, categoryTagIds);
       return tx.contact.findUniqueOrThrow({
         where: { id: contact.id },
         include: contactWithCategory,
@@ -345,6 +385,18 @@ export async function updateContact(
     }
   }
 
+  let categoryTagIds: string[] | undefined;
+  if (mapped.categoryTagIds !== undefined) {
+    try {
+      categoryTagIds = await resolveContactCategoryTagIds(
+        organizationId,
+        mapped.categoryTagIds,
+      );
+    } catch (error) {
+      handleContactWriteError(error);
+    }
+  }
+
   try {
     return await prisma.$transaction(async (tx) => {
       await tx.contact.update({
@@ -368,6 +420,13 @@ export async function updateContact(
         organizationId,
         contactId,
         mapped.occasionDates,
+      );
+
+      await applyContactCategoryTags(
+        tx,
+        contactId,
+        categoryId !== undefined ? categoryId : existing.categoryId,
+        categoryTagIds,
       );
 
       return tx.contact.findUniqueOrThrow({

@@ -36,6 +36,8 @@ const contactMobileSchema = z
 
 const categoryIdSchema = z.string().trim().min(1).max(100);
 const categoryNameSchema = z.string().trim().min(1).max(50);
+/** Extra category ids beyond the primary categoryId/categoryName. */
+const categoryTagIdsSchema = z.array(categoryIdSchema).max(20).optional();
 
 const contactEmailSchema = z
   .string()
@@ -88,6 +90,7 @@ export const createContactSchema = z
     occasionDates: occasionDatesSchema.optional(),
     categoryId: categoryIdSchema.optional().nullable(),
     categoryName: categoryNameSchema.optional().nullable(),
+    categoryTagIds: categoryTagIdsSchema,
     address: z.string().trim().max(500).optional().nullable(),
     note: z.string().trim().max(1000).optional().nullable(),
     attributes: contactAttributesSchema,
@@ -112,6 +115,7 @@ export const updateContactSchema = z
     occasionDates: occasionDatesSchema.optional(),
     categoryId: categoryIdSchema.nullable().optional(),
     categoryName: categoryNameSchema.nullable().optional(),
+    categoryTagIds: categoryTagIdsSchema,
     address: z.string().trim().max(500).nullable().optional(),
     note: z.string().trim().max(1000).nullable().optional(),
     attributes: contactAttributesSchema.optional(),
