@@ -1,4 +1,4 @@
-import { QueueStatus } from "@prisma/client";
+import { QueueStatus, UserRole } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { createGeneratedDocument } from "@/lib/generated-documents/service";
@@ -97,4 +97,92 @@ export async function prepareQueueDocument(input: {
         : "Failed to generate personalized document",
     );
   }
+}
+
+/**
+ * Retry safety net: if a queue row's template requires a personalized PDF but
+ * the row never got one (the worker claimed it before preparation finished, or
+ * preparation was interrupted), generate it now so the retry can succeed
+ * instead of failing with DOCUMENT_NOT_READY again.
+ *
+ * Returns { ok: true } when the row needs no PDF or already has one, or one
+ * was just generated. Returns { ok: false, message } when it still has none;
+ * prepareQueueDocument has then recorded the reason on the row.
+ * Call OUTSIDE any DB transaction, like prepareQueueDocument.
+ */
+export async function ensureQueueDocumentForRetry(
+  organizationId: string,
+  sendQueueId: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const row = await prisma.sendQueue.findFirst({
+    where: { id: sendQueueId, organizationId },
+    select: {
+      generatedDocumentId: true,
+      contactId: true,
+      recipientName: true,
+      recipientEmail: true,
+      recipientMobile: true,
+      template: {
+        select: { includePersonalizedPdf: true, documentTemplateId: true },
+      },
+    },
+  });
+
+  if (!row || !row.template.includePersonalizedPdf || row.generatedDocumentId) {
+    return { ok: true };
+  }
+
+  const creator = await prisma.user.findFirst({
+    where: { organizationId, role: UserRole.ADMIN, isActive: true },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  if (!creator) {
+    const message = "No active organization admin is available to generate the PDF";
+    await markDocumentPreparationFailed(
+      sendQueueId,
+      "DOCUMENT_GENERATION_FAILED",
+      message,
+    );
+    return { ok: false, message };
+  }
+
+  const contact = row.contactId
+    ? await prisma.contact.findFirst({
+        where: { id: row.contactId, organizationId },
+        select: {
+          name: true,
+          email: true,
+          mobile: true,
+          address: true,
+          attributes: true,
+        },
+      })
+    : null;
+
+  await prepareQueueDocument({
+    organizationId,
+    sendQueueId,
+    createdByUserId: creator.id,
+    documentTemplateId: row.template.documentTemplateId,
+    contact: contact ?? {
+      name: row.recipientName,
+      email: row.recipientEmail,
+      mobile: row.recipientMobile,
+      address: null,
+      attributes: {},
+    },
+  });
+
+  const after = await prisma.sendQueue.findUnique({
+    where: { id: sendQueueId },
+    select: { generatedDocumentId: true, lastError: true },
+  });
+  if (after?.generatedDocumentId) {
+    return { ok: true };
+  }
+  return {
+    ok: false,
+    message: after?.lastError ?? "Could not prepare the personalized PDF",
+  };
 }

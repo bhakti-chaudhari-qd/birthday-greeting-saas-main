@@ -509,6 +509,115 @@ describe("Manual Send: personalized PDF delivery", () => {
     await cleanupOrganization(org.organization.id);
   });
 
+  it("prepares the missing PDF on Retry after a row failed with DOCUMENT_NOT_READY, then delivers it", async ({
+    skip,
+  }) => {
+    if (!databaseAvailable) skip();
+
+    const { org, birthday } = await setupManualSendEmailOrg();
+    const documentTemplate = await createDocumentTemplateFixture(
+      org.organization.id,
+      org.user.id,
+    );
+    const template = await createEmailTemplate(org.organization.id, birthday.id, {
+      includePersonalizedPdf: true,
+      documentTemplateId: documentTemplate.id,
+    });
+    const contact = await createContact(org.organization.id, {
+      name: "Bhakti",
+      mobile: uniqueMobile(),
+      email: uniqueEmail("contact"),
+      isActive: true,
+    });
+
+    await executeManualSend(
+      org.organization.id,
+      { templateId: template.id, contactIds: [contact.id] },
+      { createdByUserId: org.user.id },
+    );
+    const queue = await prisma.sendQueue.findFirstOrThrow({
+      where: { organizationId: org.organization.id, contactId: contact.id },
+    });
+
+    // Recreate the race: the worker failed the row before its PDF was attached.
+    await prisma.sendQueue.update({
+      where: { id: queue.id },
+      data: {
+        generatedDocumentId: null,
+        status: "FAILED",
+        lastError: "Personalized PDF has not been prepared for this delivery yet",
+        lastErrorCode: "DOCUMENT_NOT_READY",
+        attemptCount: 1,
+        nextAttemptAt: null,
+      },
+    });
+    await prisma.generatedDocument.deleteMany({
+      where: { organizationId: org.organization.id },
+    });
+
+    await scheduleQueueRetry(org.organization.id, queue.id);
+    const afterRetry = await prisma.sendQueue.findUniqueOrThrow({
+      where: { id: queue.id },
+    });
+    expect(afterRetry.generatedDocumentId).not.toBeNull();
+
+    const claimed = await claimQueueItemsForOrganization(org.organization.id);
+    expect(claimed.map((item) => item.id)).toContain(queue.id);
+    const result = await processClaimedQueueItem(org.organization.id, queue.id);
+    expect(result.status).toBe("sent");
+
+    await cleanupOrganization(org.organization.id);
+  });
+
+  it("refuses Retry with a clear reason when the PDF cannot be prepared (no document template)", async ({
+    skip,
+  }) => {
+    if (!databaseAvailable) skip();
+
+    const { org, birthday } = await setupManualSendEmailOrg();
+    const documentTemplate = await createDocumentTemplateFixture(
+      org.organization.id,
+      org.user.id,
+    );
+    const template = await createEmailTemplate(org.organization.id, birthday.id, {
+      includePersonalizedPdf: true,
+      documentTemplateId: documentTemplate.id,
+    });
+    const contact = await createContact(org.organization.id, {
+      name: "Bhakti",
+      mobile: uniqueMobile(),
+      email: uniqueEmail("contact"),
+      isActive: true,
+    });
+    await executeManualSend(
+      org.organization.id,
+      { templateId: template.id, contactIds: [contact.id] },
+      { createdByUserId: org.user.id },
+    );
+    const queue = await prisma.sendQueue.findFirstOrThrow({
+      where: { organizationId: org.organization.id, contactId: contact.id },
+    });
+    await prisma.sendQueue.update({
+      where: { id: queue.id },
+      data: {
+        generatedDocumentId: null,
+        status: "FAILED",
+        lastErrorCode: "DOCUMENT_NOT_READY",
+        nextAttemptAt: null,
+      },
+    });
+    await prisma.messageTemplate.update({
+      where: { id: template.id },
+      data: { documentTemplateId: null },
+    });
+
+    await expect(
+      scheduleQueueRetry(org.organization.id, queue.id),
+    ).rejects.toThrow(/no document template is configured/i);
+
+    await cleanupOrganization(org.organization.id);
+  });
+
   it("does not generate a second GeneratedDocument when the same clientOperationId is replayed", async ({
     skip,
   }) => {

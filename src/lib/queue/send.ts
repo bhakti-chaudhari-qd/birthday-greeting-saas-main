@@ -29,6 +29,7 @@ import { TemplateValidationError } from "@/lib/templates/errors";
 
 import { computeNextAttemptAt, type BackoffRandom } from "./backoff";
 import { classifySendFailure } from "./classify";
+import { ensureQueueDocumentForRetry } from "./document-preparation";
 import {
   AMBIGUOUS_PROVIDER_OUTCOME,
   AMBIGUOUS_PROVIDER_OUTCOME_MESSAGE,
@@ -993,6 +994,13 @@ export async function scheduleQueueRetry(
   if (isAmbiguous && input.confirmAmbiguousRetry !== true) {
     throw new QueueInvalidStateError(
       `${AMBIGUOUS_PROVIDER_OUTCOME_MESSAGE} Pass confirmAmbiguousRetry=true to acknowledge duplicate-send risk.`,
+    );
+  }
+
+  const document = await ensureQueueDocumentForRetry(organizationId, queue.id);
+  if (!document.ok) {
+    throw new QueueInvalidStateError(
+      `Could not prepare the personalized PDF for this delivery: ${document.message}`,
     );
   }
 
