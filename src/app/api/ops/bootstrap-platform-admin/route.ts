@@ -5,6 +5,7 @@ import { hash } from "bcryptjs";
 import { z } from "zod";
 
 import { jsonError } from "@/lib/api/response";
+import { lockAndCheckPrincipalEmail } from "@/lib/auth/principal-email";
 import { STRONG_PASSWORD_MESSAGE, isStrongPassword } from "@/lib/auth/password-policy";
 import { prisma } from "@/lib/db";
 
@@ -74,26 +75,47 @@ export async function POST(request: Request) {
     const name = parsed.data.name?.trim() || "Platform Admin";
     const passwordHash = await hash(password, 12);
 
-    const admin = await prisma.platformAdmin.upsert({
-      where: { email },
-      update: {
-        passwordHash,
-        name,
-        isActive: true,
-      },
-      create: {
-        email,
-        passwordHash,
-        name,
-        isActive: true,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        isActive: true,
-      },
+    const admin = await prisma.$transaction(async (tx) => {
+      const existing = await tx.platformAdmin.findUnique({
+        where: { email },
+        select: { id: true },
+      });
+
+      if (!existing) {
+        const principalEmail = await lockAndCheckPrincipalEmail(tx, email);
+        if (!principalEmail.available) {
+          return null;
+        }
+      }
+
+      return tx.platformAdmin.upsert({
+        where: { email },
+        update: {
+          passwordHash,
+          name,
+          isActive: true,
+        },
+        create: {
+          email,
+          passwordHash,
+          name,
+          isActive: true,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          isActive: true,
+        },
+      });
     });
+
+    if (!admin) {
+      return jsonError(
+        "This email is already used by an organization or vendor account",
+        409,
+      );
+    }
 
     return NextResponse.json({
       data: {

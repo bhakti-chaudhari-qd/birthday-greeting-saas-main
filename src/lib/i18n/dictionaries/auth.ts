@@ -21,6 +21,8 @@ export type AuthDict = {
     organizationNameLabel: string;
     ownerNameLabel: string;
     emailLabel: string;
+    mobileLabel: string;
+    mobilePlaceholder: string;
     passwordLabel: string;
     passwordHint: string;
     referralLabel: string;
@@ -80,6 +82,8 @@ const AUTH_DICT: Record<Locale, AuthDict> = {
       organizationNameLabel: "Organization name",
       ownerNameLabel: "Owner name",
       emailLabel: "Email",
+      mobileLabel: "Mobile number",
+      mobilePlaceholder: "10-digit mobile number",
       passwordLabel: "Password",
       passwordHint:
         "At least 10 characters, or 8+ with uppercase, lowercase, and a number.",
@@ -141,6 +145,8 @@ const AUTH_DICT: Record<Locale, AuthDict> = {
       organizationNameLabel: "संगठन का नाम",
       ownerNameLabel: "Owner का नाम",
       emailLabel: "ईमेल",
+      mobileLabel: "मोबाइल नंबर",
+      mobilePlaceholder: "10 अंकों का मोबाइल नंबर",
       passwordLabel: "पासवर्ड",
       passwordHint:
         "कम से कम 10 अक्षर, या 8+ के साथ बड़े-छोटे अक्षर और एक अंक।",
@@ -202,6 +208,8 @@ const AUTH_DICT: Record<Locale, AuthDict> = {
       organizationNameLabel: "संस्थेचे नाव",
       ownerNameLabel: "Owner चे नाव",
       emailLabel: "ईमेल",
+      mobileLabel: "मोबाइल नंबर",
+      mobilePlaceholder: "10 अंकी मोबाइल नंबर",
       passwordLabel: "पासवर्ड",
       passwordHint:
         "किमान 10 अक्षरे, किंवा 8+ सह मोठी-लहान अक्षरे आणि एक अंक.",

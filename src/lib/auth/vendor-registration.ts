@@ -8,6 +8,7 @@ import {
 
 import { hashPassword } from "@/lib/auth/password";
 import { lockAndCheckPrincipalEmail } from "@/lib/auth/principal-email";
+import { lockAndCheckPrincipalMobile } from "@/lib/auth/principal-mobile";
 import { normalizeMobile } from "@/lib/contacts/mobile";
 import { prisma } from "@/lib/db";
 import type { VendorRegistrationInput } from "@/lib/validation/auth";
@@ -209,11 +210,10 @@ export async function registerInvitedVendor(
         }
       }
 
-      const duplicateMobile = await tx.vendorUser.findFirst({
-        where: { mobile },
-        select: { id: true },
+      const principalMobile = await lockAndCheckPrincipalMobile(tx, mobile, {
+        ignoreVendorId: invite.vendor.id,
       });
-      if (duplicateMobile) {
+      if (!principalMobile.available) {
         throw new VendorRegistrationError(
           DUPLICATE_VENDOR_IDENTIFIER_MESSAGE,
           "CONFLICT",

@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   transaction: vi.fn(),
   createAuditEvent: vi.fn(),
   lockAndCheckPrincipalEmail: vi.fn(),
+  lockAndCheckPrincipalMobile: vi.fn(),
 }));
 
 const tx = {
@@ -39,6 +40,10 @@ vi.mock("@/lib/auth/password", () => ({
 
 vi.mock("@/lib/auth/principal-email", () => ({
   lockAndCheckPrincipalEmail: mocks.lockAndCheckPrincipalEmail,
+}));
+
+vi.mock("@/lib/auth/principal-mobile", () => ({
+  lockAndCheckPrincipalMobile: mocks.lockAndCheckPrincipalMobile,
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -91,6 +96,7 @@ describe("vendor registration service", () => {
     mocks.inviteFindFirst.mockResolvedValue(invite);
     mocks.inviteUpdateMany.mockResolvedValue({ count: 1 });
     mocks.vendorUserFindFirst.mockResolvedValue(null);
+    mocks.lockAndCheckPrincipalMobile.mockResolvedValue({ available: true });
     mocks.organizationUserFindFirst.mockResolvedValue(null);
     mocks.platformAdminFindFirst.mockResolvedValue(null);
     mocks.vendorUserCreate.mockResolvedValue({ id: "vendor-user-1" });

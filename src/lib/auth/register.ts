@@ -3,8 +3,10 @@ import { Prisma, UserRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
 import { lockAndCheckPrincipalEmail } from "@/lib/auth/principal-email";
+import { lockAndCheckPrincipalMobile } from "@/lib/auth/principal-mobile";
 import { createSession } from "@/lib/auth/session";
 import { ensureDefaultContactCategories } from "@/lib/contacts/categories";
+import { normalizeMobile } from "@/lib/contacts/mobile";
 import type { RegisterInput } from "@/lib/validation/auth";
 
 export class RegistrationError extends Error {
@@ -78,6 +80,17 @@ export async function createRegisteredOrganization(
     slugifyOrganizationName(input.organizationName);
   const timezone = input.timezone?.trim() || DEFAULT_ORGANIZATION_TIMEZONE;
   const referredByVendorId = options.referredByVendorId?.trim() || null;
+  let mobile: string | null = null;
+  if (input.mobile) {
+    try {
+      mobile = normalizeMobile(input.mobile);
+    } catch (error) {
+      throw new RegistrationError(
+        error instanceof Error ? error.message : "Invalid mobile number",
+        "VALIDATION",
+      );
+    }
+  }
 
   try {
     return await prisma.$transaction(async (tx) => {
@@ -88,6 +101,16 @@ export async function createRegisteredOrganization(
           "An account with this email already exists",
           "CONFLICT",
         );
+      }
+
+      if (mobile) {
+        const principalMobile = await lockAndCheckPrincipalMobile(tx, mobile);
+        if (!principalMobile.available) {
+          throw new RegistrationError(
+            "An account with this mobile number already exists",
+            "CONFLICT",
+          );
+        }
       }
 
       const organization = await tx.organization.create({
@@ -110,6 +133,7 @@ export async function createRegisteredOrganization(
         data: {
           organizationId: organization.id,
           email: principalEmail.normalizedEmail,
+          mobile,
           passwordHash,
           name: input.adminName,
           role: UserRole.ADMIN,
@@ -136,6 +160,13 @@ export async function createRegisteredOrganization(
       if (target.includes("slug")) {
         throw new RegistrationError(
           "An organization with this slug already exists",
+          "CONFLICT",
+        );
+      }
+
+      if (target.includes("mobile")) {
+        throw new RegistrationError(
+          "An account with this mobile number already exists",
           "CONFLICT",
         );
       }

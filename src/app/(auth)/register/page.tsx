@@ -39,6 +39,7 @@ function RegisterForm() {
           organizationName: formData.get("organizationName"),
           adminName: formData.get("adminName"),
           email: formData.get("email"),
+          mobile: formData.get("mobile"),
           password: formData.get("password"),
           referralCode: formData.get("referralCode") || undefined,
         }),
@@ -76,6 +77,13 @@ function RegisterForm() {
         <Field label={dict.organizationNameLabel} name="organizationName" required />
         <Field label={dict.ownerNameLabel} name="adminName" required />
         <Field label={dict.emailLabel} name="email" type="email" required />
+        <Field
+          label={dict.mobileLabel}
+          name="mobile"
+          type="tel"
+          required
+          placeholder={dict.mobilePlaceholder}
+        />
         <PasswordField
           label={dict.passwordLabel}
           name="password"
