@@ -20,8 +20,8 @@ export default async function AdminOrganizationsPage() {
   return (
     <PageShell wide>
       <PageHeader
-        title="Organizations"
-        description="All organizations on the platform. Open a row to manage status, plan, limits, and users."
+        title="Clients"
+        description="All clients on the platform. Open a row to manage status, plan, limits, and users."
       />
 
       <Panel>
@@ -29,7 +29,7 @@ export default async function AdminOrganizationsPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-stone-200 bg-stone-50 text-stone-600">
               <tr>
-                <th className="px-4 py-3 font-medium">Organization</th>
+                <th className="px-4 py-3 font-medium">Client</th>
                 <th className="px-4 py-3 font-medium">Vendor</th>
                 <th className="px-4 py-3 font-medium">Health</th>
                 <th className="px-4 py-3 font-medium">Messaging</th>
@@ -39,7 +39,7 @@ export default async function AdminOrganizationsPage() {
               {organizations.length === 0 ? (
                 <tr>
                   <td className="px-4 py-6 text-stone-500" colSpan={4}>
-                    No organizations yet.
+                    No clients yet.
                   </td>
                 </tr>
               ) : (

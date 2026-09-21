@@ -18,7 +18,7 @@ export default async function AdminUsagePage() {
     <PageShell wide>
       <PageHeader
         title="Usage"
-        description="Platform-wide delivery health, queue pressure, and tenants near their limits. No organization contact details are shown."
+        description="Platform-wide delivery health, queue pressure, and tenants near their limits. No client contact details are shown."
       />
 
       <PortalStatGrid
@@ -150,7 +150,7 @@ function LimitTable({
       <table className="min-w-full text-left text-sm">
         <thead className="border-b border-stone-200 bg-stone-50 text-stone-600">
           <tr>
-            <th className="px-4 py-3 font-medium">Organization</th>
+            <th className="px-4 py-3 font-medium">Client</th>
             <th className="px-4 py-3 font-medium">Usage</th>
             <th className="px-4 py-3 font-medium">Status</th>
           </tr>
@@ -159,7 +159,7 @@ function LimitTable({
           {rows.length === 0 ? (
             <tr>
               <td className="px-4 py-6 text-stone-500" colSpan={3}>
-                No organizations near this limit.
+                No clients near this limit.
               </td>
             </tr>
           ) : (

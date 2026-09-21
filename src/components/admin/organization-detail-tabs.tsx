@@ -65,7 +65,7 @@ export function OrganizationDetailTabs({
       <div
         className="flex flex-wrap gap-2"
         role="tablist"
-        aria-label="Organization detail"
+        aria-label="Client detail"
       >
         {TABS.map(({ key, label }) => (
           <button

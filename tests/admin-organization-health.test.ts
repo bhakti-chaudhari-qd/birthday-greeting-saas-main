@@ -92,7 +92,7 @@ describe("platform organization health", () => {
       }),
     ).toEqual({
       label: "INACTIVE",
-      reasons: ["Organization is inactive"],
+      reasons: ["Client is inactive"],
     });
 
     expect(

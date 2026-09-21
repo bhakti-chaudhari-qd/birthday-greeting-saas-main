@@ -54,7 +54,7 @@ export function deriveOrganizationHealth(input: {
   if (!input.isActive) {
     return {
       label: "INACTIVE",
-      reasons: ["Organization is inactive"],
+      reasons: ["Client is inactive"],
     };
   }
 

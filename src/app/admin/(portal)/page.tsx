@@ -43,10 +43,10 @@ export default async function AdminHomePage() {
     <PageShell wide>
       <PageHeader
         title="Overview"
-        description="Platform snapshot across all organizations. Organization workspaces stay separate from this portal."
+        description="Platform snapshot across all clients. Client workspaces stay separate from this portal."
         actions={
           <PrimaryButtonLink href="/admin/organizations">
-            View organizations
+            View clients
           </PrimaryButtonLink>
         }
       />
@@ -54,19 +54,19 @@ export default async function AdminHomePage() {
       <PortalStatGrid
         stats={[
           {
-            label: "Organizations",
+            label: "Clients",
             value: formatNumber(stats.organizationCount),
             hint: `${formatNumber(stats.activeOrganizationCount)} active · ${formatNumber(stats.inactiveOrganizationCount)} inactive`,
           },
           {
             label: "Users",
             value: formatNumber(stats.userCount),
-            hint: "Across all organizations",
+            hint: "Across all clients",
           },
           {
             label: "Contacts",
             value: formatNumber(stats.contactCount),
-            hint: "Stored in Organization portals",
+            hint: "Stored in Client portals",
           },
           {
             label: "Messages this month",
@@ -127,7 +127,7 @@ export default async function AdminHomePage() {
         <Panel className="p-5">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-sm font-semibold text-stone-900">
-              Organizations
+              Clients
             </h2>
             <Link
               href="/admin/organizations"
@@ -137,7 +137,7 @@ export default async function AdminHomePage() {
             </Link>
           </div>
           {preview.length === 0 ? (
-            <p className="mt-3 text-sm text-stone-500">No organizations yet.</p>
+            <p className="mt-3 text-sm text-stone-500">No clients yet.</p>
           ) : (
             <ul className="mt-3 space-y-2 text-sm">
               {preview.map((org) => (

@@ -25,7 +25,7 @@ const SAFE_FAILURE_REASONS: Record<string, string> = {
   PROVIDER_TIMEOUT: "The provider request timed out.",
   RATE_LIMITED: "The provider rate limit was reached.",
   SEND_VELOCITY_LIMIT:
-    "Organization send rate limit was reached; the worker will retry automatically.",
+    "Client send rate limit was reached; the worker will retry automatically.",
   SEND_FAILED: "Message delivery failed.",
   SUBMISSION_ERROR: "The provider did not accept the submission.",
   UNKNOWN_PROVIDER: "The configured provider is unsupported.",

@@ -81,7 +81,7 @@ export function PlanActivationForm({
     const activeLabel = getPlanDisplayLabel(active.plan, planLabels);
     const dealLabel = getPlanDisplayLabel(dealPlan, planLabels);
     return (
-      `This org already has an active ${activeLabel} plan until ${formatCustomerDateTime(active.paidUntil)}. ` +
+      `This client already has an active ${activeLabel} plan until ${formatCustomerDateTime(active.paidUntil)}. ` +
       `Once paid, this link will ${changingPlan ? `replace it with ${dealLabel}` : `renew it, extending access from ${formatCustomerDateTime(active.paidUntil)}`}.`
     );
   }
@@ -173,7 +173,7 @@ export function PlanActivationForm({
     const dealLabel = getPlanDisplayLabel(dealPlan, planLabels);
 
     return (
-      `This org already has an active ${activeLabel} plan until ${formatCustomerDateTime(active.paidUntil)}. ` +
+      `This client already has an active ${activeLabel} plan until ${formatCustomerDateTime(active.paidUntil)}. ` +
       `Activating ${dealLabel} will ${changingPlan ? "switch the plan and extend" : "extend"} access to ${formatCustomerDateTime(newPaidUntil)} ` +
       `and add ${amountLabel} to the outstanding balance.`
     );

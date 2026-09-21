@@ -54,13 +54,13 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
       );
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to save organization");
+        setError(payload.error?.message ?? "Failed to save client");
         return;
       }
-      setSuccess("Organization updated.");
+      setSuccess("Client updated.");
       router.refresh();
     } catch {
-      setError("Failed to save organization");
+      setError("Failed to save client");
     } finally {
       setSaving(false);
     }
@@ -74,7 +74,7 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
           checked={isActive}
           onChange={(event) => setIsActive(event.target.checked)}
         />
-        <span className="font-medium">Organization active</span>
+        <span className="font-medium">Client active</span>
       </label>
 
       <label className="flex items-center gap-2 text-sm text-stone-800">
@@ -107,12 +107,12 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
 
       <ConfirmDialog
         open={pendingDeactivateConfirm}
-        title="Deactivate organization?"
+        title="Deactivate client?"
         message={
           <>
             <strong>{organization.name}</strong> and everyone in it will
             immediately lose access. This can be undone later by re-activating
-            the organization.
+            the client.
           </>
         }
         confirmLabel="Deactivate"

@@ -282,7 +282,7 @@ export async function updateOrganizationForPlatformAdmin(
     });
 
     if (!existing) {
-      throw new PlatformAdminOrgError("Organization not found");
+      throw new PlatformAdminOrgError("Client not found");
     }
 
     const before: PlatformAdminAuditValues = {};
@@ -345,7 +345,7 @@ export async function updateOrganizationForPlatformAdmin(
 
   const updated = await getOrganizationForPlatformAdmin(organizationId);
   if (!updated) {
-    throw new PlatformAdminOrgError("Organization not found after update");
+    throw new PlatformAdminOrgError("Client not found after update");
   }
   return updated;
 }
@@ -366,7 +366,7 @@ export async function activatePlanForPlatformAdmin(
     },
   });
   if (!organization) {
-    throw new PlatformAdminOrgError("Organization not found");
+    throw new PlatformAdminOrgError("Client not found");
   }
 
   const existing = organization.subscription;
@@ -379,7 +379,7 @@ export async function activatePlanForPlatformAdmin(
 
   if (hasActiveUnexpiredPlan && input.confirmRenewal !== true) {
     throw new ActivePlanRenewalConfirmationRequiredError(
-      `This organization already has an active ${existing!.plan} plan until ${existing!.paidUntil!.toISOString()}. Pass confirmRenewal=true to acknowledge activating ${input.plan} for it.`,
+      `This client already has an active ${existing!.plan} plan until ${existing!.paidUntil!.toISOString()}. Pass confirmRenewal=true to acknowledge activating ${input.plan} for it.`,
     );
   }
 
@@ -410,7 +410,7 @@ export async function activatePlanForPlatformAdmin(
 
   const updated = await getOrganizationForPlatformAdmin(organizationId);
   if (!updated) {
-    throw new PlatformAdminOrgError("Organization not found after activation");
+    throw new PlatformAdminOrgError("Client not found after activation");
   }
   return updated;
 }
@@ -426,7 +426,7 @@ export async function recordPlanPaymentForPlatformAdmin(
     select: { id: true },
   });
   if (!organization) {
-    throw new PlatformAdminOrgError("Organization not found");
+    throw new PlatformAdminOrgError("Client not found");
   }
 
   const payment = await recordPlanPayment(
@@ -447,7 +447,7 @@ export async function recordPlanPaymentForPlatformAdmin(
 
   const updated = await getOrganizationForPlatformAdmin(organizationId);
   if (!updated) {
-    throw new PlatformAdminOrgError("Organization not found after payment");
+    throw new PlatformAdminOrgError("Client not found after payment");
   }
   return updated;
 }
@@ -467,7 +467,7 @@ export async function topUpCustomPlanChannelForPlatformAdmin(
     select: { id: true },
   });
   if (!organization) {
-    throw new PlatformAdminOrgError("Organization not found");
+    throw new PlatformAdminOrgError("Client not found");
   }
 
   const { topUp } = await topUpCustomPlanChannel({
@@ -494,7 +494,7 @@ export async function topUpCustomPlanChannelForPlatformAdmin(
 
   const updated = await getOrganizationForPlatformAdmin(organizationId);
   if (!updated) {
-    throw new PlatformAdminOrgError("Organization not found after top-up");
+    throw new PlatformAdminOrgError("Client not found after top-up");
   }
   return updated;
 }
@@ -522,7 +522,7 @@ export async function setOrganizationUserActiveForPlatformAdmin(input: {
     });
 
     if (!user) {
-      throw new PlatformAdminOrgError("User not found in this organization");
+      throw new PlatformAdminOrgError("User not found in this client");
     }
 
     if (user.isActive === input.isActive) {
@@ -591,11 +591,11 @@ export async function sendOrganizationUserPasswordResetForPlatformAdmin(input: {
   });
 
   if (!user) {
-    throw new PlatformAdminOrgError("User not found in this organization");
+    throw new PlatformAdminOrgError("User not found in this client");
   }
 
   if (!user.organization.isActive) {
-    throw new PlatformAdminOrgInactiveError("Organization is inactive");
+    throw new PlatformAdminOrgInactiveError("Client is inactive");
   }
 
   if (!user.isActive) {

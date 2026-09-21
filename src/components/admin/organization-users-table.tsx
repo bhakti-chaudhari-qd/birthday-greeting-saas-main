@@ -112,7 +112,7 @@ export function OrganizationUsersTable({
           {users.length === 0 ? (
             <tr>
               <td className="px-4 py-6 text-stone-500" colSpan={5}>
-                No users in this organization.
+                No users in this client.
               </td>
             </tr>
           ) : (
@@ -174,7 +174,7 @@ export function OrganizationUsersTable({
           pendingDeactivate ? (
             <>
               <strong>{pendingDeactivate.name}</strong> ({pendingDeactivate.email})
-              will immediately lose access to this organization. They can be
+              will immediately lose access to this client. They can be
               reactivated later.
             </>
           ) : null

@@ -58,7 +58,7 @@ export default async function AdminOrganizationDetailPage({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-sm font-semibold text-stone-900">
-              Organization health
+              Client health
             </h2>
             <ul className="mt-2 space-y-1 text-sm text-stone-600">
               {organization.health.reasons.map((reason) => (
@@ -123,7 +123,7 @@ export default async function AdminOrganizationDetailPage({
       <Panel>
         <div className="border-b border-stone-200 px-5 py-3 sm:px-6">
           <h2 className="text-sm font-semibold text-stone-900">
-            Organization settings
+            Client settings
           </h2>
           <p className="mt-0.5 text-sm text-stone-600">
             Active/inactive, live Custom HTTP approval, and timezone. Not
@@ -242,7 +242,7 @@ export default async function AdminOrganizationDetailPage({
             Recent Platform Admin activity
           </h2>
           <p className="mt-0.5 text-sm text-stone-600">
-            Security-relevant changes recorded for this organization.
+            Security-relevant changes recorded for this client.
           </p>
         </div>
         {recentActivity.length === 0 ? (
@@ -291,7 +291,7 @@ export default async function AdminOrganizationDetailPage({
       <div className="border-b border-stone-200 px-5 py-3 sm:px-6">
         <h2 className="text-sm font-semibold text-stone-900">Users</h2>
         <p className="mt-0.5 text-sm text-stone-600">
-          Activate or deactivate organization users (Owner / Staff).
+          Activate or deactivate client users (Owner / Staff).
         </p>
       </div>
       <OrganizationUsersTable

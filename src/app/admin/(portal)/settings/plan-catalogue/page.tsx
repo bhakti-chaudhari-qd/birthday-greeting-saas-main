@@ -16,7 +16,7 @@ export default async function AdminPlanCataloguePage() {
       <Panel>
         <div className="border-b border-stone-200 px-5 py-3 sm:px-6">
           <p className="text-sm text-stone-600">
-            Changes apply going forward only — organizations already on
+            Changes apply going forward only — clients already on
             STARTER or PRO keep their existing contact/message limits
             unchanged. If <code>RAZORPAY_PLAN_STARTER</code>/
             <code>RAZORPAY_PLAN_PRO</code> is configured, that pinned
