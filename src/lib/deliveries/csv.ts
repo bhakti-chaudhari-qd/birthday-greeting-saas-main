@@ -1,4 +1,6 @@
 import { escapeCsvField } from "@/lib/contacts/csv";
+import type { Locale } from "@/lib/i18n/constants";
+import { getCsvHeaders } from "@/lib/i18n/dictionaries/csv-headers";
 import {
   getCustomerDeliveryStatusLabel,
   getCustomerSmsProviderLabel,
@@ -34,8 +36,12 @@ function providerLabel(channel: string, provider: string | null): string {
 
 export function serializeDeliveriesToCsv(
   deliveries: SerializedDelivery[],
+  locale: Locale = "en",
 ): string {
-  const lines = [DELIVERY_CSV_HEADERS.join(",")];
+  const labels = getCsvHeaders(locale).deliveries;
+  const lines = [
+    DELIVERY_CSV_HEADERS.map((header) => escapeCsvField(labels[header])).join(","),
+  ];
 
   for (const delivery of deliveries) {
     lines.push(

@@ -7,6 +7,8 @@ import {
   MAX_CONTACT_EXPORT_ROWS,
   serializeContactsToCsv,
 } from "./csv";
+import type { Locale } from "@/lib/i18n/constants";
+
 import { buildContactListWhere, serializeContact } from "./serialize";
 
 export type ContactExportQuery = Pick<
@@ -19,6 +21,7 @@ export type ContactExportQuery = Pick<
 export async function exportContactsCsv(
   organizationId: string,
   query: ContactExportQuery,
+  locale: Locale = "en",
 ): Promise<{
   csv: string;
   total: number;
@@ -65,6 +68,7 @@ export async function exportContactsCsv(
       contacts.map(serializeContact),
       attributeFields,
       occasions,
+      locale,
     ),
     total,
     truncated: Boolean(nextCursor),
@@ -75,6 +79,7 @@ export async function exportContactsCsv(
 export async function exportContactsCsvByIds(
   organizationId: string,
   ids: string[],
+  locale: Locale = "en",
 ): Promise<{ csv: string; total: number; truncated: boolean }> {
   const uniqueIds = [...new Set(ids)];
   const where = {
@@ -104,6 +109,7 @@ export async function exportContactsCsvByIds(
       contacts.map(serializeContact),
       attributeFields,
       occasions,
+      locale,
     ),
     total,
     truncated: total > MAX_CONTACT_EXPORT_ROWS,

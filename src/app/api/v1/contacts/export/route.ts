@@ -13,6 +13,7 @@ import {
 import { bulkContactIdsSchema } from "@/lib/validation/contact";
 import { exportContactsQuerySchema } from "@/lib/validation/contact-csv";
 import { withUtf8Bom } from "@/lib/csv-response";
+import { getRequestLocale } from "@/lib/i18n/request-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,11 @@ export async function GET(request: Request) {
       cursor: searchParams.get("cursor") ?? undefined,
     });
 
-    const result = await exportContactsCsv(auth.organizationId, query);
+    const result = await exportContactsCsv(
+      auth.organizationId,
+      query,
+      getRequestLocale(request),
+    );
 
     const headers = new Headers({
       "Content-Type": "text/csv; charset=utf-8",
@@ -63,7 +68,11 @@ export async function POST(request: Request) {
     const auth = await requireSessionAdmin();
     const body = await request.json();
     const input = bulkContactIdsSchema.parse(body);
-    const result = await exportContactsCsvByIds(auth.organizationId, input.ids);
+    const result = await exportContactsCsvByIds(
+      auth.organizationId,
+      input.ids,
+      getRequestLocale(request),
+    );
 
     const headers = new Headers({
       "Content-Type": "text/csv; charset=utf-8",

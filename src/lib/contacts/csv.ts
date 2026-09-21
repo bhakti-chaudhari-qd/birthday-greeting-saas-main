@@ -4,6 +4,9 @@ import {
 } from "@/lib/validation/contact";
 import { ZodError } from "zod";
 
+import type { Locale } from "@/lib/i18n/constants";
+import { getCsvHeaders } from "@/lib/i18n/dictionaries/csv-headers";
+
 import type { SerializedContact } from "./serialize";
 
 export const CONTACT_CSV_HEADERS = [
@@ -81,6 +84,16 @@ const HEADER_ALIASES: Record<string, ContactCsvHeader> = {
   is_active: "isActive",
   active: "isActive",
 };
+
+// Hindi/Marathi column headings written by localized exports must map back to
+// the same fields when the file is re-imported.
+for (const locale of ["hi", "mr"] as const) {
+  for (const [header, label] of Object.entries(
+    getCsvHeaders(locale).contacts,
+  )) {
+    HEADER_ALIASES[normalizeCsvHeaderKey(label)] = header as ContactCsvHeader;
+  }
+}
 
 function detectCsvDelimiter(text: string): "," | "\t" {
   const firstDataLine =
@@ -179,9 +192,11 @@ export function stripCsvDateFormatHint(header: string): string {
 
 export function buildContactCsvTemplate(
   occasions: Array<{ name: string }> = [],
+  locale: Locale = "en",
 ): string {
+  const labels = getCsvHeaders(locale).contacts;
   return `${[
-    ...CONTACT_CSV_HEADERS,
+    ...CONTACT_CSV_HEADERS.map((header) => labels[header]),
     ...occasions.map((occasion) => `${occasion.name} (DD-MM-YYYY)`),
   ].map(escapeCsvField).join(",")}\n`;
 }
@@ -203,9 +218,11 @@ export function serializeContactsToCsv(
   >,
   attributeFields: Array<{ key: string; label: string }> = [],
   occasions: Array<{ id: string; name: string }> = [],
+  locale: Locale = "en",
 ): string {
+  const labels = getCsvHeaders(locale).contacts;
   const headers = [
-    ...CONTACT_CSV_HEADERS,
+    ...CONTACT_CSV_HEADERS.map((header) => labels[header]),
     ...occasions.map((occasion) => occasion.name),
     ...attributeFields.map((field) => field.label),
   ];
@@ -247,7 +264,7 @@ export function normalizeCsvHeaderKey(raw: string): string {
   const stripped = stripCsvDateFormatHint(raw)
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/[^a-z0-9\u0900-\u097f]+/g, " ")
     .trim();
   return stripped.replace(/\s+/g, "");
 }
@@ -256,7 +273,7 @@ export function resolveContactCsvHeader(raw: string): ContactCsvHeader | null {
   const stripped = stripCsvDateFormatHint(raw)
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/[^a-z0-9\u0900-\u097f]+/g, " ")
     .trim();
   const key = normalizeCsvHeaderKey(raw);
   const underscored = stripped.replace(/\s+/g, "_");

@@ -3,6 +3,8 @@ import { QueueStatus } from "@prisma/client";
 import { getActivityUpcoming } from "@/lib/activity/upcoming";
 import { AUTOMATION_TIMEZONE } from "@/lib/automation/constants";
 import { escapeCsvField } from "@/lib/contacts/csv";
+import type { Locale } from "@/lib/i18n/constants";
+import { getCsvHeaders } from "@/lib/i18n/dictionaries/csv-headers";
 import { exportDeliveriesCsv } from "@/lib/deliveries/export";
 import {
   buildDeliveryListWhere,
@@ -61,8 +63,12 @@ const FAILED_CSV_HEADERS = [
 
 function exportUpcomingCsv(
   items: Awaited<ReturnType<typeof getActivityUpcoming>>["items"],
+  locale: Locale,
 ): string {
-  const lines = [UPCOMING_CSV_HEADERS.join(",")];
+  const labels = getCsvHeaders(locale).activityUpcoming;
+  const lines = [
+    UPCOMING_CSV_HEADERS.map((header) => escapeCsvField(labels[header])).join(","),
+  ];
   const rows = items.slice(0, MAX_ACTIVITY_EXPORT_ROWS);
 
   for (const item of rows) {
@@ -87,6 +93,7 @@ function exportUpcomingCsv(
 async function exportFailedCsv(
   organizationId: string,
   query: ExportActivityQuery,
+  locale: Locale,
 ): Promise<{ csv: string; total: number; truncated: boolean }> {
   const queueWhere = buildQueueListWhere(organizationId, {
     search: query.search,
@@ -150,7 +157,10 @@ async function exportFailedCsv(
       }),
     ]);
 
-  const lines = [FAILED_CSV_HEADERS.join(",")];
+  const failedLabels = getCsvHeaders(locale).activityFailed;
+  const lines = [
+    FAILED_CSV_HEADERS.map((header) => escapeCsvField(failedLabels[header])).join(","),
+  ];
   let rowCount = 0;
 
   for (const item of queueItems.map(serializeQueueItem)) {
@@ -208,6 +218,7 @@ async function exportFailedCsv(
 export async function exportActivityCsv(
   organizationId: string,
   query: ExportActivityQuery,
+  locale: Locale = "en",
 ): Promise<{ csv: string; total: number; truncated: boolean; filename: string }> {
   if (query.tab === "sent") {
     const result = await exportDeliveriesCsv(organizationId, {
@@ -218,7 +229,7 @@ export async function exportActivityCsv(
       scheduledDateFrom: query.startDate,
       scheduledDateTo: query.endDate,
       outcome: "sent",
-    });
+    }, locale);
     return {
       ...result,
       filename: "activity-submitted.csv",
@@ -226,7 +237,7 @@ export async function exportActivityCsv(
   }
 
   if (query.tab === "failed") {
-    const result = await exportFailedCsv(organizationId, query);
+    const result = await exportFailedCsv(organizationId, query, locale);
     return {
       ...result,
       filename: "activity-failed.csv",
@@ -255,7 +266,7 @@ export async function exportActivityCsv(
   const upcomingTotal = dayResults.reduce((sum, result) => sum + result.meta.total, 0);
 
   return {
-    csv: exportUpcomingCsv(upcomingItems),
+    csv: exportUpcomingCsv(upcomingItems, locale),
     total: upcomingTotal,
     truncated: upcomingItems.length > MAX_ACTIVITY_EXPORT_ROWS,
     filename: "activity-upcoming.csv",

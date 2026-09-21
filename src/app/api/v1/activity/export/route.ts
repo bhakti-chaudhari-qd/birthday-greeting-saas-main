@@ -9,6 +9,7 @@ import { jsonError } from "@/lib/api/response";
 import { exportActivityCsv } from "@/lib/activity/export";
 import { exportActivityQuerySchema } from "@/lib/validation/activity-export";
 import { withUtf8Bom } from "@/lib/csv-response";
+import { getRequestLocale } from "@/lib/i18n/request-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,11 @@ export async function GET(request: Request) {
       endDate: searchParams.get("endDate") ?? undefined,
     });
 
-    const result = await exportActivityCsv(auth.organizationId, query);
+    const result = await exportActivityCsv(
+      auth.organizationId,
+      query,
+      getRequestLocale(request),
+    );
 
     const headers = new Headers({
       "Content-Type": "text/csv; charset=utf-8",

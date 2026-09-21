@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import type { Locale } from "@/lib/i18n/constants";
 import type { ExportDeliveriesQuery } from "@/lib/validation/send";
 
 import {
@@ -13,6 +14,7 @@ export async function exportDeliveriesCsv(
     scheduledDateFrom?: string;
     scheduledDateTo?: string;
   },
+  locale: Locale = "en",
 ): Promise<{ csv: string; total: number; truncated: boolean }> {
   const where = buildDeliveryListWhere(organizationId, query);
 
@@ -41,7 +43,7 @@ export async function exportDeliveriesCsv(
   });
 
   return {
-    csv: serializeDeliveriesToCsv(logs.map(serializeDeliveryLog)),
+    csv: serializeDeliveriesToCsv(logs.map(serializeDeliveryLog), locale),
     total,
     truncated: total > MAX_DELIVERY_EXPORT_ROWS,
   };

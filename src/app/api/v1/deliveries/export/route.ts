@@ -9,6 +9,7 @@ import { jsonError } from "@/lib/api/response";
 import { exportDeliveriesCsv } from "@/lib/deliveries/export";
 import { exportDeliveriesQuerySchema } from "@/lib/validation/send";
 import { withUtf8Bom } from "@/lib/csv-response";
+import { getRequestLocale } from "@/lib/i18n/request-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,11 @@ export async function GET(request: Request) {
       scheduledDate: searchParams.get("scheduledDate") ?? undefined,
     });
 
-    const result = await exportDeliveriesCsv(auth.organizationId, query);
+    const result = await exportDeliveriesCsv(
+      auth.organizationId,
+      query,
+      getRequestLocale(request),
+    );
 
     const headers = new Headers({
       "Content-Type": "text/csv; charset=utf-8",
