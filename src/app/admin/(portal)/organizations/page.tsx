@@ -1,7 +1,12 @@
 import Link from "next/link";
 
 import { StatusBadge } from "@/components/ui/feedback";
-import { PageHeader, PageShell, Panel } from "@/components/ui/page";
+import {
+  PageHeader,
+  PageShell,
+  Panel,
+  PrimaryButtonLink,
+} from "@/components/ui/page";
 import { listOrganizationsForPlatformAdmin } from "@/lib/admin/organizations";
 import { listPlanCatalogueEntriesForPlatformAdmin } from "@/lib/admin/plan-catalogue-ops";
 import { getPlanDisplayLabel, type PlanLabelMap } from "@/lib/billing/catalogue";
@@ -22,6 +27,11 @@ export default async function AdminOrganizationsPage() {
       <PageHeader
         title="Clients"
         description="All clients on the platform. Open a row to manage status, plan, limits, and users."
+        actions={
+          <PrimaryButtonLink href="/admin/organizations/new">
+            Add client
+          </PrimaryButtonLink>
+        }
       />
 
       <Panel>
