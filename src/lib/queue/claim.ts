@@ -9,6 +9,7 @@ import {
 import { RETRYABLE_ERROR_CODES } from "./classify";
 import {
   AMBIGUOUS_PROVIDER_OUTCOME,
+  DOCUMENT_PREPARATION_GRACE_MS,
   MAX_SEND_ATTEMPTS,
   QUEUE_LEASE_DURATION_MS,
   USAGE_PERIOD_TIMEZONE,
@@ -20,6 +21,28 @@ export type ClaimedQueueRow = {
   id: string;
   organizationId: string;
 };
+
+/**
+ * Excludes rows still waiting for their personalized PDF (see
+ * DOCUMENT_PREPARATION_GRACE_MS). `alias` is the SendQueue alias in scope.
+ */
+function notAwaitingDocumentSql(alias: string, now: Date) {
+  const graceCutoffSql = utcTimestampSql(
+    new Date(now.getTime() - DOCUMENT_PREPARATION_GRACE_MS),
+  );
+  const col = (name: string) => Prisma.raw(`${alias}."${name}"`);
+
+  return Prisma.sql`
+    AND NOT (
+      ${col("generatedDocumentId")} IS NULL
+      AND ${col("createdAt")} > ${graceCutoffSql}
+      AND EXISTS (
+        SELECT 1 FROM "MessageTemplate" mt
+        WHERE mt.id = ${col("templateId")}
+          AND mt."includePersonalizedPdf" = true
+      )
+    )`;
+}
 
 function buildRetryableCodeList() {
   return RETRYABLE_ERROR_CODES.map((code) => Prisma.sql`${code}`);
@@ -57,6 +80,7 @@ export async function listOrganizationsWithClaimableWork(
           sq.status = CAST(${QueueStatus.PENDING} AS "QueueStatus")
           AND sq."scheduledDate" <= ${scheduledSql}
           AND (sq."nextAttemptAt" IS NULL OR sq."nextAttemptAt" <= ${nowSql})
+          ${notAwaitingDocumentSql("sq", now)}
         )
         OR (
           sq.status = CAST(${QueueStatus.FAILED} AS "QueueStatus")
@@ -126,26 +150,27 @@ export async function claimQueueItemsForOrganization(
         "nextAttemptAt" = NULL,
         "updatedAt" = ${nowSql}
       WHERE sq.id IN (
-        SELECT id
-        FROM "SendQueue"
-        WHERE "organizationId" = ${organizationId}
+        SELECT cand.id
+        FROM "SendQueue" cand
+        WHERE cand."organizationId" = ${organizationId}
           AND (
             (
-              status = CAST(${QueueStatus.PENDING} AS "QueueStatus")
-              AND "scheduledDate" <= ${scheduledSql}
-              AND ("nextAttemptAt" IS NULL OR "nextAttemptAt" <= ${nowSql})
+              cand.status = CAST(${QueueStatus.PENDING} AS "QueueStatus")
+              AND cand."scheduledDate" <= ${scheduledSql}
+              AND (cand."nextAttemptAt" IS NULL OR cand."nextAttemptAt" <= ${nowSql})
+              ${notAwaitingDocumentSql("cand", now)}
             )
             OR (
-              status = CAST(${QueueStatus.FAILED} AS "QueueStatus")
-              AND "attemptCount" < ${MAX_SEND_ATTEMPTS}
-              AND ("nextAttemptAt" IS NULL OR "nextAttemptAt" <= ${nowSql})
+              cand.status = CAST(${QueueStatus.FAILED} AS "QueueStatus")
+              AND cand."attemptCount" < ${MAX_SEND_ATTEMPTS}
+              AND (cand."nextAttemptAt" IS NULL OR cand."nextAttemptAt" <= ${nowSql})
               AND (
-                "lastErrorCode" IS NULL
-                OR "lastErrorCode" IN (${Prisma.join(retryableCodes)})
+                cand."lastErrorCode" IS NULL
+                OR cand."lastErrorCode" IN (${Prisma.join(retryableCodes)})
               )
             )
           )
-        ORDER BY "createdAt" ASC, id ASC
+        ORDER BY cand."createdAt" ASC, cand.id ASC
         LIMIT ${limit}
         FOR UPDATE SKIP LOCKED
       )

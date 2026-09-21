@@ -46,6 +46,14 @@ export const AMBIGUOUS_PROVIDER_OUTCOME_MESSAGE =
 
 export const TEST_PROVIDER_FAIL_MOBILE_SUFFIX = "000001";
 
+/**
+ * A PENDING row whose template needs a personalized PDF is not claimable until
+ * the PDF is attached, for this long after creation. Covers the gap between
+ * the row being saved and its PDF finishing generation; past it the row is
+ * claimed anyway and fails visibly (DOCUMENT_NOT_READY) if the PDF never came.
+ */
+export const DOCUMENT_PREPARATION_GRACE_MS = 10 * 60 * 1000;
+
 /** PENDING rows older than this with a due nextAttemptAt are treated as stuck. */
 export const STUCK_PENDING_THRESHOLD_MS = 15 * 60 * 1000;
 
