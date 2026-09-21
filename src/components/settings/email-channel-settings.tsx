@@ -21,6 +21,7 @@ type EmailChannelConfigView = {
   fromName?: string;
   createdAt?: string;
   updatedAt?: string;
+  platformDefaultFrom?: string | null;
 };
 
 type FormState = {
@@ -206,7 +207,9 @@ export function EmailChannelSettings() {
                   ? `Configured · ${getCustomerEmailProviderLabel(config.provider)} · ${
                       config.isActive ? "active" : "inactive"
                     }`
-                  : "Not configured - Email will use the platform default sender"}
+                  : config?.platformDefaultFrom
+                    ? `Not configured - Email is sent from the platform default sender (${config.platformDefaultFrom}). Add your own Resend details to send from your own address.`
+                    : "Not configured - Email is unavailable until you add your Resend details"}
               </p>
               {config?.provider === "RESEND" && config.fromEmail ? (
                 <p className="mt-1 break-all text-xs text-stone-500">

@@ -16,6 +16,7 @@ import {
   ChannelConfigValidationError,
   ChannelConfigVerificationError,
 } from "./errors";
+import { getPlatformDefaultSmsConfig } from "./platform-defaults";
 import { buildSmsHttpSettings, resolveSmsProviderConfig } from "./resolve";
 import {
   serializeSmsChannelConfig,
@@ -168,7 +169,11 @@ export async function getSmsChannelConfig(
   organizationId: string,
 ): Promise<SafeSmsChannelConfigView> {
   const config = await getTenantSmsChannelConfig(organizationId);
-  return serializeSmsChannelConfig(config);
+  const view = serializeSmsChannelConfig(config);
+  if (!config && (await getPlatformDefaultSmsConfig(organizationId))) {
+    return { ...view, usingPlatformDefault: true };
+  }
+  return view;
 }
 
 export async function upsertSmsChannelConfig(

@@ -6,6 +6,7 @@ import {
   isEncryptedCredentials,
 } from "@/lib/crypto/credentials";
 import { prisma } from "@/lib/db";
+import { getPlatformFromAddress } from "@/lib/email/platform-from";
 import type { EmailChannelConfigWriteInput } from "@/lib/validation/email-channel-config";
 
 import { ChannelConfigValidationError } from "./errors";
@@ -105,7 +106,16 @@ export async function getEmailChannelConfig(
   organizationId: string,
 ): Promise<SafeEmailChannelConfigView> {
   const config = await getTenantEmailChannelConfig(organizationId);
-  return serializeEmailChannelConfig(config);
+  const view = serializeEmailChannelConfig(config);
+  if (config) {
+    return view;
+  }
+  return {
+    ...view,
+    platformDefaultFrom: process.env.RESEND_API_KEY?.trim()
+      ? getPlatformFromAddress()
+      : null,
+  };
 }
 
 export async function upsertEmailChannelConfig(

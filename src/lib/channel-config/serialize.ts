@@ -25,6 +25,8 @@ export type SafeSmsChannelConfigView = {
   verificationSupported: boolean;
   /** Live wallet lookup is available for Custom HTTP SMS providers. */
   walletBalanceSupported: boolean;
+  /** True when the client has no gateway of its own and sends through the platform default. */
+  usingPlatformDefault?: boolean;
 };
 
 function safeUsernameFromConfig(config: ChannelConfig): string | undefined {

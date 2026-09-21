@@ -302,7 +302,10 @@ export async function getDashboardHomeSummary(
 
   const { rows: runningAutomations, nextRunLabel } = automationState;
 
-  const smsConnected = Boolean(smsChannel?.configured && smsChannel.isActive);
+  const smsConnected = Boolean(
+    (smsChannel?.configured && smsChannel.isActive) ||
+    smsChannel?.usingPlatformDefault,
+  );
   const whatsappConnected = Boolean(
     whatsappChannel?.configured && whatsappChannel.isActive,
   );

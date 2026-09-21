@@ -14,6 +14,8 @@ export type SafeEmailChannelConfigView = {
   fromName?: string;
   createdAt?: string;
   updatedAt?: string;
+  /** Sender used when the client has no config of its own; null when the platform has no email sender set up. */
+  platformDefaultFrom?: string | null;
 };
 
 function safeCredentialSummaryFromConfig(config: ChannelConfig): {

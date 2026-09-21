@@ -10,6 +10,7 @@ import {
 } from "@prisma/client";
 
 import { normalizeMobile } from "@/lib/contacts/mobile";
+import { getEffectiveChannelConfig } from "@/lib/channel-config/platform-defaults";
 import { prisma } from "@/lib/db";
 import { resolveWhatsAppMediaAssetIdForSend } from "@/lib/media/resolve-whatsapp-send-media";
 import { TemplateRenderError } from "@/lib/templates/errors";
@@ -125,13 +126,7 @@ async function loadChannelConfig(
   organizationId: string,
   channel: Channel,
 ): Promise<ChannelConfig | null> {
-  return prisma.channelConfig.findFirst({
-    where: {
-      organizationId,
-      channel,
-      isActive: true,
-    },
-  });
+  return getEffectiveChannelConfig(organizationId, channel);
 }
 
 async function loadManualSendTemplate(

@@ -4,6 +4,7 @@ import { getMessageProvider, isDeliveryStatusCapable } from "@/lib/messaging/pro
 import { DeliveryStatusLookupError } from "@/lib/messaging/providers/types";
 import type { ProviderDeliveryOutcome } from "@/lib/messaging/providers/types";
 import type { ProviderDeliveryStatusResult } from "@/lib/messaging/providers/types";
+import { getEffectiveChannelConfig } from "@/lib/channel-config/platform-defaults";
 import { prisma } from "@/lib/db";
 import { getOrganizationLocalIsoDate } from "@/lib/queue/dates";
 
@@ -324,13 +325,10 @@ export async function refreshDeliveryStatus(
     });
   }
 
-  const channelConfig = await prisma.channelConfig.findFirst({
-    where: {
-      organizationId,
-      channel: log.sendQueue.channel,
-      isActive: true,
-    },
-  });
+  const channelConfig = await getEffectiveChannelConfig(
+    organizationId,
+    log.sendQueue.channel,
+  );
 
   const provider = getMessageProvider(channelConfig, log.sendQueue.channel);
 

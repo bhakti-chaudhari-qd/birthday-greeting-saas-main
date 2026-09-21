@@ -6,6 +6,7 @@ import {
 import { resolveAutomationCreatesPerRun } from "@/lib/automation/caps";
 import type { ActiveCategoryChannelRule } from "@/lib/automation/category-settings";
 import { listActiveCategoryChannelRules } from "@/lib/automation/category-settings";
+import { getEffectiveChannelConfig } from "@/lib/channel-config/platform-defaults";
 import { prisma } from "@/lib/db";
 import type { QueueGenerationSummary } from "@/lib/queue/generate";
 import {
@@ -93,9 +94,7 @@ async function assertChannelEligible(
     return;
   }
 
-  const channelConfig = await prisma.channelConfig.findFirst({
-    where: { organizationId, channel, isActive: true },
-  });
+  const channelConfig = await getEffectiveChannelConfig(organizationId, channel);
 
   if (channel === Channel.WHATSAPP) {
     assertWhatsAppTemplateEligibleForManualSend(template, channelConfig);

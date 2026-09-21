@@ -29,6 +29,7 @@ type SmsChannelConfigView = {
   updatedAt?: string;
   verificationSupported: boolean;
   walletBalanceSupported: boolean;
+  usingPlatformDefault?: boolean;
 };
 
 type SmsWalletBalanceView = {
@@ -310,12 +311,18 @@ export function SmsChannelSettings() {
         <>
           <Panel className="p-4 sm:p-5">
             <p className="text-sm font-medium text-stone-800">
-              {config?.configured ? "Configured" : "Not configured"}
+              {config?.configured
+                ? "Configured"
+                : config?.usingPlatformDefault
+                  ? "Using the platform SMS service"
+                  : "Not configured"}
             </p>
             <p className="mt-1 text-sm text-stone-600">
               {config?.configured
                 ? `Provider: ${getCustomerSmsProviderLabel(config.provider)}`
-                : "Save a configuration to enable SMS."}
+                : config?.usingPlatformDefault
+                  ? "SMS is ready to use with the platform gateway. Save your own gateway below if you prefer to send through your own account."
+                  : "Save a configuration to enable SMS."}
             </p>
             {config?.configured && config.provider === "CUSTOM_HTTP" ? (
               <p className="mt-1 text-sm text-stone-600">

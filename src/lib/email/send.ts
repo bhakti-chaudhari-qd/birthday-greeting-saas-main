@@ -1,19 +1,13 @@
 import { Resend } from "resend";
 
+import { getPlatformFromAddress } from "./platform-from";
+
 function getAppBaseUrl(): string {
   const configured =
     process.env.APP_URL?.trim() ||
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
     "http://localhost:3000";
   return configured.replace(/\/$/, "");
-}
-
-function getFromAddress(): string {
-  return (
-    process.env.EMAIL_FROM?.trim() ||
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    "Birthday Greeting <onboarding@resend.dev>"
-  );
 }
 
 export type SendEmailAttachment = {
@@ -59,7 +53,7 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
 
   const resend = new Resend(apiKey);
   const result = await resend.emails.send({
-    from: input.from?.trim() || getFromAddress(),
+    from: input.from?.trim() || getPlatformFromAddress(),
     to: input.to,
     subject: input.subject,
     html: input.html,

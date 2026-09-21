@@ -22,6 +22,7 @@ import {
   isAutomationOriginatedIdempotencyKey,
 } from "@/lib/automation/send-time";
 import { getMessageProvider, ProviderSendError } from "@/lib/messaging/providers";
+import { getEffectiveChannelConfig } from "@/lib/channel-config/platform-defaults";
 import { prisma } from "@/lib/db";
 import type { DocumentStorage } from "@/lib/storage";
 import { assertTemplateReadyForCustomHttpSend } from "@/lib/templates/sms-setup";
@@ -615,13 +616,10 @@ export async function processClaimedQueueItem(
     return finalizeSkippedInactive(organizationId, queue.id);
   }
 
-  const channelConfig = await prisma.channelConfig.findFirst({
-    where: {
-      organizationId,
-      channel: queue.channel,
-      isActive: true,
-    },
-  });
+  const channelConfig = await getEffectiveChannelConfig(
+    organizationId,
+    queue.channel,
+  );
 
   const attemptNumber = queue.attemptCount + 1;
   let providerName: ChannelProvider | string =
