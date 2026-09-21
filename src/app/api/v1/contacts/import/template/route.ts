@@ -7,6 +7,7 @@ import {
 import { jsonError } from "@/lib/api/response";
 import { buildContactCsvTemplate } from "@/lib/contacts/csv";
 import { listOccasions } from "@/lib/occasions/service";
+import { withUtf8Bom } from "@/lib/csv-response";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export async function GET() {
     const auth = await requireSessionAuth();
     const occasions = await listOccasions(auth.organizationId);
 
-    return new NextResponse(buildContactCsvTemplate(occasions), {
+    return new NextResponse(withUtf8Bom(buildContactCsvTemplate(occasions)), {
       status: 200,
       headers: {
         "Content-Type": "text/csv; charset=utf-8",

@@ -8,6 +8,7 @@ import {
 import { jsonError } from "@/lib/api/response";
 import { exportActivityCsv } from "@/lib/activity/export";
 import { exportActivityQuerySchema } from "@/lib/validation/activity-export";
+import { withUtf8Bom } from "@/lib/csv-response";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
       "X-Activity-Export-Truncated": result.truncated ? "true" : "false",
     });
 
-    return new NextResponse(result.csv, { status: 200, headers });
+    return new NextResponse(withUtf8Bom(result.csv), { status: 200, headers });
   } catch (error) {
     const authError = sessionAuthErrorResponse(error);
     if (authError) {

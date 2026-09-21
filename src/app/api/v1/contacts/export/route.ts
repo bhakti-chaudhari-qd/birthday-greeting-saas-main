@@ -12,6 +12,7 @@ import {
 } from "@/lib/contacts/export";
 import { bulkContactIdsSchema } from "@/lib/validation/contact";
 import { exportContactsQuerySchema } from "@/lib/validation/contact-csv";
+import { withUtf8Bom } from "@/lib/csv-response";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,7 @@ export async function GET(request: Request) {
         : {}),
     });
 
-    return new NextResponse(result.csv, { status: 200, headers });
+    return new NextResponse(withUtf8Bom(result.csv), { status: 200, headers });
   } catch (error) {
     const authError = sessionAuthErrorResponse(error);
     if (authError) {
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
       "X-Contact-Export-Truncated": result.truncated ? "true" : "false",
     });
 
-    return new NextResponse(result.csv, { status: 200, headers });
+    return new NextResponse(withUtf8Bom(result.csv), { status: 200, headers });
   } catch (error) {
     const authError = sessionAuthErrorResponse(error);
     if (authError) {
