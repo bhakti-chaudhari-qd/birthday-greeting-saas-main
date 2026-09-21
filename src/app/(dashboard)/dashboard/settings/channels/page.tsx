@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
+import { ChannelSetupSteps } from "@/components/settings/channel-setup-steps";
 import { EmailChannelSettings } from "@/components/settings/email-channel-settings";
 import { SmsChannelSettings } from "@/components/settings/sms-channel-settings";
 import { WhatsAppChannelSettings } from "@/components/settings/whatsapp-channel-settings";
@@ -96,6 +97,8 @@ function ChannelSettingsTabs() {
           Email
         </button>
       </div>
+
+      <ChannelSetupSteps channel={tab} />
 
       <div role="tabpanel" aria-label={TAB_LABEL[tab]}>
         {tab === "sms" ? <SmsChannelSettings /> : null}
