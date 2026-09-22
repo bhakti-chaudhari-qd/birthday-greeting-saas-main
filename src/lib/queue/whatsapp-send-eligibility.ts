@@ -42,7 +42,8 @@ export function assertWhatsAppTemplateEligibleForManualSend(
 
   if (
     channelConfig.provider !== ChannelProvider.TEST &&
-    channelConfig.provider !== ChannelProvider.CUSTOM_HTTP
+    channelConfig.provider !== ChannelProvider.CUSTOM_HTTP &&
+    channelConfig.provider !== ChannelProvider.META
   ) {
     throw new QueueTemplateRejectedError(
       "Configured WhatsApp provider is not supported",

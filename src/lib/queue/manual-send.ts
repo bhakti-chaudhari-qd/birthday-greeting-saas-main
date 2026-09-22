@@ -63,8 +63,8 @@ export type ManualSendPreviewResult = {
     channel: Channel;
     realSmsStatusLabel: string;
   };
-  providerMode: ManualSendProviderMode | "TEST";
-  providerModeLabel: "Test mode" | "Custom HTTP" | "Resend";
+  providerMode: ManualSendProviderMode | "TEST" | "META";
+  providerModeLabel: "Test mode" | "Custom HTTP" | "Resend" | "Meta Cloud API";
   recipientCount: number;
   media: {
     filename: string;
@@ -112,7 +112,7 @@ type ManualSendRecipient = {
 
 type PreparedManualSend = {
   operationId: string;
-  providerMode: ManualSendProviderMode | "TEST";
+  providerMode: ManualSendProviderMode | "TEST" | "META";
   template: ManualSendTemplate;
   recipients: ManualSendRecipient[];
   scheduledDate: Date;
@@ -274,14 +274,16 @@ async function prepareManualSend(
     template.channel,
   );
 
-  let providerMode: ManualSendProviderMode | "TEST";
+  let providerMode: ManualSendProviderMode | "TEST" | "META";
 
   if (template.channel === Channel.WHATSAPP) {
     assertWhatsAppTemplateEligibleForManualSend(template, channelConfig);
     providerMode =
       channelConfig?.provider === ChannelProvider.CUSTOM_HTTP
         ? "CUSTOM_HTTP"
-        : "TEST";
+        : channelConfig?.provider === ChannelProvider.META
+          ? "META"
+          : "TEST";
   } else if (template.channel === Channel.SMS) {
     providerMode = resolveManualSendProviderMode(channelConfig);
     assertTemplateEligibleForManualSend(template, providerMode);
@@ -370,7 +372,7 @@ function renderManualSendEmailSubjects(
 
 function serializeTemplatePreviewIdentity(
   template: MessageTemplate,
-  providerMode: ManualSendProviderMode | "TEST",
+  providerMode: ManualSendProviderMode | "TEST" | "META",
 ) {
   const readiness = deriveRealSmsReadiness(template);
 
@@ -382,21 +384,29 @@ function serializeTemplatePreviewIdentity(
       template.channel === Channel.WHATSAPP
         ? providerMode === "CUSTOM_HTTP"
           ? "Custom HTTP"
-          : "WhatsApp TEST"
+          : providerMode === "META"
+            ? "Meta Cloud API"
+            : "WhatsApp TEST"
         : readiness.realSmsStatusLabel,
   };
 }
 
 function resolveManualSendProviderModeLabel(
   channel: Channel,
-  providerMode: ManualSendProviderMode | "TEST",
-): "Test mode" | "Custom HTTP" | "Resend" {
+  providerMode: ManualSendProviderMode | "TEST" | "META",
+): "Test mode" | "Custom HTTP" | "Resend" | "Meta Cloud API" {
   if (channel === Channel.EMAIL) {
     return providerMode === "TEST" ? "Test mode" : "Resend";
   }
 
   if (channel === Channel.WHATSAPP) {
-    return providerMode === "CUSTOM_HTTP" ? "Custom HTTP" : "Test mode";
+    if (providerMode === "CUSTOM_HTTP") {
+      return "Custom HTTP";
+    }
+    if (providerMode === "META") {
+      return "Meta Cloud API";
+    }
+    return "Test mode";
   }
 
   return getManualSendProviderModeLabel(providerMode as ManualSendProviderMode);
