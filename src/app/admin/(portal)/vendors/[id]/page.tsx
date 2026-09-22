@@ -68,12 +68,10 @@ export default async function AdminVendorDetailPage({ params }: PageProps) {
             </dd>
           </div>
           <div>
-            <dt className="text-stone-500">Registration submitted</dt>
+            <dt className="text-stone-500">Registration submitted (IST)</dt>
             <dd className="mt-1 font-medium text-stone-900">
               {vendor.registrationSubmittedAt
-                ? new Date(vendor.registrationSubmittedAt).toLocaleString(
-                    "en-IN",
-                  )
+                ? formatCustomerDateTime(vendor.registrationSubmittedAt)
                 : "Not submitted"}
             </dd>
           </div>
@@ -94,7 +92,7 @@ export default async function AdminVendorDetailPage({ params }: PageProps) {
         </Panel>
         <Panel className="px-4 py-3">
           <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
-            Current-routed deliveries this month
+            Current-routed deliveries this month (IST)
           </p>
           <p className="mt-1 text-xl font-semibold text-stone-900">
             {vendor.currentRoutedDeliveriesThisMonth}
@@ -106,11 +104,11 @@ export default async function AdminVendorDetailPage({ params }: PageProps) {
         </Panel>
         <Panel className="px-4 py-3">
           <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
-            Current-routed monthly success rate
+            Current-routed success rate this month (IST)
           </p>
           <p className="mt-1 text-xl font-semibold text-stone-900">
             {vendor.currentRoutedMonthlyDeliverySuccessRatePercent == null
-              ? "-"
+              ? "No decided deliveries"
               : `${vendor.currentRoutedMonthlyDeliverySuccessRatePercent}%`}
           </p>
         </Panel>

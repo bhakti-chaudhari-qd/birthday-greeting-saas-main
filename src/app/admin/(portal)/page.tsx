@@ -215,11 +215,11 @@ export default async function AdminHomePage() {
                       {formatNumber(
                         vendor.currentRoutedDeliveriesThisMonth,
                       )}{" "}
-                      current-routed deliveries this month
+                      current-routed deliveries this month (IST)
                       {" · "}
                       {vendor.currentRoutedMonthlyDeliverySuccessRatePercent ==
                       null
-                        ? "No success rate"
+                        ? "No decided deliveries"
                         : `${vendor.currentRoutedMonthlyDeliverySuccessRatePercent}% success`}
                     </p>
                   </div>

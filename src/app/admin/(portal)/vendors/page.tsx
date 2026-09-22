@@ -47,7 +47,7 @@ export default async function AdminVendorsPage() {
                   Current active connections
                 </th>
                 <th className="px-4 py-3 font-medium">
-                  Current-routed deliveries (month)
+                  Current-routed deliveries this month (IST)
                 </th>
               </tr>
             </thead>
