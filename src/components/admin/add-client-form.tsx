@@ -6,10 +6,12 @@ import { useState } from "react";
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass } from "@/components/ui/page";
 import { PasswordField } from "@/components/ui/password-field";
-import { STRONG_PASSWORD_MESSAGE } from "@/lib/auth/password-policy";
+import { getAdminClientNewDict } from "@/lib/i18n/dictionaries/admin-client-new";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export function AddClientForm() {
   const router = useRouter();
+  const dict = getAdminClientNewDict(useLocale());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,14 +37,14 @@ export function AddClientForm() {
       const payload = await response.json();
 
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to create client");
+        setError(payload.error?.message ?? dict.failedToCreateClient);
         return;
       }
 
       router.push(`/admin/organizations/${payload.data.organization.id}`);
       router.refresh();
     } catch {
-      setError("Failed to create client");
+      setError(dict.failedToCreateClient);
     } finally {
       setSubmitting(false);
     }
@@ -51,7 +53,7 @@ export function AddClientForm() {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Client name</span>
+        <span className="font-medium text-stone-800">{dict.clientName}</span>
         <input
           name="organizationName"
           className={`mt-1 ${inputClass}`}
@@ -62,7 +64,7 @@ export function AddClientForm() {
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Owner name</span>
+        <span className="font-medium text-stone-800">{dict.ownerName}</span>
         <input
           name="adminName"
           className={`mt-1 ${inputClass}`}
@@ -72,7 +74,7 @@ export function AddClientForm() {
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Owner email</span>
+        <span className="font-medium text-stone-800">{dict.ownerEmail}</span>
         <input
           name="email"
           type="email"
@@ -83,26 +85,25 @@ export function AddClientForm() {
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Owner mobile</span>
+        <span className="font-medium text-stone-800">{dict.ownerMobile}</span>
         <input
           name="mobile"
           type="tel"
           inputMode="tel"
           autoComplete="off"
           className={`mt-1 ${inputClass}`}
-          placeholder="10-digit mobile number"
+          placeholder={dict.mobilePlaceholder}
           required
         />
       </label>
       <PasswordField
-        label="Initial password"
+        label={dict.initialPassword}
         name="password"
         required
         autoComplete="new-password"
       />
       <p className="text-xs text-stone-500">
-        {STRONG_PASSWORD_MESSAGE} Share it with the client securely; they can
-        change it after signing in.
+        {dict.passwordHint} {dict.passwordShareNote}
       </p>
 
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
@@ -111,7 +112,7 @@ export function AddClientForm() {
         disabled={submitting}
         className={primaryButtonClass}
       >
-        {submitting ? "Creating…" : "Add client"}
+        {submitting ? dict.creating : dict.addClient}
       </button>
     </form>
   );

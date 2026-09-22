@@ -7,6 +7,7 @@ import {
   translateHealthLabel,
   translateHealthReason,
 } from "@/lib/i18n/dictionaries/admin-health";
+import { getAdminClientNewDict } from "@/lib/i18n/dictionaries/admin-client-new";
 import { getAdminOverviewDict } from "@/lib/i18n/dictionaries/admin-overview";
 import { getAdminUsageDict } from "@/lib/i18n/dictionaries/admin-usage";
 import { getAdminVendorDict } from "@/lib/i18n/dictionaries/admin-vendor";
@@ -268,6 +269,23 @@ describe("admin i18n: vendors list, detail, and new", () => {
       checkStrings(getAdminVendorsListDict(locale), `vendorsList.${locale}`);
       checkStrings(getAdminVendorDetailDict(locale), `vendorDetail.${locale}`);
       checkStrings(getAdminVendorNewDict(locale), `vendorNew.${locale}`);
+    }
+  });
+});
+
+describe("admin i18n: add client page", () => {
+  it("returns Devanagari content in every locale", () => {
+    for (const locale of ["hi", "mr"] as const) {
+      const dict = getAdminClientNewDict(locale);
+      expect(dict.title).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.addClient).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.passwordHint).toMatch(DEVANAGARI_PATTERN);
+    }
+    for (const locale of LOCALES) {
+      const dict = getAdminClientNewDict(locale);
+      for (const [key, value] of Object.entries(dict)) {
+        expect(value.trim().length, `${locale}.${key}`).toBeGreaterThan(0);
+      }
     }
   });
 });

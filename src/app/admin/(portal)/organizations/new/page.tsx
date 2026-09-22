@@ -1,20 +1,26 @@
+"use client";
+
 import Link from "next/link";
 
 import { AddClientForm } from "@/components/admin/add-client-form";
 import { PageHeader, PageShell, Panel } from "@/components/ui/page";
+import { getAdminClientNewDict } from "@/lib/i18n/dictionaries/admin-client-new";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export default function NewAdminClientPage() {
+  const dict = getAdminClientNewDict(useLocale());
+
   return (
     <PageShell>
       <PageHeader
-        title="Add client"
-        description="Create a client and its Owner account. The Owner signs in with the email and password set here."
+        title={dict.title}
+        description={dict.description}
         actions={
           <Link
             href="/admin/organizations"
             className="text-sm font-medium text-primary hover:underline"
           >
-            Back to clients
+            {dict.backToClients}
           </Link>
         }
       />
