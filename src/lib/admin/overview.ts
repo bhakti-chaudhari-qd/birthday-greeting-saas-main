@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { isUsagePeriodStale } from "@/lib/queue/limits";
 
 export type PlatformOverviewStats = {
   organizationCount: number;
@@ -22,6 +23,7 @@ export async function getPlatformOverviewStats(): Promise<PlatformOverviewStats>
         select: {
           plan: true,
           messagesSentThisMonth: true,
+          billingPeriodStart: true,
         },
       }),
     ]);
@@ -30,9 +32,18 @@ export async function getPlatformOverviewStats(): Promise<PlatformOverviewStats>
   const activeOrganizationCount = organizations.filter((o) => o.isActive).length;
   const planCounts = new Map<string, number>();
   let messagesSentThisMonth = 0;
+  const now = new Date();
 
   for (const subscription of subscriptions) {
-    messagesSentThisMonth += subscription.messagesSentThisMonth;
+    // The per-client counter only resets the next time that client sends a
+    // message (see lockSubscriptionForQueueGeneration) - a client that
+    // hasn't sent anything since an earlier IST month still has that
+    // month's stale count sitting in the column. Treat it as 0 here so this
+    // platform-wide total reflects the current month, without touching the
+    // real counter (which the send path resets and increments itself).
+    if (!isUsagePeriodStale(subscription.billingPeriodStart, now)) {
+      messagesSentThisMonth += subscription.messagesSentThisMonth;
+    }
     planCounts.set(
       subscription.plan,
       (planCounts.get(subscription.plan) ?? 0) + 1,
