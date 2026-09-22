@@ -18,7 +18,7 @@ export default async function AdminUsagePage() {
     <PageShell wide>
       <PageHeader
         title="Usage"
-        description="Platform-wide delivery health, queue pressure, and tenants near their limits. No client contact details are shown."
+        description="Platform-wide delivery health, queue pressure, and tenants near their limits. No client contact details are shown. All time frames below (today, this month) are Indian Standard Time (IST)."
       />
 
       <PortalStatGrid
@@ -26,18 +26,20 @@ export default async function AdminUsagePage() {
           {
             label: "Deliveries today",
             value: formatNumber(usage.deliveriesToday),
+            hint: "Since midnight IST",
           },
           {
             label: "Deliveries this month",
             value: formatNumber(usage.deliveriesThisMonth),
+            hint: "Since the 1st of this month, IST",
           },
           {
-            label: "Successful",
+            label: "Successful this month",
             value: formatNumber(usage.successCount),
             hint: "Submitted, delivered, or read",
           },
           {
-            label: "Failed",
+            label: "Failed this month",
             value: formatNumber(usage.failureCount),
             hint: "Failed or undelivered",
           },
@@ -47,6 +49,7 @@ export default async function AdminUsagePage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Panel className="p-5">
           <h2 className="text-sm font-semibold text-stone-900">Queue depth</h2>
+          <p className="mt-1 text-xs text-stone-500">Right now, not a monthly count</p>
           <ul className="mt-3 space-y-2 text-sm">
             <li className="flex justify-between border-b border-stone-100 pb-2">
               <span className="text-stone-700">Pending</span>
@@ -71,8 +74,9 @@ export default async function AdminUsagePage() {
 
         <Panel className="p-5">
           <h2 className="text-sm font-semibold text-stone-900">
-            By status (month)
+            By status
           </h2>
+          <p className="mt-1 text-xs text-stone-500">This month, IST</p>
           {usage.statusBreakdown.length === 0 ? (
             <p className="mt-3 text-sm text-stone-500">No deliveries yet.</p>
           ) : (
@@ -94,8 +98,9 @@ export default async function AdminUsagePage() {
 
         <Panel className="p-5">
           <h2 className="text-sm font-semibold text-stone-900">
-            By channel (month)
+            By channel
           </h2>
+          <p className="mt-1 text-xs text-stone-500">This month, IST</p>
           {usage.channelBreakdown.length === 0 ? (
             <p className="mt-3 text-sm text-stone-500">No deliveries yet.</p>
           ) : (
@@ -128,7 +133,7 @@ export default async function AdminUsagePage() {
         <Panel>
           <div className="border-b border-stone-200 px-4 py-3">
             <h2 className="text-sm font-semibold text-stone-900">
-              Near message limit (≥80%)
+              Near message limit (≥80% of this month&apos;s limit)
             </h2>
           </div>
           <LimitTable rows={usage.nearMessageLimit} kind="messages" />

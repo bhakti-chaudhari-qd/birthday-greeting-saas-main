@@ -24,6 +24,11 @@ import {
   type AdminPaymentLinkSummary,
 } from "@/lib/billing/service";
 import { prisma } from "@/lib/db";
+import { USAGE_PERIOD_TIMEZONE } from "@/lib/queue/constants";
+import {
+  getOrganizationLocalIsoDate,
+  parseTargetDate,
+} from "@/lib/queue/dates";
 
 import {
   PLATFORM_ADMIN_AUDIT_ACTIONS,
@@ -626,14 +631,23 @@ const FAILURE_STATUSES: DeliveryStatus[] = [
   DeliveryStatus.UNDELIVERED,
 ];
 
-function startOfUtcDay(date = new Date()) {
-  return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+/** IST is a fixed UTC+5:30 offset year-round (no DST), so this is exact. */
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+/** Start of "today" in IST, as a UTC instant - for filtering createdAt (stored in UTC). */
+export function startOfIstDay(date = new Date()) {
+  const { year, month, day } = parseTargetDate(
+    getOrganizationLocalIsoDate(USAGE_PERIOD_TIMEZONE, date),
   );
+  return new Date(Date.UTC(year, month - 1, day) - IST_OFFSET_MS);
 }
 
-function startOfUtcMonth(date = new Date()) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+/** Start of "this month" in IST, as a UTC instant. */
+export function startOfIstMonth(date = new Date()) {
+  const { year, month } = parseTargetDate(
+    getOrganizationLocalIsoDate(USAGE_PERIOD_TIMEZONE, date),
+  );
+  return new Date(Date.UTC(year, month - 1, 1) - IST_OFFSET_MS);
 }
 
 export type PlatformUsageSnapshot = {
@@ -652,8 +666,8 @@ export type PlatformUsageSnapshot = {
 };
 
 export async function getPlatformUsageSnapshot(): Promise<PlatformUsageSnapshot> {
-  const monthStart = startOfUtcMonth();
-  const dayStart = startOfUtcDay();
+  const monthStart = startOfIstMonth();
+  const dayStart = startOfIstDay();
 
   const [
     monthlyLogs,
