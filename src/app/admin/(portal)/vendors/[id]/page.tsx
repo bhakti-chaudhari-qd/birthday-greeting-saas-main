@@ -7,7 +7,7 @@ import {
   maskedVendorMobile,
 } from "@/components/admin/vendor-lifecycle";
 import { VendorAdminForm } from "@/components/admin/vendor-admin-form";
-import { StatusBadge } from "@/components/ui/feedback";
+import { InlineAlert, StatusBadge } from "@/components/ui/feedback";
 import { PageHeader, PageShell, Panel } from "@/components/ui/page";
 import { listPlatformAdminAuditEventsForVendor } from "@/lib/admin/audit";
 import { getVendorForPlatformAdmin } from "@/lib/admin/vendors";
@@ -17,10 +17,18 @@ export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ id: string }>;
+  /** inviteIssue: set by CreateVendorForm when the vendor was created but the
+   * invitation SMS failed or its delivery is uncertain - surfaced here as a
+   * banner instead of letting that redirect look like a silent success. */
+  searchParams: Promise<{ inviteIssue?: string }>;
 };
 
-export default async function AdminVendorDetailPage({ params }: PageProps) {
+export default async function AdminVendorDetailPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { id } = await params;
+  const { inviteIssue } = await searchParams;
   const [vendor, auditEvents] = await Promise.all([
     getVendorForPlatformAdmin(id),
     listPlatformAdminAuditEventsForVendor(id, 12),
@@ -44,6 +52,12 @@ export default async function AdminVendorDetailPage({ params }: PageProps) {
         }
       />
 
+      {inviteIssue ? (
+        <InlineAlert tone="warning">
+          The vendor was created, but {inviteIssue}
+        </InlineAlert>
+      ) : null}
+
       <Panel className="p-5">
         <div className="flex flex-wrap items-center gap-2">
           <VendorLifecycleBadge status={vendor.onboardingStatus} />
@@ -66,6 +80,11 @@ export default async function AdminVendorDetailPage({ params }: PageProps) {
             <dd className="mt-1 font-medium text-stone-900">
               {describeLatestVendorInvite(vendor.latestInvite)}
             </dd>
+            {vendor.latestInvite?.deliveryError ? (
+              <dd className="mt-0.5 text-xs text-red-700">
+                {vendor.latestInvite.deliveryError}
+              </dd>
+            ) : null}
           </div>
           <div>
             <dt className="text-stone-500">Registration submitted (IST)</dt>

@@ -48,6 +48,8 @@ export type PlatformVendorSummary = {
     sentAt: string | null;
     expiresAt: string;
     revokedAt: string | null;
+    /** Specific reason for a FAILED/AMBIGUOUS outcome (see safeDeliveryError in vendor-invites.ts). */
+    deliveryError: string | null;
   } | null;
   userCount: number;
   referredOrganizationCount: number;
@@ -98,6 +100,7 @@ async function loadVendorsForPlatformAdmin(
           sentAt: true,
           expiresAt: true,
           revokedAt: true,
+          deliveryError: true,
         },
       },
       _count: {
@@ -179,6 +182,7 @@ async function loadVendorsForPlatformAdmin(
             sentAt: latestInvite.sentAt?.toISOString() ?? null,
             expiresAt: latestInvite.expiresAt.toISOString(),
             revokedAt: latestInvite.revokedAt?.toISOString() ?? null,
+            deliveryError: latestInvite.deliveryError,
           }
         : null,
       userCount: vendor._count.users,

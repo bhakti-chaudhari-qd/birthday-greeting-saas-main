@@ -28,7 +28,16 @@ export function CreateVendorForm() {
       if (!response.ok) {
         const vendorId = payload.error?.details?.vendorId;
         if (typeof vendorId === "string") {
-          router.push(`/admin/vendors/${vendorId}`);
+          // The vendor was created; only its invitation SMS failed or its
+          // delivery is uncertain. Carry that into the vendor page as a
+          // visible banner instead of navigating there looking like a
+          // plain success.
+          const inviteIssue = payload.error?.details?.deliveryUncertain
+            ? "SMS delivery is uncertain. Verify with the vendor before resending, to avoid a duplicate message."
+            : "the invitation SMS could not be sent. You can retry sending it from this page.";
+          router.push(
+            `/admin/vendors/${vendorId}?inviteIssue=${encodeURIComponent(inviteIssue)}`,
+          );
           router.refresh();
           return;
         }
