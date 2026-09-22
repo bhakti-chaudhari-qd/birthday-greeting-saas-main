@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { startOfIstDay, startOfIstMonth } from "@/lib/admin/org-ops";
+import { startOfIstDay, startOfIstMonth } from "@/lib/queue/dates";
 
 describe("admin usage snapshot: IST day/month boundaries", () => {
   it("places a UTC instant just after IST midnight in the new IST day, not the old UTC day", () => {

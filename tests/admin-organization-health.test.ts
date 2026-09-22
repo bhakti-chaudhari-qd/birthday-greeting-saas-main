@@ -67,15 +67,32 @@ describe("platform organization health", () => {
         monthlySuccessCount: 8,
         monthlyFailureCount: 2,
         queuePendingCount: 3,
-        queueFailedCount: 1,
+        queueFailedStuckCount: 1,
       }),
     ).toEqual({
       label: "NEEDS_ATTENTION",
       reasons: [
         "Some enabled routes need a template or active channel",
-        "1 failed queue item(s)",
+        "1 failed queue item(s) need attention",
         "Monthly delivery success is below 90%",
       ],
+    });
+  });
+
+  it("does not flag a queue failure the worker will still retry on its own", () => {
+    expect(
+      deriveOrganizationHealth({
+        isActive: true,
+        enabledRouteCount: 1,
+        executableRouteCount: 1,
+        monthlySuccessCount: 10,
+        monthlyFailureCount: 0,
+        queuePendingCount: 0,
+        queueFailedStuckCount: 0,
+      }),
+    ).toEqual({
+      label: "HEALTHY",
+      reasons: ["No health issues detected"],
     });
   });
 
@@ -88,7 +105,7 @@ describe("platform organization health", () => {
         monthlySuccessCount: 0,
         monthlyFailureCount: 0,
         queuePendingCount: 0,
-        queueFailedCount: 0,
+        queueFailedStuckCount: 0,
       }),
     ).toEqual({
       label: "INACTIVE",
@@ -103,7 +120,7 @@ describe("platform organization health", () => {
         monthlySuccessCount: 10,
         monthlyFailureCount: 1,
         queuePendingCount: 2,
-        queueFailedCount: 0,
+        queueFailedStuckCount: 0,
       }),
     ).toEqual({
       label: "HEALTHY",

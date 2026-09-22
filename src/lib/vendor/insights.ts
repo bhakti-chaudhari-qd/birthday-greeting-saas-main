@@ -1,6 +1,7 @@
 import { Channel, DeliveryStatus, type Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { startOfIstDay, startOfIstMonth } from "@/lib/queue/dates";
 
 export type VendorConnectedOrganization = {
   id: string;
@@ -52,16 +53,6 @@ const FAILURE_STATUSES: DeliveryStatus[] = [
   DeliveryStatus.FAILED,
   DeliveryStatus.UNDELIVERED,
 ];
-
-function startOfUtcDay(date = new Date()) {
-  return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  );
-}
-
-function startOfUtcMonth(date = new Date()) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-}
 
 export async function getVendorDeliveryInsights(
   vendorId: string,
@@ -128,8 +119,8 @@ export async function getVendorDeliveryInsights(
     })),
   };
 
-  const monthStart = startOfUtcMonth();
-  const dayStart = startOfUtcDay();
+  const monthStart = startOfIstMonth();
+  const dayStart = startOfIstDay();
 
   const [monthlyLogs, deliveriesToday, recentLogs] = await Promise.all([
     prisma.deliveryLog.findMany({

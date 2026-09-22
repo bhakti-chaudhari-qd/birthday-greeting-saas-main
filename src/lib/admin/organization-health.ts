@@ -49,7 +49,12 @@ export function deriveOrganizationHealth(input: {
   monthlySuccessCount: number;
   monthlyFailureCount: number;
   queuePendingCount: number;
-  queueFailedCount: number;
+  /**
+   * Only FAILED queue rows that have exhausted retries or hit a
+   * non-retryable error - not messages the worker will still retry on its
+   * own, which don't need admin attention and shouldn't flag NEEDS_ATTENTION.
+   */
+  queueFailedStuckCount: number;
 }): OrganizationHealth {
   if (!input.isActive) {
     return {
@@ -69,8 +74,10 @@ export function deriveOrganizationHealth(input: {
     reasons.push("Some enabled routes need a template or active channel");
   }
 
-  if (input.queueFailedCount > 0) {
-    reasons.push(`${input.queueFailedCount} failed queue item(s)`);
+  if (input.queueFailedStuckCount > 0) {
+    reasons.push(
+      `${input.queueFailedStuckCount} failed queue item(s) need attention`,
+    );
   }
 
   const decided = input.monthlySuccessCount + input.monthlyFailureCount;

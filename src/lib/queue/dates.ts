@@ -66,6 +66,31 @@ export function getPreviousIsoDate(isoDate: string): string {
   );
 }
 
+/** IST is a fixed UTC+5:30 offset year-round (no DST), so this is exact. */
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+/**
+ * Start of "today" in IST, as a UTC instant - for filtering a createdAt
+ * column (stored in UTC) by the IST calendar day. Platform-wide "today"/
+ * "this month" stats should use this (and startOfIstMonth below) rather
+ * than a UTC calendar boundary, which misclassifies deliveries made in
+ * the last ~5.5 hours of the IST day as still "yesterday"/"last month."
+ */
+export function startOfIstDay(date: Date = new Date()): Date {
+  const { year, month, day } = parseTargetDate(
+    getOrganizationLocalIsoDate("Asia/Kolkata", date),
+  );
+  return new Date(Date.UTC(year, month - 1, day) - IST_OFFSET_MS);
+}
+
+/** Start of "this month" in IST, as a UTC instant. */
+export function startOfIstMonth(date: Date = new Date()): Date {
+  const { year, month } = parseTargetDate(
+    getOrganizationLocalIsoDate("Asia/Kolkata", date),
+  );
+  return new Date(Date.UTC(year, month - 1, 1) - IST_OFFSET_MS);
+}
+
 export function isLeapYear(year: number): boolean {
   return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }

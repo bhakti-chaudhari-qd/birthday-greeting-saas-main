@@ -25,11 +25,8 @@ import {
 } from "@/lib/billing/service";
 import { prisma } from "@/lib/db";
 import { RETRYABLE_ERROR_CODES } from "@/lib/queue/classify";
-import { MAX_SEND_ATTEMPTS, USAGE_PERIOD_TIMEZONE } from "@/lib/queue/constants";
-import {
-  getOrganizationLocalIsoDate,
-  parseTargetDate,
-} from "@/lib/queue/dates";
+import { MAX_SEND_ATTEMPTS } from "@/lib/queue/constants";
+import { startOfIstDay, startOfIstMonth } from "@/lib/queue/dates";
 
 import {
   PLATFORM_ADMIN_AUDIT_ACTIONS,
@@ -631,25 +628,6 @@ const FAILURE_STATUSES: DeliveryStatus[] = [
   DeliveryStatus.FAILED,
   DeliveryStatus.UNDELIVERED,
 ];
-
-/** IST is a fixed UTC+5:30 offset year-round (no DST), so this is exact. */
-const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
-
-/** Start of "today" in IST, as a UTC instant - for filtering createdAt (stored in UTC). */
-export function startOfIstDay(date = new Date()) {
-  const { year, month, day } = parseTargetDate(
-    getOrganizationLocalIsoDate(USAGE_PERIOD_TIMEZONE, date),
-  );
-  return new Date(Date.UTC(year, month - 1, day) - IST_OFFSET_MS);
-}
-
-/** Start of "this month" in IST, as a UTC instant. */
-export function startOfIstMonth(date = new Date()) {
-  const { year, month } = parseTargetDate(
-    getOrganizationLocalIsoDate(USAGE_PERIOD_TIMEZONE, date),
-  );
-  return new Date(Date.UTC(year, month - 1, 1) - IST_OFFSET_MS);
-}
 
 export type PlatformUsageSnapshot = {
   deliveriesToday: number;

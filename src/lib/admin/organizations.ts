@@ -13,6 +13,9 @@ import {
   type OrganizationHealth,
 } from "@/lib/admin/organization-health";
 import { prisma } from "@/lib/db";
+import { RETRYABLE_ERROR_CODES } from "@/lib/queue/classify";
+import { MAX_SEND_ATTEMPTS } from "@/lib/queue/constants";
+import { startOfIstMonth } from "@/lib/queue/dates";
 
 export type PlatformOrganizationSummary = {
   id: string;
@@ -53,19 +56,20 @@ export type PlatformOrganizationSummary = {
   monthlyDeliverySuccessRatePercent: number | null;
   queuePendingCount: number;
   queueFailedCount: number;
+  /** Of queueFailedCount, how many the worker will retry on its own. */
+  queueFailedRetryableCount: number;
+  /** Of queueFailedCount, how many have exhausted retries or hit a non-retryable error. */
+  queueFailedStuckCount: number;
   referredVendor: { id: string; name: string } | null;
   connectedVendors: Array<{ id: string; name: string }>;
   health: OrganizationHealth;
 };
 
-function startOfUtcMonth(date = new Date()) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-}
-
 async function loadOrganizationsForPlatformAdmin(
   organizationId?: string,
 ): Promise<PlatformOrganizationSummary[]> {
-  const [organizations, deliveryCounts, queueCounts] = await Promise.all([
+  const [organizations, deliveryCounts, queueCounts, retryableFailedCounts] =
+    await Promise.all([
     prisma.organization.findMany({
       where: organizationId ? { id: organizationId } : undefined,
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
@@ -107,7 +111,7 @@ async function loadOrganizationsForPlatformAdmin(
       by: ["organizationId", "status"],
       where: {
         ...(organizationId ? { organizationId } : {}),
-        createdAt: { gte: startOfUtcMonth() },
+        createdAt: { gte: startOfIstMonth() },
       },
       _count: true,
     }),
@@ -116,6 +120,19 @@ async function loadOrganizationsForPlatformAdmin(
       where: {
         ...(organizationId ? { organizationId } : {}),
         status: { in: [QueueStatus.PENDING, QueueStatus.FAILED] },
+      },
+      _count: true,
+    }),
+    prisma.sendQueue.groupBy({
+      by: ["organizationId"],
+      where: {
+        ...(organizationId ? { organizationId } : {}),
+        status: QueueStatus.FAILED,
+        attemptCount: { lt: MAX_SEND_ATTEMPTS },
+        OR: [
+          { lastErrorCode: null },
+          { lastErrorCode: { in: [...RETRYABLE_ERROR_CODES] } },
+        ],
       },
       _count: true,
     }),
@@ -140,6 +157,10 @@ async function loadOrganizationsForPlatformAdmin(
     rows.push({ status: row.status, count: row._count });
     queueByOrganization.set(row.organizationId, rows);
   }
+
+  const retryableFailedByOrganization = new Map<string, number>(
+    retryableFailedCounts.map((row) => [row.organizationId, row._count]),
+  );
 
   return organizations.map((organization) => {
     const configuredChannels = [
@@ -222,6 +243,9 @@ async function loadOrganizationsForPlatformAdmin(
     const queueFailedCount =
       organizationQueueRows.find((row) => row.status === QueueStatus.FAILED)
         ?.count ?? 0;
+    const queueFailedRetryableCount =
+      retryableFailedByOrganization.get(organization.id) ?? 0;
+    const queueFailedStuckCount = queueFailedCount - queueFailedRetryableCount;
     const health = deriveOrganizationHealth({
       isActive: organization.isActive,
       enabledRouteCount,
@@ -229,7 +253,7 @@ async function loadOrganizationsForPlatformAdmin(
       monthlySuccessCount: monthlyDeliverySuccessCount,
       monthlyFailureCount: monthlyDeliveryFailureCount,
       queuePendingCount,
-      queueFailedCount,
+      queueFailedStuckCount,
     });
 
     return {
@@ -286,6 +310,8 @@ async function loadOrganizationsForPlatformAdmin(
             ) / 10,
       queuePendingCount,
       queueFailedCount,
+      queueFailedRetryableCount,
+      queueFailedStuckCount,
       referredVendor: organization.referredByVendor,
       connectedVendors,
       health,

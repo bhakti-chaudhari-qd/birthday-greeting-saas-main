@@ -81,17 +81,20 @@ export default async function AdminOrganizationDetailPage({
               </p>
             </div>
             <div>
-              <p className="text-xs text-stone-500">Monthly delivery</p>
+              <p className="text-xs text-stone-500">Delivery, this month (IST)</p>
               <p className="font-semibold text-stone-900">
                 {organization.monthlyDeliverySuccessCount} ok ·{" "}
                 {organization.monthlyDeliveryFailureCount} failed
               </p>
             </div>
             <div>
-              <p className="text-xs text-stone-500">Queue</p>
+              <p className="text-xs text-stone-500">Queue right now</p>
               <p className="font-semibold text-stone-900">
                 {organization.queuePendingCount} pending ·{" "}
-                {organization.queueFailedCount} failed
+                {organization.queueFailedStuckCount} stuck
+                {organization.queueFailedRetryableCount > 0
+                  ? ` · ${organization.queueFailedRetryableCount} retrying`
+                  : ""}
               </p>
             </div>
           </div>
@@ -100,7 +103,7 @@ export default async function AdminOrganizationDetailPage({
           Active configured channels:{" "}
           {organization.configuredChannels.join(", ") || "None"}
           {" · "}
-          Monthly success:{" "}
+          Success rate this month (IST):{" "}
           {organization.monthlyDeliverySuccessRatePercent == null
             ? "No decided deliveries"
             : `${organization.monthlyDeliverySuccessRatePercent}%`}

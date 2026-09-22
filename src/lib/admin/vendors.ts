@@ -15,6 +15,7 @@ import {
   DELIVERY_SUCCESS_STATUSES,
 } from "@/lib/admin/organization-health";
 import { prisma } from "@/lib/db";
+import { startOfIstMonth } from "@/lib/queue/dates";
 
 import {
   PLATFORM_ADMIN_AUDIT_ACTIONS,
@@ -78,10 +79,6 @@ export type UpdatePlatformVendorInput = z.infer<
   typeof updatePlatformVendorSchema
 >;
 
-function startOfUtcMonth(date = new Date()) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-}
-
 async function loadVendorsForPlatformAdmin(
   vendorId?: string,
 ): Promise<PlatformVendorSummary[]> {
@@ -127,7 +124,7 @@ async function loadVendorsForPlatformAdmin(
       ? []
       : await prisma.deliveryLog.findMany({
           where: {
-            createdAt: { gte: startOfUtcMonth() },
+            createdAt: { gte: startOfIstMonth() },
             OR: vendors.flatMap((vendor) =>
               vendor.channelConfigs.map((config) => ({
                 organizationId: config.organizationId,

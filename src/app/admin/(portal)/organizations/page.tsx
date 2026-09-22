@@ -99,21 +99,26 @@ export default async function AdminOrganizationsPage() {
                               : "neutral"
                         }
                       />
-                      <p className="mt-1 max-w-52 text-xs text-stone-500">
-                        {org.health.reasons[0]}
-                      </p>
+                      <ul className="mt-1 max-w-52 space-y-0.5 text-xs text-stone-500">
+                        {org.health.reasons.map((reason) => (
+                          <li key={reason}>{reason}</li>
+                        ))}
+                      </ul>
                     </td>
                     <td className="px-4 py-3 text-stone-600">
                       <p>
                         {org.monthlyDeliverySuccessRatePercent == null
-                          ? "No deliveries"
-                          : `${org.monthlyDeliverySuccessRatePercent}% success`}
+                          ? "No deliveries this month"
+                          : `${org.monthlyDeliverySuccessRatePercent}% success this month`}
                       </p>
                       <p className="mt-1 text-xs text-stone-500">
-                        {org.monthlyDeliveryFailureCount} failed ·{" "}
-                        {org.queuePendingCount} queued
-                        {org.queueFailedCount > 0
-                          ? ` · ${org.queueFailedCount} need retry`
+                        {org.monthlyDeliveryFailureCount} failed this month ·{" "}
+                        {org.queuePendingCount} queued now
+                        {org.queueFailedStuckCount > 0
+                          ? ` · ${org.queueFailedStuckCount} stuck, need attention`
+                          : ""}
+                        {org.queueFailedRetryableCount > 0
+                          ? ` · ${org.queueFailedRetryableCount} retrying`
                           : ""}
                       </p>
                     </td>
