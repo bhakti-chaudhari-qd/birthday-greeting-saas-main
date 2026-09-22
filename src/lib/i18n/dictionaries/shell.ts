@@ -5,6 +5,7 @@ export type ShellDict = {
   menu: string;
   close: string;
   organizationPortalLabel: string;
+  platformAdminPortalLabel: string;
   /** Keyed by nav href (stable), for items that link somewhere. */
   navLabelsByHref: Record<string, string>;
   /** Keyed by the group's English label (there's only one group, "Settings"). */
@@ -25,6 +26,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
     menu: "Menu",
     close: "Close",
     organizationPortalLabel: "Organization",
+    platformAdminPortalLabel: "Platform Admin",
     navLabelsByHref: {
       "/dashboard": "Home",
       "/dashboard/contacts": "Contacts",
@@ -35,6 +37,11 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/dashboard/settings/occasions": "Occasion Management",
       "/dashboard/settings/contact-fields": "Contact Fields",
       "/dashboard/settings/billing": "Billing",
+      "/admin": "Overview",
+      "/admin/usage": "Usage",
+      "/admin/organizations": "Clients",
+      "/admin/vendors": "Vendors",
+      "/admin/settings/plan-catalogue": "Settings",
     },
     navGroupLabelsByEnglishLabel: {
       Settings: "Settings",
@@ -54,6 +61,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
     menu: "मेनू",
     close: "बंद करें",
     organizationPortalLabel: "संगठन",
+    platformAdminPortalLabel: "प्लेटफ़ॉर्म एडमिन",
     navLabelsByHref: {
       "/dashboard": "होम",
       "/dashboard/contacts": "कॉन्टैक्ट्स",
@@ -64,6 +72,11 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/dashboard/settings/occasions": "अवसर प्रबंधन",
       "/dashboard/settings/contact-fields": "कॉन्टैक्ट फ़ील्ड",
       "/dashboard/settings/billing": "बिलिंग",
+      "/admin": "ओवरव्यू",
+      "/admin/usage": "उपयोग",
+      "/admin/organizations": "क्लायंट",
+      "/admin/vendors": "वेंडर",
+      "/admin/settings/plan-catalogue": "सेटिंग्स",
     },
     navGroupLabelsByEnglishLabel: {
       Settings: "सेटिंग्स",
@@ -83,6 +96,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
     menu: "मेनू",
     close: "बंद करा",
     organizationPortalLabel: "संस्था",
+    platformAdminPortalLabel: "प्लॅटफॉर्म अ‍ॅडमिन",
     navLabelsByHref: {
       "/dashboard": "होम",
       "/dashboard/contacts": "कॉन्टॅक्ट्स",
@@ -93,6 +107,11 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/dashboard/settings/occasions": "प्रसंग व्यवस्थापन",
       "/dashboard/settings/contact-fields": "कॉन्टॅक्ट फील्ड्स",
       "/dashboard/settings/billing": "बिलिंग",
+      "/admin": "ओव्हरव्ह्यू",
+      "/admin/usage": "वापर",
+      "/admin/organizations": "क्लायंट",
+      "/admin/vendors": "व्हेंडर",
+      "/admin/settings/plan-catalogue": "सेटिंग्ज",
     },
     navGroupLabelsByEnglishLabel: {
       Settings: "सेटिंग्ज",

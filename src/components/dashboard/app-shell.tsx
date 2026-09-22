@@ -370,7 +370,11 @@ export function AppShell({
   const dict = getShellDict(useLocale());
   const translatedNav = useMemo(() => translateNav(nav, dict), [nav, dict]);
   const translatedPortalLabel =
-    portalLabel === "Organization" ? dict.organizationPortalLabel : portalLabel;
+    portalLabel === "Organization"
+      ? dict.organizationPortalLabel
+      : portalLabel === "Platform Admin"
+        ? dict.platformAdminPortalLabel
+        : portalLabel;
   const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
   const mobileOpen = mobileMenuPath === pathname;
   const panelId = useId();

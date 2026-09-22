@@ -2,6 +2,8 @@ import type { VendorOnboardingStatus } from "@prisma/client";
 
 import { StatusBadge } from "@/components/ui/feedback";
 import type { PlatformVendorSummary } from "@/lib/admin/vendors";
+import type { Locale } from "@/lib/i18n/constants";
+import { getAdminVendorDict } from "@/lib/i18n/dictionaries/admin-vendor";
 import { formatDisplayDate } from "@/lib/ui/datetime";
 
 const LIFECYCLE_TONES = {
@@ -12,12 +14,25 @@ const LIFECYCLE_TONES = {
   REJECTED: "danger",
 } as const;
 
+/**
+ * Server components have no synchronous access to the locale cookie (see
+ * use-locale.ts), so callers that already know the locale (a client
+ * component that called useLocale()) pass it explicitly; callers that don't
+ * care (existing server-rendered English call sites, tests) get English.
+ */
 export function VendorLifecycleBadge({
   status,
+  locale = "en",
 }: {
   status: VendorOnboardingStatus;
+  locale?: Locale;
 }) {
-  return <StatusBadge label={status} tone={LIFECYCLE_TONES[status]} />;
+  return (
+    <StatusBadge
+      label={getAdminVendorDict(locale).lifecycleLabels[status]}
+      tone={LIFECYCLE_TONES[status]}
+    />
+  );
 }
 
 export function maskedVendorMobile(mobile: string | null) {
@@ -38,16 +53,18 @@ export function isActiveAmbiguousVendorInvite(
 export function describeLatestVendorInvite(
   latestInvite: PlatformVendorSummary["latestInvite"],
   now = new Date(),
+  locale: Locale = "en",
 ) {
-  if (!latestInvite) return "No invitation sent";
-  if (latestInvite.deliveryStatus === "FAILED") return "Invitation not sent";
-  if (latestInvite.deliveryStatus === "PENDING") return "SMS send pending";
-  if (latestInvite.revokedAt) return "Latest invitation revoked";
+  const dict = getAdminVendorDict(locale).latestInvite;
+  if (!latestInvite) return dict.noInvitationSent;
+  if (latestInvite.deliveryStatus === "FAILED") return dict.invitationNotSent;
+  if (latestInvite.deliveryStatus === "PENDING") return dict.smsSendPending;
+  if (latestInvite.revokedAt) return dict.invitationRevoked;
   if (new Date(latestInvite.expiresAt).getTime() <= now.getTime()) {
-    return "Latest invitation expired";
+    return dict.invitationExpired;
   }
   if (isActiveAmbiguousVendorInvite(latestInvite, now)) {
-    return "SMS delivery uncertain · invitation remains valid";
+    return dict.deliveryUncertain;
   }
-  return `SMS sent · expires ${formatDisplayDate(latestInvite.expiresAt)}`;
+  return dict.smsSentExpires(formatDisplayDate(latestInvite.expiresAt));
 }
