@@ -4,6 +4,7 @@ import { PortalStatGrid } from "@/components/portal/portal-stat-grid";
 import { StatusBadge } from "@/components/ui/feedback";
 import { PageHeader, PageShell, Panel } from "@/components/ui/page";
 import { getPlatformUsageSnapshot } from "@/lib/admin/org-ops";
+import { getCustomerDeliveryStatusLabel } from "@/lib/ui/customer-labels";
 
 export const dynamic = "force-dynamic";
 
@@ -41,15 +42,26 @@ export default async function AdminUsagePage() {
           {
             label: "Failed this month",
             value: formatNumber(usage.failureCount),
-            hint: "Failed or undelivered",
+            hint: "Failed or not delivered",
           },
         ]}
       />
+      <p className="text-xs text-stone-500">
+        Successful ({formatNumber(usage.successCount)}) + Failed (
+        {formatNumber(usage.failureCount)}) + still sending (
+        {formatNumber(usage.queuedCount)}) = Deliveries this month (
+        {formatNumber(usage.deliveriesThisMonth)}).
+      </p>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Panel className="p-5">
-          <h2 className="text-sm font-semibold text-stone-900">Queue depth</h2>
-          <p className="mt-1 text-xs text-stone-500">Right now, not a monthly count</p>
+          <h2 className="text-sm font-semibold text-stone-900">
+            Queue right now
+          </h2>
+          <p className="mt-1 text-xs text-stone-500">
+            Live counts, not a monthly total - unrelated to &quot;Failed this
+            month&quot; above, which counts finished attempts instead
+          </p>
           <ul className="mt-3 space-y-2 text-sm">
             <li className="flex justify-between border-b border-stone-100 pb-2">
               <span className="text-stone-700">Pending</span>
@@ -63,10 +75,18 @@ export default async function AdminUsagePage() {
                 {formatNumber(usage.queueSending)}
               </span>
             </li>
-            <li className="flex justify-between">
-              <span className="text-stone-700">Failed</span>
+            <li className="flex justify-between border-b border-stone-100 pb-2">
+              <span className="text-stone-700">
+                Failed - will retry automatically
+              </span>
               <span className="font-medium">
-                {formatNumber(usage.queueFailed)}
+                {formatNumber(usage.queueFailedRetryable)}
+              </span>
+            </li>
+            <li className="flex justify-between">
+              <span className="text-stone-700">Failed - needs attention</span>
+              <span className="font-medium">
+                {formatNumber(usage.queueFailedStuck)}
               </span>
             </li>
           </ul>
@@ -86,7 +106,9 @@ export default async function AdminUsagePage() {
                   key={row.status}
                   className="flex justify-between border-b border-stone-100 pb-2 last:border-0 last:pb-0"
                 >
-                  <span className="text-stone-700">{row.status}</span>
+                  <span className="text-stone-700">
+                    {getCustomerDeliveryStatusLabel(row.status)}
+                  </span>
                   <span className="font-medium">
                     {formatNumber(row.count)}
                   </span>
@@ -127,6 +149,12 @@ export default async function AdminUsagePage() {
             <h2 className="text-sm font-semibold text-stone-900">
               Near contact limit (≥80%)
             </h2>
+            {usage.nearContactLimitTotal > usage.nearContactLimit.length ? (
+              <p className="mt-1 text-xs text-stone-500">
+                Showing {usage.nearContactLimit.length} of{" "}
+                {usage.nearContactLimitTotal}
+              </p>
+            ) : null}
           </div>
           <LimitTable rows={usage.nearContactLimit} kind="contacts" />
         </Panel>
@@ -135,6 +163,12 @@ export default async function AdminUsagePage() {
             <h2 className="text-sm font-semibold text-stone-900">
               Near message limit (≥80% of this month&apos;s limit)
             </h2>
+            {usage.nearMessageLimitTotal > usage.nearMessageLimit.length ? (
+              <p className="mt-1 text-xs text-stone-500">
+                Showing {usage.nearMessageLimit.length} of{" "}
+                {usage.nearMessageLimitTotal}
+              </p>
+            ) : null}
           </div>
           <LimitTable rows={usage.nearMessageLimit} kind="messages" />
         </Panel>

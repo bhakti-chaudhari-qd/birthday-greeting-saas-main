@@ -97,7 +97,7 @@ export default async function AdminHomePage() {
           {
             label: "Queue",
             value: formatNumber(usage.queuePending),
-            hint: `${formatNumber(usage.queueSending)} sending · ${formatNumber(usage.queueFailed)} failed`,
+            hint: `${formatNumber(usage.queueSending)} sending · ${formatNumber(usage.queueFailedStuck)} failed (needs attention)`,
           },
         ]}
       />

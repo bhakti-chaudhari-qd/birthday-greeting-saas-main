@@ -24,7 +24,8 @@ import {
   type AdminPaymentLinkSummary,
 } from "@/lib/billing/service";
 import { prisma } from "@/lib/db";
-import { USAGE_PERIOD_TIMEZONE } from "@/lib/queue/constants";
+import { RETRYABLE_ERROR_CODES } from "@/lib/queue/classify";
+import { MAX_SEND_ATTEMPTS, USAGE_PERIOD_TIMEZONE } from "@/lib/queue/constants";
 import {
   getOrganizationLocalIsoDate,
   parseTargetDate,
@@ -655,14 +656,26 @@ export type PlatformUsageSnapshot = {
   deliveriesThisMonth: number;
   successCount: number;
   failureCount: number;
+  /** Logged this month but with no final outcome yet (DeliveryStatus.QUEUED). */
+  queuedCount: number;
   successRatePercent: number | null;
   statusBreakdown: Array<{ status: DeliveryStatus; count: number }>;
   channelBreakdown: Array<{ channel: string; count: number }>;
   queuePending: number;
   queueSending: number;
-  queueFailed: number;
+  /**
+   * SendQueue rows in FAILED status right now (a live count, unrelated to
+   * "Failed this month" above, which counts finished DeliveryLog attempts).
+   * Split because a FAILED row isn't necessarily done: below MAX_SEND_ATTEMPTS
+   * with a recognized retryable error code, the worker will pick it up again
+   * on its own; queueFailedStuck is what actually needs attention.
+   */
+  queueFailedRetryable: number;
+  queueFailedStuck: number;
   nearContactLimit: PlatformOrganizationSummary[];
+  nearContactLimitTotal: number;
   nearMessageLimit: PlatformOrganizationSummary[];
+  nearMessageLimitTotal: number;
 };
 
 export async function getPlatformUsageSnapshot(): Promise<PlatformUsageSnapshot> {
@@ -674,7 +687,8 @@ export async function getPlatformUsageSnapshot(): Promise<PlatformUsageSnapshot>
     deliveriesToday,
     queuePending,
     queueSending,
-    queueFailed,
+    queueFailedTotal,
+    queueFailedRetryable,
     organizations,
   ] = await Promise.all([
     prisma.deliveryLog.findMany({
@@ -690,6 +704,16 @@ export async function getPlatformUsageSnapshot(): Promise<PlatformUsageSnapshot>
     prisma.sendQueue.count({ where: { status: "PENDING" } }),
     prisma.sendQueue.count({ where: { status: "SENDING" } }),
     prisma.sendQueue.count({ where: { status: "FAILED" } }),
+    prisma.sendQueue.count({
+      where: {
+        status: "FAILED",
+        attemptCount: { lt: MAX_SEND_ATTEMPTS },
+        OR: [
+          { lastErrorCode: null },
+          { lastErrorCode: { in: [...RETRYABLE_ERROR_CODES] } },
+        ],
+      },
+    }),
     listOrganizationsForPlatformAdmin(),
   ]);
 
@@ -697,6 +721,7 @@ export async function getPlatformUsageSnapshot(): Promise<PlatformUsageSnapshot>
   const channelCountMap = new Map<string, number>();
   let successCount = 0;
   let failureCount = 0;
+  let queuedCount = 0;
 
   for (const log of monthlyLogs) {
     statusCountMap.set(log.status, (statusCountMap.get(log.status) ?? 0) + 1);
@@ -706,40 +731,38 @@ export async function getPlatformUsageSnapshot(): Promise<PlatformUsageSnapshot>
     );
     if (SUCCESS_STATUSES.includes(log.status)) {
       successCount += 1;
-    }
-    if (FAILURE_STATUSES.includes(log.status)) {
+    } else if (FAILURE_STATUSES.includes(log.status)) {
       failureCount += 1;
+    } else {
+      queuedCount += 1;
     }
   }
 
   const decided = successCount + failureCount;
   const summaries = organizations;
 
-  const nearContactLimit = summaries
-    .filter((org) => {
-      if (org.contactLimit == null || org.contactLimit <= 0) return false;
-      return org.contactCount / org.contactLimit >= 0.8;
-    })
-    .slice(0, 10);
+  const nearContactLimitAll = summaries.filter((org) => {
+    if (org.contactLimit == null || org.contactLimit <= 0) return false;
+    return org.contactCount / org.contactLimit >= 0.8;
+  });
 
-  const nearMessageLimit = summaries
-    .filter((org) => {
-      if (
-        org.monthlyMessageLimit == null ||
-        org.monthlyMessageLimit <= 0 ||
-        org.messagesSentThisMonth == null
-      ) {
-        return false;
-      }
-      return org.messagesSentThisMonth / org.monthlyMessageLimit >= 0.8;
-    })
-    .slice(0, 10);
+  const nearMessageLimitAll = summaries.filter((org) => {
+    if (
+      org.monthlyMessageLimit == null ||
+      org.monthlyMessageLimit <= 0 ||
+      org.messagesSentThisMonth == null
+    ) {
+      return false;
+    }
+    return org.messagesSentThisMonth / org.monthlyMessageLimit >= 0.8;
+  });
 
   return {
     deliveriesToday,
     deliveriesThisMonth: monthlyLogs.length,
     successCount,
     failureCount,
+    queuedCount,
     successRatePercent:
       decided === 0 ? null : Math.round((successCount / decided) * 1000) / 10,
     statusBreakdown: [...statusCountMap.entries()]
@@ -750,8 +773,11 @@ export async function getPlatformUsageSnapshot(): Promise<PlatformUsageSnapshot>
       .sort((a, b) => b.count - a.count),
     queuePending,
     queueSending,
-    queueFailed,
-    nearContactLimit,
-    nearMessageLimit,
+    queueFailedRetryable,
+    queueFailedStuck: queueFailedTotal - queueFailedRetryable,
+    nearContactLimit: nearContactLimitAll.slice(0, 10),
+    nearContactLimitTotal: nearContactLimitAll.length,
+    nearMessageLimit: nearMessageLimitAll.slice(0, 10),
+    nearMessageLimitTotal: nearMessageLimitAll.length,
   };
 }
