@@ -40,7 +40,7 @@ export function describeLatestVendorInvite(
   now = new Date(),
 ) {
   if (!latestInvite) return "No invitation sent";
-  if (latestInvite.deliveryStatus === "FAILED") return "Latest SMS failed";
+  if (latestInvite.deliveryStatus === "FAILED") return "Invitation not sent";
   if (latestInvite.deliveryStatus === "PENDING") return "SMS send pending";
   if (latestInvite.revokedAt) return "Latest invitation revoked";
   if (new Date(latestInvite.expiresAt).getTime() <= now.getTime()) {

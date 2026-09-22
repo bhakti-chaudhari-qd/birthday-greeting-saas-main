@@ -83,7 +83,7 @@ describe("platform admin vendor UI", () => {
         expiresAt: "2026-07-20T00:00:00.000Z",
         revokedAt: null,
       }),
-    ).toBe("Latest SMS failed");
+    ).toBe("Invitation not sent");
     expect(
       describeLatestVendorInvite(
         {
