@@ -5,9 +5,12 @@ import { useState } from "react";
 
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass } from "@/components/ui/page";
+import { getAdminVendorNewDict } from "@/lib/i18n/dictionaries/admin-vendor-new";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export function CreateVendorForm() {
   const router = useRouter();
+  const dict = getAdminVendorNewDict(useLocale());
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -33,22 +36,22 @@ export function CreateVendorForm() {
           // visible banner instead of navigating there looking like a
           // plain success.
           const inviteIssue = payload.error?.details?.deliveryUncertain
-            ? "SMS delivery is uncertain. Verify with the vendor before resending, to avoid a duplicate message."
-            : "the invitation SMS could not be sent. You can retry sending it from this page.";
+            ? dict.inviteIssueUncertain
+            : dict.inviteIssueNotSent;
           router.push(
             `/admin/vendors/${vendorId}?inviteIssue=${encodeURIComponent(inviteIssue)}`,
           );
           router.refresh();
           return;
         }
-        setError(payload.error?.message ?? "Failed to create vendor");
+        setError(payload.error?.message ?? dict.failedToCreateVendor);
         return;
       }
 
       router.push(`/admin/vendors/${payload.data.vendor.id}`);
       router.refresh();
     } catch {
-      setError("Failed to create vendor");
+      setError(dict.failedToCreateVendor);
     } finally {
       setSubmitting(false);
     }
@@ -57,7 +60,7 @@ export function CreateVendorForm() {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Vendor name</span>
+        <span className="font-medium text-stone-800">{dict.vendorName}</span>
         <input
           name="name"
           className={`mt-1 ${inputClass}`}
@@ -70,7 +73,7 @@ export function CreateVendorForm() {
         />
       </label>
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Mobile</span>
+        <span className="font-medium text-stone-800">{dict.mobile}</span>
         <input
           name="mobile"
           type="tel"
@@ -79,11 +82,11 @@ export function CreateVendorForm() {
           className={`mt-1 ${inputClass}`}
           value={mobile}
           onChange={(event) => setMobile(event.target.value)}
-          placeholder="98765 43210"
+          placeholder={dict.mobilePlaceholder}
           required
         />
         <span className="mt-1 block text-xs text-stone-500">
-          The registration invitation is sent by SMS.
+          {dict.mobileHint}
         </span>
       </label>
 
@@ -93,7 +96,7 @@ export function CreateVendorForm() {
         disabled={submitting}
         className={primaryButtonClass}
       >
-        {submitting ? "Creating and sending…" : "Create vendor and send SMS"}
+        {submitting ? dict.creatingAndSending : dict.createVendorAndSendSms}
       </button>
     </form>
   );

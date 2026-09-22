@@ -10,6 +10,9 @@ import {
 import { getAdminOverviewDict } from "@/lib/i18n/dictionaries/admin-overview";
 import { getAdminUsageDict } from "@/lib/i18n/dictionaries/admin-usage";
 import { getAdminVendorDict } from "@/lib/i18n/dictionaries/admin-vendor";
+import { getAdminVendorDetailDict } from "@/lib/i18n/dictionaries/admin-vendor-detail";
+import { getAdminVendorNewDict } from "@/lib/i18n/dictionaries/admin-vendor-new";
+import { getAdminVendorsListDict } from "@/lib/i18n/dictionaries/admin-vendors-list";
 import { getShellDict } from "@/lib/i18n/dictionaries/shell";
 import { LOCALES } from "@/lib/i18n/constants";
 
@@ -210,6 +213,61 @@ describe("admin i18n: clients list", () => {
       expect(dict.referredBy("Acme Vendor")).toMatch(DEVANAGARI_PATTERN);
       expect(dict.successThisMonth(92)).toContain("92");
       expect(dict.failedThisMonth("4")).toContain("4");
+    }
+  });
+});
+
+describe("admin i18n: vendors list, detail, and new", () => {
+  it("returns Devanagari content and wires values through for the vendors list", () => {
+    for (const locale of ["hi", "mr"] as const) {
+      const dict = getAdminVendorsListDict(locale);
+      expect(dict.title).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.successPercent(75)).toContain("75");
+      expect(dict.successPercent(75)).toMatch(DEVANAGARI_PATTERN);
+    }
+  });
+
+  it("returns Devanagari content and wires values through for the vendor detail page", () => {
+    for (const locale of ["hi", "mr"] as const) {
+      const dict = getAdminVendorDetailDict(locale);
+      expect(dict.backToVendors).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.vendorWasCreatedBut("test-issue-text")).toContain("test-issue-text");
+      expect(dict.vendorWasCreatedBut("test-issue-text")).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.okFailed("3", "1")).toContain("3");
+      expect(dict.okFailed("3", "1")).toContain("1");
+      // Every action has a distinct button label, confirmation, success, and
+      // failure message - not derived from one another, so check they're
+      // all populated and none accidentally left in English.
+      for (const [key, value] of Object.entries(dict.form)) {
+        expect(value, `${locale}.form.${key}`).toMatch(DEVANAGARI_PATTERN);
+      }
+    }
+  });
+
+  it("returns Devanagari content for the create-vendor page and form", () => {
+    for (const locale of ["hi", "mr"] as const) {
+      const dict = getAdminVendorNewDict(locale);
+      expect(dict.title).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.createVendorAndSendSms).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.inviteIssueUncertain).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.inviteIssueNotSent).toMatch(DEVANAGARI_PATTERN);
+    }
+  });
+
+  it("covers every locale with non-empty strings for all three dicts", () => {
+    function checkStrings(value: unknown, path: string) {
+      if (typeof value === "string") {
+        expect(value.trim().length, path).toBeGreaterThan(0);
+      } else if (value && typeof value === "object") {
+        for (const [key, nested] of Object.entries(value)) {
+          checkStrings(nested, `${path}.${key}`);
+        }
+      }
+    }
+    for (const locale of LOCALES) {
+      checkStrings(getAdminVendorsListDict(locale), `vendorsList.${locale}`);
+      checkStrings(getAdminVendorDetailDict(locale), `vendorDetail.${locale}`);
+      checkStrings(getAdminVendorNewDict(locale), `vendorNew.${locale}`);
     }
   });
 });

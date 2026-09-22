@@ -12,6 +12,8 @@ import {
   secondaryButtonClass,
 } from "@/components/ui/page";
 import type { PlatformVendorDetail } from "@/lib/admin/vendors";
+import { getAdminVendorDetailDict } from "@/lib/i18n/dictionaries/admin-vendor-detail";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type VendorAdminFormProps = {
   vendor: PlatformVendorDetail;
@@ -19,10 +21,11 @@ type VendorAdminFormProps = {
 
 export function VendorAdminForm({ vendor }: VendorAdminFormProps) {
   const router = useRouter();
+  const dict = getAdminVendorDetailDict(useLocale()).form;
   const [name, setName] = useState(vendor.name);
   const [referralCode, setReferralCode] = useState(vendor.referralCode);
   const [saving, setSaving] = useState(false);
-  const [action, setAction] = useState<string | null>(null);
+  const [actionLabel, setActionLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const hasActiveAmbiguousInvite = isActiveAmbiguousVendorInvite(
@@ -46,7 +49,7 @@ export function VendorAdminForm({ vendor }: VendorAdminFormProps) {
       });
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to save vendor");
+        setError(payload.error?.message ?? dict.failedToSaveVendor);
         return;
       }
 
@@ -55,49 +58,57 @@ export function VendorAdminForm({ vendor }: VendorAdminFormProps) {
         setName(updated.name);
         setReferralCode(updated.referralCode);
       }
-      setSuccess("Vendor saved");
+      setSuccess(dict.vendorSaved);
       router.refresh();
     } catch {
-      setError("Failed to save vendor");
+      setError(dict.failedToSaveVendor);
     } finally {
       setSaving(false);
     }
   }
 
-  async function runAction(
-    label: string,
-    confirmation: string,
-    path: string,
-    body?: Record<string, unknown>,
-  ) {
-    if (!window.confirm(confirmation)) return;
-    setAction(label);
+  /**
+   * buttonLabel is shown on the button while the request is in flight (and
+   * doubles as the loading state key); successMessage/failureMessage are
+   * fully translated, standalone strings - not derived from buttonLabel, so
+   * there's no locale-dependent casing/lowering involved.
+   */
+  async function runAction(config: {
+    buttonLabel: string;
+    confirmation: string;
+    successMessage: string;
+    failureMessage: string;
+    path: string;
+    body?: Record<string, unknown>;
+  }) {
+    if (!window.confirm(config.confirmation)) return;
+    setActionLabel(config.buttonLabel);
     setError(null);
     setSuccess(null);
     try {
-      const response = await fetch(path, {
-        method: body ? "PATCH" : "POST",
-        headers: body ? { "Content-Type": "application/json" } : undefined,
-        body: body ? JSON.stringify(body) : undefined,
+      const response = await fetch(config.path, {
+        method: config.body ? "PATCH" : "POST",
+        headers: config.body ? { "Content-Type": "application/json" } : undefined,
+        body: config.body ? JSON.stringify(config.body) : undefined,
       });
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error?.message ?? `Failed to ${label.toLowerCase()}`);
+        setError(payload.error?.message ?? config.failureMessage);
         return;
       }
-      setSuccess(`${label} completed`);
+      setSuccess(config.successMessage);
       router.refresh();
     } catch {
-      setError(`Failed to ${label.toLowerCase()}`);
+      setError(config.failureMessage);
     } finally {
-      setAction(null);
+      setActionLabel(null);
     }
   }
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Name</span>
+        <span className="font-medium text-stone-800">{dict.name}</span>
         <input
           className={`mt-1 ${inputClass}`}
           value={name}
@@ -107,7 +118,7 @@ export function VendorAdminForm({ vendor }: VendorAdminFormProps) {
       </label>
 
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Referral code</span>
+        <span className="font-medium text-stone-800">{dict.referralCode}</span>
         <input
           className={`mt-1 font-mono uppercase ${inputClass}`}
           value={referralCode}
@@ -115,7 +126,7 @@ export function VendorAdminForm({ vendor }: VendorAdminFormProps) {
           required
         />
         <span className="mt-1 block text-xs text-stone-500">
-          One code per vendor. Letters, numbers, and hyphens (2-32 characters).
+          {dict.referralCodeHint}
         </span>
       </label>
 
@@ -125,87 +136,101 @@ export function VendorAdminForm({ vendor }: VendorAdminFormProps) {
       <div className="flex flex-wrap gap-2">
         <button
           type="submit"
-          disabled={saving || action !== null}
+          disabled={saving || actionLabel !== null}
           className={primaryButtonClass}
         >
-          {saving ? "Saving…" : "Save vendor"}
+          {saving ? dict.saving : dict.saveVendor}
         </button>
         {vendor.userCount === 0 &&
         (vendor.onboardingStatus === "DRAFT" ||
           vendor.onboardingStatus === "INVITED") ? (
           <button
             type="button"
-            disabled={action !== null}
+            disabled={actionLabel !== null}
             className={secondaryButtonClass}
-            onClick={() =>
-              runAction(
-                vendor.onboardingStatus === "DRAFT"
-                  ? "Retry SMS"
-                  : "Reissue SMS",
-                hasActiveAmbiguousInvite
-                  ? "SMS delivery is uncertain and the current invitation remains valid. Verify with the vendor before reissuing; continuing will revoke the current invitation."
-                  : "Send a new registration SMS? Any previous invitation will be revoked.",
-                `/api/v1/admin/vendors/${vendor.id}/registration-link`,
-              )
-            }
-          >
-            {action ??
-              (vendor.onboardingStatus === "DRAFT"
-                ? "Retry invitation SMS"
+            onClick={() => {
+              const isDraft = vendor.onboardingStatus === "DRAFT";
+              const buttonLabel = isDraft
+                ? dict.retryInvitationSms
                 : hasActiveAmbiguousInvite
-                  ? "Reissue SMS (delivery uncertain)"
-                  : "Reissue invitation SMS")}
+                  ? dict.reissueSmsUncertain
+                  : dict.reissueInvitationSms;
+              void runAction({
+                buttonLabel,
+                confirmation: hasActiveAmbiguousInvite
+                  ? dict.confirmUncertainReissue
+                  : dict.confirmSendNewSms,
+                successMessage: isDraft ? dict.smsRetryCompleted : dict.smsReissueCompleted,
+                failureMessage: dict.failedToSendSms,
+                path: `/api/v1/admin/vendors/${vendor.id}/registration-link`,
+              });
+            }}
+          >
+            {actionLabel ??
+              (vendor.onboardingStatus === "DRAFT"
+                ? dict.retryInvitationSms
+                : hasActiveAmbiguousInvite
+                  ? dict.reissueSmsUncertain
+                  : dict.reissueInvitationSms)}
           </button>
         ) : null}
         {vendor.onboardingStatus === "PENDING" ? (
           <>
             <button
               type="button"
-              disabled={action !== null}
+              disabled={actionLabel !== null}
               className={secondaryButtonClass}
               onClick={() =>
-                runAction(
-                  "Approve",
-                  "Approve this vendor registration?",
-                  `/api/v1/admin/vendors/${vendor.id}/approve`,
-                )
+                void runAction({
+                  buttonLabel: dict.approve,
+                  confirmation: dict.confirmApprove,
+                  successMessage: dict.approveCompleted,
+                  failureMessage: dict.failedToApprove,
+                  path: `/api/v1/admin/vendors/${vendor.id}/approve`,
+                })
               }
             >
-              Approve
+              {dict.approve}
             </button>
             <button
               type="button"
-              disabled={action !== null}
+              disabled={actionLabel !== null}
               className={compactSecondaryButtonClass}
               onClick={() =>
-                runAction(
-                  "Reject",
-                  "Reject this vendor registration?",
-                  `/api/v1/admin/vendors/${vendor.id}/reject`,
-                )
+                void runAction({
+                  buttonLabel: dict.reject,
+                  confirmation: dict.confirmReject,
+                  successMessage: dict.rejectCompleted,
+                  failureMessage: dict.failedToReject,
+                  path: `/api/v1/admin/vendors/${vendor.id}/reject`,
+                })
               }
             >
-              Reject
+              {dict.reject}
             </button>
           </>
         ) : null}
         {vendor.onboardingStatus === "APPROVED" ? (
           <button
             type="button"
-            disabled={action !== null}
+            disabled={actionLabel !== null}
             className={secondaryButtonClass}
             onClick={() =>
-              runAction(
-                vendor.isActive ? "Suspend" : "Reactivate",
-                vendor.isActive
-                  ? "Suspend this active vendor?"
-                  : "Reactivate this approved vendor?",
-                `/api/v1/admin/vendors/${vendor.id}`,
-                { isActive: !vendor.isActive },
-              )
+              void runAction({
+                buttonLabel: vendor.isActive ? dict.suspendVendor : dict.reactivateVendor,
+                confirmation: vendor.isActive ? dict.confirmSuspend : dict.confirmReactivate,
+                successMessage: vendor.isActive
+                  ? dict.suspendCompleted
+                  : dict.reactivateCompleted,
+                failureMessage: vendor.isActive
+                  ? dict.failedToSuspend
+                  : dict.failedToReactivate,
+                path: `/api/v1/admin/vendors/${vendor.id}`,
+                body: { isActive: !vendor.isActive },
+              })
             }
           >
-            {vendor.isActive ? "Suspend vendor" : "Reactivate vendor"}
+            {vendor.isActive ? dict.suspendVendor : dict.reactivateVendor}
           </button>
         ) : null}
       </div>

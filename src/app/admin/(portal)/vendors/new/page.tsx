@@ -1,20 +1,26 @@
+"use client";
+
 import Link from "next/link";
 
 import { CreateVendorForm } from "@/components/admin/create-vendor-form";
 import { PageHeader, PageShell, Panel } from "@/components/ui/page";
+import { getAdminVendorNewDict } from "@/lib/i18n/dictionaries/admin-vendor-new";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export default function NewAdminVendorPage() {
+  const dict = getAdminVendorNewDict(useLocale());
+
   return (
     <PageShell>
       <PageHeader
-        title="Create vendor"
-        description="Create the vendor record and send its secure registration invitation by SMS."
+        title={dict.title}
+        description={dict.description}
         actions={
           <Link
             href="/admin/vendors"
             className="text-sm font-medium text-primary hover:underline"
           >
-            Back to vendors
+            {dict.backToVendors}
           </Link>
         }
       />
