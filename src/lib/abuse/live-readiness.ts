@@ -26,7 +26,7 @@ export type LiveChannelReadiness = {
   liveChannelsApproved: boolean;
   canEnableLiveCustomHttp: boolean;
   smsProvider: "TEST" | "CUSTOM_HTTP" | null;
-  whatsappProvider: "TEST" | "CUSTOM_HTTP" | null;
+  whatsappProvider: "TEST" | "CUSTOM_HTTP" | "META" | null;
   smsTemplatesReadyForLive: number;
   smsTemplatesNeedingSetup: number;
   checklist: LiveReadinessChecklistItem[];
@@ -44,6 +44,15 @@ function asProviderMode(
     return "TEST";
   }
   return null;
+}
+
+function asWhatsAppProviderMode(
+  provider: ChannelProvider | null | undefined,
+): "TEST" | "CUSTOM_HTTP" | "META" | null {
+  if (provider === ChannelProvider.META) {
+    return "META";
+  }
+  return asProviderMode(provider);
 }
 
 /**
@@ -97,7 +106,7 @@ export async function getLiveChannelReadiness(
     (row) => row.channel === Channel.WHATSAPP,
   );
   const smsProvider = asProviderMode(smsConfig?.provider);
-  const whatsappProvider = asProviderMode(whatsappConfig?.provider);
+  const whatsappProvider = asWhatsAppProviderMode(whatsappConfig?.provider);
 
   let smsTemplatesReadyForLive = 0;
   let smsTemplatesNeedingSetup = 0;
@@ -111,7 +120,9 @@ export async function getLiveChannelReadiness(
   }
 
   const liveProviderDone =
-    smsProvider === "CUSTOM_HTTP" || whatsappProvider === "CUSTOM_HTTP";
+    smsProvider === "CUSTOM_HTTP" ||
+    whatsappProvider === "CUSTOM_HTTP" ||
+    whatsappProvider === "META";
   const dltDone = smsTemplates.length > 0 && smsTemplatesNeedingSetup === 0;
 
   const checklist: LiveReadinessChecklistItem[] = [
@@ -134,7 +145,7 @@ export async function getLiveChannelReadiness(
     },
     {
       id: "live_provider",
-      label: "Switch SMS or WhatsApp to Custom HTTP (live)",
+      label: "Switch SMS or WhatsApp to a live provider (Custom HTTP or Meta)",
       done: liveProviderDone,
       href: "/dashboard/settings/channels",
     },

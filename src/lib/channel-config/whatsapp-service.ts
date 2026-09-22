@@ -25,6 +25,8 @@ import {
   stripWhatsAppMediaDataUrlPrefix,
   whatsappHttpCredentialsSchema,
   whatsappHttpSettingsSchema,
+  whatsappMetaCredentialsSchema,
+  whatsappMetaSettingsSchema,
   whatsappTestSettingsSchema,
   type WhatsAppMediaContentType,
 } from "./whatsapp-types";
@@ -76,6 +78,35 @@ function encryptWhatsAppCredentials(credentials: {
   );
 }
 
+/** Same "leave blank to keep" UX as Custom HTTP's password, for the Meta access token. */
+function existingWhatsAppMetaCredentials(
+  existing: ChannelConfig | null,
+): { accessToken: string } | null {
+  if (
+    !existing ||
+    existing.provider !== ChannelProvider.META ||
+    !isEncryptedCredentials(existing.encryptedCredentials)
+  ) {
+    return null;
+  }
+
+  try {
+    return whatsappMetaCredentialsSchema.parse(
+      JSON.parse(decryptCredentials(existing.encryptedCredentials)),
+    );
+  } catch {
+    return null;
+  }
+}
+
+function encryptWhatsAppMetaCredentials(credentials: {
+  accessToken: string;
+}): string {
+  return encryptCredentials(
+    JSON.stringify(whatsappMetaCredentialsSchema.parse(credentials)),
+  );
+}
+
 /**
  * Username/password and API-key are two mutually exclusive Custom HTTP auth
  * modes, chosen by which field the request actually supplies. Whichever
@@ -89,6 +120,23 @@ function resolveEncryptedCredentialsForWrite(
 ): string {
   if (input.provider === ChannelProvider.TEST) {
     return buildTestProviderEncryptedCredentials();
+  }
+
+  if (input.provider === ChannelProvider.META) {
+    if (hasNonEmptyValue(input.accessToken)) {
+      return encryptWhatsAppMetaCredentials({
+        accessToken: input.accessToken.trim(),
+      });
+    }
+
+    const existingMetaCredentials = existingWhatsAppMetaCredentials(existing);
+    if (existingMetaCredentials) {
+      return encryptWhatsAppMetaCredentials(existingMetaCredentials);
+    }
+
+    throw new ChannelConfigValidationError(
+      "Access token is required for Meta Cloud API WhatsApp",
+    );
   }
 
   const existingCredentials = existingWhatsAppCredentials(existing);
@@ -157,6 +205,73 @@ function resolveSettingsForWrite(
     }
 
     return Prisma.JsonNull;
+  }
+
+  if (input.provider === ChannelProvider.META) {
+    if (!input.phoneNumberId?.trim()) {
+      throw new ChannelConfigValidationError(
+        "Phone number ID is required for Meta Cloud API WhatsApp",
+      );
+    }
+
+    let existingMetaMedia:
+      | {
+          mediaBase64: string;
+          mediaFilename: string;
+          mediaContentType?: WhatsAppMediaContentType;
+        }
+      | null = null;
+
+    if (existing?.provider === ChannelProvider.META && existing.settings) {
+      try {
+        const parsed = whatsappMetaSettingsSchema.parse(existing.settings);
+        if (
+          !input.clearMedia &&
+          parsed.mediaBase64?.trim() &&
+          parsed.mediaFilename?.trim()
+        ) {
+          existingMetaMedia = {
+            mediaBase64: parsed.mediaBase64,
+            mediaFilename: parsed.mediaFilename,
+            mediaContentType: parsed.mediaContentType,
+          };
+        }
+      } catch {
+        existingMetaMedia = null;
+      }
+    }
+
+    let metaMedia = existingMetaMedia;
+
+    if (input.clearMedia) {
+      metaMedia = null;
+    } else if (input.mediaBase64?.trim()) {
+      let decoded;
+      try {
+        decoded = decodeWhatsAppMediaBase64(input.mediaBase64);
+      } catch (error) {
+        throw new ChannelConfigValidationError(
+          error instanceof Error ? error.message : "Invalid WhatsApp media",
+        );
+      }
+
+      const contentType = input.mediaContentType ?? decoded.contentType;
+      metaMedia = {
+        mediaBase64: stripWhatsAppMediaDataUrlPrefix(input.mediaBase64),
+        mediaFilename: (
+          input.mediaFilename ?? defaultFilenameForMediaType(contentType)
+        ).trim(),
+        mediaContentType: contentType,
+      };
+    }
+
+    return whatsappMetaSettingsSchema.parse({
+      phoneNumberId: input.phoneNumberId.trim(),
+      ...(input.apiVersion?.trim()
+        ? { apiVersion: input.apiVersion.trim() }
+        : {}),
+      ...(metaMedia ?? {}),
+    });
   }
 
   if (!input.baseUrl?.trim() || !input.sendPath?.trim()) {
@@ -269,22 +384,37 @@ export async function upsertWhatsAppChannelConfig(
 ): Promise<SafeWhatsAppChannelConfigView> {
   if (
     input.provider !== ChannelProvider.TEST &&
-    input.provider !== ChannelProvider.CUSTOM_HTTP
+    input.provider !== ChannelProvider.CUSTOM_HTTP &&
+    input.provider !== ChannelProvider.META
   ) {
     throw new ChannelConfigValidationError(
       "Configured WhatsApp provider is not supported",
     );
   }
 
-  if (input.provider === ChannelProvider.CUSTOM_HTTP) {
+  if (
+    input.provider === ChannelProvider.CUSTOM_HTTP ||
+    input.provider === ChannelProvider.META
+  ) {
     await assertLiveCustomHttpAllowed({
       organizationId,
       userId: options.userId,
       provider: input.provider,
     });
+  }
+
+  if (input.provider === ChannelProvider.CUSTOM_HTTP) {
     if (!input.baseUrl?.trim() || !input.sendPath?.trim()) {
       throw new ChannelConfigValidationError(
         "Base URL and send path are required for Custom HTTP WhatsApp",
+      );
+    }
+  }
+
+  if (input.provider === ChannelProvider.META) {
+    if (!input.phoneNumberId?.trim()) {
+      throw new ChannelConfigValidationError(
+        "Phone number ID is required for Meta Cloud API WhatsApp",
       );
     }
   }
@@ -341,7 +471,8 @@ export async function updateWhatsAppChannelMedia(
   if (
     !existing ||
     (existing.provider !== ChannelProvider.TEST &&
-      existing.provider !== ChannelProvider.CUSTOM_HTTP)
+      existing.provider !== ChannelProvider.CUSTOM_HTTP &&
+      existing.provider !== ChannelProvider.META)
   ) {
     throw new ChannelConfigValidationError(
       "Configure WhatsApp in Settings before applying media",
@@ -367,6 +498,21 @@ export async function updateWhatsAppChannelMedia(
   let nextSettings: Prisma.InputJsonValue;
   if (existing.provider === ChannelProvider.TEST) {
     nextSettings = whatsappTestSettingsSchema.parse(storedMedia);
+  } else if (existing.provider === ChannelProvider.META) {
+    let settings: ReturnType<typeof whatsappMetaSettingsSchema.parse>;
+    try {
+      settings = whatsappMetaSettingsSchema.parse(existing.settings ?? {});
+    } catch {
+      throw new ChannelConfigValidationError(
+        "WhatsApp Meta Cloud API settings are incomplete. Save the phone number ID first.",
+      );
+    }
+
+    nextSettings = whatsappMetaSettingsSchema.parse({
+      phoneNumberId: settings.phoneNumberId,
+      ...(settings.apiVersion ? { apiVersion: settings.apiVersion } : {}),
+      ...storedMedia,
+    });
   } else {
     let settings: ReturnType<typeof whatsappHttpSettingsSchema.parse>;
     try {

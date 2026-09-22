@@ -120,6 +120,63 @@ export type ResolvedWhatsAppHttpProviderConfig = {
   mediaContentType?: string;
 };
 
+/** Meta WhatsApp Cloud API (graph.facebook.com) - system user access token. */
+export const whatsappMetaCredentialsSchema = z
+  .object({
+    accessToken: z.string().trim().min(1),
+  })
+  .strict();
+
+export const WHATSAPP_META_DEFAULT_API_VERSION = "v21.0";
+
+export const whatsappMetaSettingsSchema = z
+  .object({
+    /** WhatsApp Business phone number ID, e.g. 1320947411098948 */
+    phoneNumberId: z.string().trim().min(1),
+    /** e.g. v21.0 - defaults to WHATSAPP_META_DEFAULT_API_VERSION when omitted. */
+    apiVersion: z
+      .string()
+      .trim()
+      .regex(/^v\d+(\.\d+)?$/, "API version must look like v21.0")
+      .optional(),
+    requestTimeoutMs: z.number().int().positive().optional(),
+    /** Optional tenant default media (base64, no data: prefix), same as Custom HTTP. */
+    mediaBase64: z
+      .string()
+      .trim()
+      .min(1)
+      .max(WHATSAPP_MEDIA_MAX_BASE64_CHARS)
+      .optional(),
+    mediaFilename: z.string().trim().min(1).max(120).optional(),
+    mediaContentType: whatsappMediaContentTypeSchema.optional(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    const hasMedia = Boolean(value.mediaBase64?.trim());
+    if (hasMedia && !value.mediaFilename?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "mediaFilename is required when mediaBase64 is set",
+        path: ["mediaFilename"],
+      });
+    }
+  });
+
+export type WhatsAppMetaCredentials = z.infer<
+  typeof whatsappMetaCredentialsSchema
+>;
+export type WhatsAppMetaSettings = z.infer<typeof whatsappMetaSettingsSchema>;
+
+export type ResolvedWhatsAppMetaProviderConfig = {
+  accessToken: string;
+  phoneNumberId: string;
+  apiVersion: string;
+  requestTimeoutMs: number;
+  mediaBytes?: Buffer;
+  mediaFilename?: string;
+  mediaContentType?: string;
+};
+
 export function isJpegBuffer(bytes: Buffer): boolean {
   return (
     bytes.length >= 3 &&

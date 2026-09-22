@@ -5,6 +5,8 @@ import { decryptCredentials } from "@/lib/crypto/credentials";
 import {
   whatsappHttpCredentialsSchema,
   whatsappHttpSettingsSchema,
+  whatsappMetaCredentialsSchema,
+  whatsappMetaSettingsSchema,
   whatsappTestSettingsSchema,
 } from "./whatsapp-types";
 
@@ -25,6 +27,12 @@ export type SafeWhatsAppChannelConfigView = {
   mediaConfigured: boolean;
   mediaFilename?: string;
   mediaContentType?: string;
+  /** Meta Cloud API - WhatsApp Business phone number ID (not a secret). */
+  phoneNumberId?: string;
+  /** Meta Cloud API version, e.g. v21.0. */
+  apiVersion?: string;
+  /** True when a Meta Cloud API access token is stored. Never exposes the token itself. */
+  accessTokenConfigured: boolean;
   createdAt?: string;
   updatedAt?: string;
   /** Live wallet lookup is not available for the current WhatsApp provider. */
@@ -34,9 +42,24 @@ export type SafeWhatsAppChannelConfigView = {
 function safeCredentialSummaryFromConfig(config: ChannelConfig): {
   username?: string;
   apiKeyConfigured: boolean;
+  accessTokenConfigured: boolean;
 } {
+  if (config.provider === ChannelProvider.META) {
+    try {
+      const credentials = whatsappMetaCredentialsSchema.parse(
+        JSON.parse(decryptCredentials(config.encryptedCredentials)),
+      );
+      return {
+        apiKeyConfigured: false,
+        accessTokenConfigured: Boolean(credentials.accessToken?.trim()),
+      };
+    } catch {
+      return { apiKeyConfigured: false, accessTokenConfigured: false };
+    }
+  }
+
   if (config.provider !== ChannelProvider.CUSTOM_HTTP) {
-    return { apiKeyConfigured: false };
+    return { apiKeyConfigured: false, accessTokenConfigured: false };
   }
 
   try {
@@ -46,9 +69,10 @@ function safeCredentialSummaryFromConfig(config: ChannelConfig): {
     return {
       username: credentials.username,
       apiKeyConfigured: Boolean(credentials.apiKey?.trim()),
+      accessTokenConfigured: false,
     };
   } catch {
-    return { apiKeyConfigured: false };
+    return { apiKeyConfigured: false, accessTokenConfigured: false };
   }
 }
 
@@ -59,7 +83,29 @@ function safeSettingsFromConfig(config: ChannelConfig): {
   mediaConfigured: boolean;
   mediaFilename?: string;
   mediaContentType?: string;
+  phoneNumberId?: string;
+  apiVersion?: string;
 } {
+  if (config.provider === ChannelProvider.META) {
+    try {
+      const settings = whatsappMetaSettingsSchema.parse(config.settings ?? {});
+      const mediaConfigured = Boolean(settings.mediaBase64?.trim());
+      return {
+        mediaConfigured,
+        phoneNumberId: settings.phoneNumberId,
+        ...(settings.apiVersion ? { apiVersion: settings.apiVersion } : {}),
+        ...(mediaConfigured && settings.mediaFilename
+          ? { mediaFilename: settings.mediaFilename }
+          : {}),
+        ...(mediaConfigured && settings.mediaContentType
+          ? { mediaContentType: settings.mediaContentType }
+          : {}),
+      };
+    } catch {
+      return { mediaConfigured: false };
+    }
+  }
+
   if (config.provider === ChannelProvider.TEST) {
     try {
       const settings = whatsappTestSettingsSchema.parse(config.settings ?? {});
@@ -113,12 +159,14 @@ export function serializeWhatsAppChannelConfig(
       isActive: false,
       credentialsConfigured: false,
       apiKeyConfigured: false,
+      accessTokenConfigured: false,
       mediaConfigured: false,
       walletBalanceSupported: false,
     };
   }
 
-  const { username, apiKeyConfigured } = safeCredentialSummaryFromConfig(config);
+  const { username, apiKeyConfigured, accessTokenConfigured } =
+    safeCredentialSummaryFromConfig(config);
   const settings = safeSettingsFromConfig(config);
 
   return {
@@ -127,9 +175,11 @@ export function serializeWhatsAppChannelConfig(
     provider: config.provider,
     isActive: config.isActive,
     credentialsConfigured:
-      config.provider === ChannelProvider.CUSTOM_HTTP &&
-      (Boolean(username) || apiKeyConfigured),
+      (config.provider === ChannelProvider.CUSTOM_HTTP &&
+        (Boolean(username) || apiKeyConfigured)) ||
+      (config.provider === ChannelProvider.META && accessTokenConfigured),
     apiKeyConfigured,
+    accessTokenConfigured,
     mediaConfigured: settings.mediaConfigured,
     ...(username ? { username } : {}),
     ...(settings.baseUrl ? { baseUrl: settings.baseUrl } : {}),
@@ -143,6 +193,8 @@ export function serializeWhatsAppChannelConfig(
     ...(settings.mediaContentType
       ? { mediaContentType: settings.mediaContentType }
       : {}),
+    ...(settings.phoneNumberId ? { phoneNumberId: settings.phoneNumberId } : {}),
+    ...(settings.apiVersion ? { apiVersion: settings.apiVersion } : {}),
     createdAt: config.createdAt.toISOString(),
     updatedAt: config.updatedAt.toISOString(),
     walletBalanceSupported: false,

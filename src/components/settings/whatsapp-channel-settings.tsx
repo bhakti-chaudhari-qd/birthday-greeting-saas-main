@@ -16,23 +16,27 @@ import { getCustomerWhatsAppProviderLabel } from "@/lib/ui/customer-labels";
 type WhatsAppChannelConfigView = {
   channel: "WHATSAPP";
   configured: boolean;
-  provider: "TEST" | "CUSTOM_HTTP" | null;
+  provider: "TEST" | "CUSTOM_HTTP" | "META" | null;
   isActive: boolean;
   credentialsConfigured: boolean;
   username?: string;
   apiKeyConfigured: boolean;
+  accessTokenConfigured: boolean;
   baseUrl?: string;
   sendPath?: string;
   tlsInsecure?: boolean;
+  phoneNumberId?: string;
+  apiVersion?: string;
   createdAt?: string;
   updatedAt?: string;
   walletBalanceSupported: boolean;
 };
 
 type AuthMode = "password" | "apiKey";
+type WhatsAppProvider = "CUSTOM_HTTP" | "META";
 
 type FormState = {
-  provider: "CUSTOM_HTTP";
+  provider: WhatsAppProvider;
   isActive: boolean;
   authMode: AuthMode;
   username: string;
@@ -41,6 +45,9 @@ type FormState = {
   baseUrl: string;
   sendPath: string;
   tlsInsecure: boolean;
+  accessToken: string;
+  phoneNumberId: string;
+  apiVersion: string;
 };
 
 const emptyForm: FormState = {
@@ -53,6 +60,9 @@ const emptyForm: FormState = {
   baseUrl: "",
   sendPath: "",
   tlsInsecure: false,
+  accessToken: "",
+  phoneNumberId: "",
+  apiVersion: "",
 };
 
 /** Local-only demo Custom HTTP defaults for provider testing. Never prefilled in production. */
@@ -108,7 +118,7 @@ export function WhatsAppChannelSettings() {
         setConfig(data);
         setForm(
           withDemoCustomHttpDefaults({
-            provider: "CUSTOM_HTTP",
+            provider: data.provider === "META" ? "META" : "CUSTOM_HTTP",
             isActive: data.configured ? data.isActive : true,
             authMode: data.apiKeyConfigured ? "apiKey" : "password",
             username: data.username ?? "",
@@ -117,6 +127,9 @@ export function WhatsAppChannelSettings() {
             baseUrl: data.baseUrl ?? "",
             sendPath: data.sendPath ?? "",
             tlsInsecure: data.tlsInsecure === true,
+            accessToken: "",
+            phoneNumberId: data.phoneNumberId ?? "",
+            apiVersion: data.apiVersion ?? "",
           }),
         );
       } catch {
@@ -157,6 +170,16 @@ export function WhatsAppChannelSettings() {
       }
     }
 
+    if (form.provider === "META") {
+      payload.phoneNumberId = form.phoneNumberId.trim();
+      if (form.apiVersion.trim()) {
+        payload.apiVersion = form.apiVersion.trim();
+      }
+      if (form.accessToken.trim()) {
+        payload.accessToken = form.accessToken.trim();
+      }
+    }
+
     try {
       const response = await fetch("/api/v1/channel-config/whatsapp", {
         method: "PUT",
@@ -182,6 +205,7 @@ export function WhatsAppChannelSettings() {
   }
 
   const isCustomHttp = form.provider === "CUSTOM_HTTP";
+  const isMeta = form.provider === "META";
   const isSameConfiguredProvider =
     isCustomHttp && config?.provider === "CUSTOM_HTTP";
   const passwordConfigured = Boolean(
@@ -193,6 +217,9 @@ export function WhatsAppChannelSettings() {
     isSameConfiguredProvider &&
       form.authMode === "apiKey" &&
       config.apiKeyConfigured,
+  );
+  const accessTokenConfigured = Boolean(
+    isMeta && config?.provider === "META" && config.accessTokenConfigured,
   );
 
   return (
@@ -213,12 +240,86 @@ export function WhatsAppChannelSettings() {
 
           <Panel className="p-4 sm:p-5">
             <form className="flex flex-col gap-4" onSubmit={handleSave}>
-              <div className="block text-sm">
+              <label className="block text-sm">
                 <span className="font-medium text-stone-800">WhatsApp gateway</span>
-                <div className="mt-1 rounded-lg border border-stone-300 bg-stone-50 px-3 py-2 text-stone-700">
-                  {getCustomerWhatsAppProviderLabel(form.provider)}
-                </div>
-              </div>
+                <select
+                  className={`${inputClass} mt-1`}
+                  value={form.provider}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      provider: event.target.value as WhatsAppProvider,
+                    }))
+                  }
+                >
+                  <option value="CUSTOM_HTTP">
+                    {getCustomerWhatsAppProviderLabel("CUSTOM_HTTP")}
+                  </option>
+                  <option value="META">
+                    {getCustomerWhatsAppProviderLabel("META")}
+                  </option>
+                </select>
+              </label>
+
+              {isMeta ? (
+                <>
+                  <label className="block text-sm">
+                    <span className="font-medium text-stone-800">
+                      Phone number ID
+                    </span>
+                    <input
+                      className={`${inputClass} mt-1`}
+                      value={form.phoneNumberId}
+                      placeholder="1320947411098948"
+                      autoComplete="off"
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          phoneNumberId: event.target.value,
+                        }))
+                      }
+                      required
+                    />
+                    <span className="mt-0.5 block text-xs text-stone-500">
+                      From Meta&rsquo;s WhatsApp API Setup page - the number
+                      before /messages in your API URL.
+                    </span>
+                  </label>
+
+                  <MaskedPasswordField
+                    label="Access token"
+                    configured={accessTokenConfigured}
+                    value={form.accessToken}
+                    onChange={(value) =>
+                      setForm((current) => ({ ...current, accessToken: value }))
+                    }
+                    required={!accessTokenConfigured}
+                    hint={
+                      accessTokenConfigured
+                        ? undefined
+                        : "A permanent System User token is recommended - a temporary token from the Meta dashboard expires within hours/days."
+                    }
+                  />
+
+                  <label className="block text-sm">
+                    <span className="font-medium text-stone-800">
+                      API version (optional)
+                    </span>
+                    <input
+                      className={`${inputClass} mt-1`}
+                      value={form.apiVersion}
+                      placeholder="v21.0"
+                      autoComplete="off"
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          apiVersion: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                </>
+              ) : null}
 
               {form.provider === "CUSTOM_HTTP" ? (
                 <>
@@ -348,6 +449,11 @@ export function WhatsAppChannelSettings() {
                   <p className="mt-1 break-all text-xs text-stone-500">
                     {config.baseUrl}
                     {config.sendPath ?? ""}
+                  </p>
+                ) : null}
+                {config?.provider === "META" && config.phoneNumberId ? (
+                  <p className="mt-1 break-all text-xs text-stone-500">
+                    Phone number ID: {config.phoneNumberId}
                   </p>
                 ) : null}
               </div>

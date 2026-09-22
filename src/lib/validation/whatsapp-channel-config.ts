@@ -7,7 +7,10 @@ import {
 } from "@/lib/channel-config/whatsapp-types";
 
 /** Production channel configuration is live-only - no Test/Simulation provider option. */
-const supportedWhatsAppProviders = [ChannelProvider.CUSTOM_HTTP] as const;
+const supportedWhatsAppProviders = [
+  ChannelProvider.CUSTOM_HTTP,
+  ChannelProvider.META,
+] as const;
 
 export const whatsappChannelConfigWriteSchema = z
   .object({
@@ -38,6 +41,16 @@ export const whatsappChannelConfigWriteSchema = z
     mediaContentType: whatsappMediaContentTypeSchema.optional(),
     /** Drop stored tenant media and fall back to the built-in default JPEG. */
     clearMedia: z.boolean().optional(),
+    /** Meta Cloud API - system user access token. Omit to keep existing. */
+    accessToken: z.string().trim().min(1).max(2000).optional(),
+    /** Meta Cloud API - WhatsApp Business phone number ID. */
+    phoneNumberId: z.string().trim().min(1).max(200).optional(),
+    /** Meta Cloud API version, e.g. v21.0. Defaults when omitted. */
+    apiVersion: z
+      .string()
+      .trim()
+      .regex(/^v\d+(\.\d+)?$/, "API version must look like v21.0")
+      .optional(),
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -55,6 +68,17 @@ export const whatsappChannelConfigWriteSchema = z
         message: "Filename is required when uploading WhatsApp media",
         path: ["mediaFilename"],
       });
+    }
+
+    if (value.provider === ChannelProvider.META) {
+      if (!value.phoneNumberId?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Phone number ID is required for Meta Cloud API WhatsApp",
+          path: ["phoneNumberId"],
+        });
+      }
+      return;
     }
 
     if (value.provider !== ChannelProvider.CUSTOM_HTTP) {
@@ -97,5 +121,8 @@ export type WhatsAppChannelConfigWriteInput = Omit<
   z.input<typeof whatsappChannelConfigWriteSchema>,
   "provider"
 > & {
-  provider: typeof ChannelProvider.TEST | typeof ChannelProvider.CUSTOM_HTTP;
+  provider:
+    | typeof ChannelProvider.TEST
+    | typeof ChannelProvider.CUSTOM_HTTP
+    | typeof ChannelProvider.META;
 };

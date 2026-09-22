@@ -13,8 +13,13 @@ const PAID_PLANS: ReadonlySet<SubscriptionPlan> = new Set([
   SubscriptionPlan.CUSTOM,
 ]);
 
+const LIVE_GATED_PROVIDERS: ReadonlySet<ChannelProvider> = new Set([
+  ChannelProvider.CUSTOM_HTTP,
+  ChannelProvider.META,
+]);
+
 /**
- * Live Custom HTTP requires a paid ACTIVE plan
+ * Live Custom HTTP / Meta Cloud API requires a paid ACTIVE plan
  * (or Platform Admin liveChannelsApproved). Org Owners only call this after RBAC.
  *
  * In automated Vitest suites, gate enforcement is opt-in via ABUSE_ENFORCE_LIVE_GATES=1
@@ -25,7 +30,7 @@ export async function assertLiveCustomHttpAllowed(input: {
   userId?: string;
   provider: ChannelProvider;
 }): Promise<void> {
-  if (input.provider !== ChannelProvider.CUSTOM_HTTP) {
+  if (!LIVE_GATED_PROVIDERS.has(input.provider)) {
     return;
   }
 
@@ -53,7 +58,7 @@ export async function assertLiveCustomHttpAllowed(input: {
 
   if (!paidAndActive) {
     throw new ChannelConfigValidationError(
-      "Live Custom HTTP requires an active paid plan (STARTER, PRO, or CUSTOM), or Platform Admin approval",
+      "Live WhatsApp/SMS providers require an active paid plan (STARTER, PRO, or CUSTOM), or Platform Admin approval",
     );
   }
 }

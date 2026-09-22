@@ -3,13 +3,17 @@ import { Channel, ChannelProvider } from "@prisma/client";
 
 import { resolveEmailProviderConfig } from "@/lib/channel-config/email-resolve";
 import { resolveSmsProviderConfig } from "@/lib/channel-config/resolve";
-import { resolveWhatsAppHttpProviderConfig } from "@/lib/channel-config/whatsapp-resolve";
+import {
+  resolveWhatsAppHttpProviderConfig,
+  resolveWhatsAppMetaProviderConfig,
+} from "@/lib/channel-config/whatsapp-resolve";
 
 import { createResendEmailProvider } from "./email/resend-email-provider";
 import { createLegacyHttpSmsProvider } from "./sms/legacy-http-sms-provider";
 import { testProvider } from "./test-provider";
 import { ProviderSendError, type MessageProvider } from "./types";
 import { createCustomHttpWhatsAppProvider } from "./whatsapp/custom-http-whatsapp-provider";
+import { createMetaWhatsAppProvider } from "./whatsapp/meta-whatsapp-provider";
 
 /**
  * ChannelProvider.TEST is deliberately still handled below - it can no
@@ -60,6 +64,12 @@ export function resolveMessageProvider(
     if (channelConfig.provider === ChannelProvider.CUSTOM_HTTP) {
       return createCustomHttpWhatsAppProvider(
         resolveWhatsAppHttpProviderConfig(channelConfig),
+      );
+    }
+
+    if (channelConfig.provider === ChannelProvider.META) {
+      return createMetaWhatsAppProvider(
+        resolveWhatsAppMetaProviderConfig(channelConfig),
       );
     }
 

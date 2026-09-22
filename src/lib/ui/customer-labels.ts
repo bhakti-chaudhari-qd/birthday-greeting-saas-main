@@ -23,7 +23,7 @@ export function getCustomerSmsProviderLabel(
 }
 
 export function getCustomerWhatsAppProviderLabel(
-  provider: "TEST" | "CUSTOM_HTTP" | string | null | undefined,
+  provider: "TEST" | "CUSTOM_HTTP" | "META" | string | null | undefined,
 ): string {
   if (provider === "TEST") {
     return "Test";
@@ -31,6 +31,10 @@ export function getCustomerWhatsAppProviderLabel(
 
   if (provider === "CUSTOM_HTTP") {
     return "Custom HTTP";
+  }
+
+  if (provider === "META") {
+    return "Meta Cloud API";
   }
 
   if (!provider) {
