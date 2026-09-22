@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { describeLatestVendorInvite } from "@/components/admin/vendor-lifecycle";
 import { getAdminOverviewDict } from "@/lib/i18n/dictionaries/admin-overview";
+import { getAdminUsageDict } from "@/lib/i18n/dictionaries/admin-usage";
 import { getAdminVendorDict } from "@/lib/i18n/dictionaries/admin-vendor";
 import { getShellDict } from "@/lib/i18n/dictionaries/shell";
 import { LOCALES } from "@/lib/i18n/constants";
@@ -100,5 +101,47 @@ describe("admin i18n: vendor lifecycle + latest invite", () => {
     expect(sentMr).toMatch(DEVANAGARI_PATTERN);
     // The expiry date itself is untranslated formatDisplayDate output, still present.
     expect(sentMr).toMatch(/\d/);
+  });
+});
+
+describe("admin i18n: usage page", () => {
+  it("returns Devanagari content and wires numbers through in every locale", () => {
+    for (const locale of ["hi", "mr"] as const) {
+      const dict = getAdminUsageDict(locale);
+      expect(dict.title).toMatch(DEVANAGARI_PATTERN);
+      const line = dict.reconciliation("10", "2", "1", "13");
+      expect(line).toContain("10");
+      expect(line).toContain("13");
+      expect(line).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.showingOf(5, "12")).toContain("5");
+      expect(dict.showingOf(5, "12")).toContain("12");
+    }
+  });
+
+  it("has a translation for every DeliveryStatus enum value the page renders", () => {
+    const statuses = ["SENT", "DELIVERED", "UNDELIVERED", "FAILED", "QUEUED", "READ"];
+    for (const locale of ["hi", "mr"] as const) {
+      const dict = getAdminUsageDict(locale);
+      for (const status of statuses) {
+        expect(dict.deliveryStatusLabels[status], `${locale}.${status}`).toMatch(
+          DEVANAGARI_PATTERN,
+        );
+      }
+    }
+  });
+
+  it("covers every locale with non-empty strings (catches accidental blanks)", () => {
+    function checkStrings(value: unknown, path: string) {
+      if (typeof value === "string") {
+        expect(value.trim().length, path).toBeGreaterThan(0);
+      } else if (value && typeof value === "object") {
+        for (const [key, nested] of Object.entries(value)) {
+          checkStrings(nested, `${path}.${key}`);
+        }
+      }
+    }
+    for (const locale of LOCALES) {
+      checkStrings(getAdminUsageDict(locale), locale);
+    }
   });
 });
