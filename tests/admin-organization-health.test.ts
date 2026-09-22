@@ -72,9 +72,9 @@ describe("platform organization health", () => {
     ).toEqual({
       label: "NEEDS_ATTENTION",
       reasons: [
-        "Some enabled routes need a template or active channel",
-        "1 failed queue item(s) need attention",
-        "Monthly delivery success is below 90%",
+        { code: "SOME_ROUTES_NEED_SETUP" },
+        { code: "QUEUE_FAILED_ITEMS", count: 1 },
+        { code: "LOW_SUCCESS_RATE" },
       ],
     });
   });
@@ -92,7 +92,7 @@ describe("platform organization health", () => {
       }),
     ).toEqual({
       label: "HEALTHY",
-      reasons: ["No health issues detected"],
+      reasons: [{ code: "NO_ISSUES" }],
     });
   });
 
@@ -109,7 +109,7 @@ describe("platform organization health", () => {
       }),
     ).toEqual({
       label: "INACTIVE",
-      reasons: ["Client is inactive"],
+      reasons: [{ code: "CLIENT_INACTIVE" }],
     });
 
     expect(
@@ -124,7 +124,7 @@ describe("platform organization health", () => {
       }),
     ).toEqual({
       label: "HEALTHY",
-      reasons: ["2 queued item(s); no health issues detected"],
+      reasons: [{ code: "QUEUED_ITEMS_NO_ISSUES", count: 2 }],
     });
   });
 });

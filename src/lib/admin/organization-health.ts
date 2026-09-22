@@ -16,9 +16,24 @@ export type OrganizationHealthLabel =
   | "NEEDS_ATTENTION"
   | "INACTIVE";
 
+/**
+ * Structured instead of pre-formatted English strings, so the UI layer can
+ * translate each reason (see getAdminHealthDict) instead of being stuck
+ * with whatever language this function was written in.
+ */
+export type HealthReason =
+  | { code: "CLIENT_INACTIVE" }
+  | { code: "NO_ROUTES_ENABLED" }
+  | { code: "ROUTES_NEED_SETUP" }
+  | { code: "SOME_ROUTES_NEED_SETUP" }
+  | { code: "QUEUE_FAILED_ITEMS"; count: number }
+  | { code: "LOW_SUCCESS_RATE" }
+  | { code: "NO_ISSUES" }
+  | { code: "QUEUED_ITEMS_NO_ISSUES"; count: number };
+
 export type OrganizationHealth = {
   label: OrganizationHealthLabel;
-  reasons: string[];
+  reasons: HealthReason[];
 };
 
 export type OrganizationAutomationRouteInput = {
@@ -59,25 +74,21 @@ export function deriveOrganizationHealth(input: {
   if (!input.isActive) {
     return {
       label: "INACTIVE",
-      reasons: ["Client is inactive"],
+      reasons: [{ code: "CLIENT_INACTIVE" }],
     };
   }
 
-  const reasons: string[] = [];
+  const reasons: HealthReason[] = [];
   if (input.executableRouteCount === 0) {
-    reasons.push(
-      input.enabledRouteCount > 0
-        ? "Enabled routes need a template or active channel"
-        : "No automation routes are enabled",
-    );
+    reasons.push({
+      code: input.enabledRouteCount > 0 ? "ROUTES_NEED_SETUP" : "NO_ROUTES_ENABLED",
+    });
   } else if (input.executableRouteCount < input.enabledRouteCount) {
-    reasons.push("Some enabled routes need a template or active channel");
+    reasons.push({ code: "SOME_ROUTES_NEED_SETUP" });
   }
 
   if (input.queueFailedStuckCount > 0) {
-    reasons.push(
-      `${input.queueFailedStuckCount} failed queue item(s) need attention`,
-    );
+    reasons.push({ code: "QUEUE_FAILED_ITEMS", count: input.queueFailedStuckCount });
   }
 
   const decided = input.monthlySuccessCount + input.monthlyFailureCount;
@@ -86,7 +97,7 @@ export function deriveOrganizationHealth(input: {
     decided > 0 &&
     input.monthlySuccessCount / decided < 0.9
   ) {
-    reasons.push("Monthly delivery success is below 90%");
+    reasons.push({ code: "LOW_SUCCESS_RATE" });
   }
 
   if (reasons.length > 0) {
@@ -97,9 +108,8 @@ export function deriveOrganizationHealth(input: {
     label: "HEALTHY",
     reasons: [
       input.queuePendingCount > 0
-        ? `${input.queuePendingCount} queued item(s); no health issues detected`
-        : "No health issues detected",
+        ? { code: "QUEUED_ITEMS_NO_ISSUES", count: input.queuePendingCount }
+        : { code: "NO_ISSUES" },
     ],
   };
 }
-

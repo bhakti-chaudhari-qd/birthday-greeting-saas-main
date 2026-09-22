@@ -22,6 +22,7 @@ import { listFailedQueueDiagnosticsForPlatformAdmin } from "@/lib/admin/failed-q
 import { getOrganizationForPlatformAdmin } from "@/lib/admin/org-ops";
 import { listPlanCatalogueEntriesForPlatformAdmin } from "@/lib/admin/plan-catalogue-ops";
 import { formatInrFromPaise, type PlanLabelMap } from "@/lib/billing/catalogue";
+import { translateHealthReason } from "@/lib/i18n/dictionaries/admin-health";
 import {
   formatCustomerDateTime,
   formatDisplayDate,
@@ -62,7 +63,9 @@ export default async function AdminOrganizationDetailPage({
             </h2>
             <ul className="mt-2 space-y-1 text-sm text-stone-600">
               {organization.health.reasons.map((reason) => (
-                <li key={reason}>• {reason}</li>
+                <li key={reason.code}>
+                  • {translateHealthReason(reason, "en")}
+                </li>
               ))}
             </ul>
           </div>

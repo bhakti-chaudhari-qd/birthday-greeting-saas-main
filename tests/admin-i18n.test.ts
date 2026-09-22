@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { describeLatestVendorInvite } from "@/components/admin/vendor-lifecycle";
+import { getAdminClientsListDict } from "@/lib/i18n/dictionaries/admin-clients-list";
+import {
+  getAdminHealthDict,
+  translateHealthLabel,
+  translateHealthReason,
+} from "@/lib/i18n/dictionaries/admin-health";
 import { getAdminOverviewDict } from "@/lib/i18n/dictionaries/admin-overview";
 import { getAdminUsageDict } from "@/lib/i18n/dictionaries/admin-usage";
 import { getAdminVendorDict } from "@/lib/i18n/dictionaries/admin-vendor";
@@ -142,6 +148,68 @@ describe("admin i18n: usage page", () => {
     }
     for (const locale of LOCALES) {
       checkStrings(getAdminUsageDict(locale), locale);
+    }
+  });
+});
+
+describe("admin i18n: health reasons", () => {
+  it("translates every health reason code and label in Hindi and Marathi", () => {
+    const reasons: Parameters<typeof translateHealthReason>[0][] = [
+      { code: "CLIENT_INACTIVE" },
+      { code: "NO_ROUTES_ENABLED" },
+      { code: "ROUTES_NEED_SETUP" },
+      { code: "SOME_ROUTES_NEED_SETUP" },
+      { code: "QUEUE_FAILED_ITEMS", count: 3 },
+      { code: "LOW_SUCCESS_RATE" },
+      { code: "NO_ISSUES" },
+      { code: "QUEUED_ITEMS_NO_ISSUES", count: 5 },
+    ];
+    for (const locale of ["hi", "mr"] as const) {
+      for (const reason of reasons) {
+        expect(
+          translateHealthReason(reason, locale),
+          `${locale} ${reason.code}`,
+        ).toMatch(DEVANAGARI_PATTERN);
+      }
+      expect(translateHealthLabel("HEALTHY", locale)).toMatch(DEVANAGARI_PATTERN);
+      expect(translateHealthLabel("NEEDS_ATTENTION", locale)).toMatch(
+        DEVANAGARI_PATTERN,
+      );
+      expect(translateHealthLabel("INACTIVE", locale)).toMatch(DEVANAGARI_PATTERN);
+    }
+
+    // Counts actually get interpolated, not dropped.
+    expect(
+      translateHealthReason({ code: "QUEUE_FAILED_ITEMS", count: 7 }, "en"),
+    ).toContain("7");
+
+    // English defaults match the app's pre-existing text exactly (no visible change).
+    expect(translateHealthReason({ code: "CLIENT_INACTIVE" }, "en")).toBe(
+      "Client is inactive",
+    );
+    expect(translateHealthReason({ code: "NO_ISSUES" }, "en")).toBe(
+      "No health issues detected",
+    );
+  });
+
+  it("covers every locale for admin-health with non-empty strings", () => {
+    for (const locale of LOCALES) {
+      const dict = getAdminHealthDict(locale);
+      expect(dict.clientInactive.trim().length).toBeGreaterThan(0);
+      expect(dict.queueFailedItems(1).trim().length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("admin i18n: clients list", () => {
+  it("returns Devanagari content and wires values through in every locale", () => {
+    for (const locale of ["hi", "mr"] as const) {
+      const dict = getAdminClientsListDict(locale);
+      expect(dict.title).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.referredBy("Acme Vendor")).toContain("Acme Vendor");
+      expect(dict.referredBy("Acme Vendor")).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.successThisMonth(92)).toContain("92");
+      expect(dict.failedThisMonth("4")).toContain("4");
     }
   });
 });
