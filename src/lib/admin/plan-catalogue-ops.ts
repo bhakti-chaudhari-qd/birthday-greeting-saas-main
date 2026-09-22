@@ -36,9 +36,25 @@ export type PlanCatalogueEntrySummary = {
   monthlyMessageLimit: number;
   updatedAt: string;
   updatedByAdminName: string | null;
+  /**
+   * True when RAZORPAY_PLAN_STARTER/RAZORPAY_PLAN_PRO pins this plan to an
+   * existing Razorpay Plan (see resolveRazorpayPlanId in razorpay-plans.ts).
+   * When true, editing amountPaise here changes limits/display only - the
+   * amount actually charged via Razorpay subscriptions stays whatever that
+   * pinned Plan was created with, until the env var is unset or repointed.
+   */
+  razorpayPricePinned: boolean;
 };
 
 const EDITABLE_PLANS = [SubscriptionPlan.STARTER, SubscriptionPlan.PRO] as const;
+
+function isRazorpayPricePinned(plan: (typeof EDITABLE_PLANS)[number]): boolean {
+  const raw =
+    plan === SubscriptionPlan.STARTER
+      ? process.env.RAZORPAY_PLAN_STARTER
+      : process.env.RAZORPAY_PLAN_PRO;
+  return Boolean(raw?.trim());
+}
 
 function isEditablePlan(
   plan: string,
@@ -72,6 +88,7 @@ export async function listPlanCatalogueEntriesForPlatformAdmin(
       monthlyMessageLimit: record.monthlyMessageLimit,
       updatedAt: record.updatedAt.toISOString(),
       updatedByAdminName: record.updatedByAdmin?.name ?? null,
+      razorpayPricePinned: isRazorpayPricePinned(plan),
     };
   });
 }

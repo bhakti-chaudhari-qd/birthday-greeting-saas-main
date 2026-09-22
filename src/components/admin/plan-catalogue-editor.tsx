@@ -3,10 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass } from "@/components/ui/page";
 import type { PlanCatalogueEntrySummary } from "@/lib/admin/plan-catalogue-ops";
 import { formatCustomerDateTime } from "@/lib/ui/datetime";
+
+function formatRupees(amountPaise: number): string {
+  return `₹${(amountPaise / 100).toLocaleString("en-IN")}`;
+}
 
 type PlanCatalogueEditorProps = {
   entries: PlanCatalogueEntrySummary[];
@@ -42,9 +47,30 @@ function PlanCatalogueEntryForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  const parsedAmountPaise = Math.round(Number.parseFloat(priceRupees) * 100);
+  const parsedContactLimit = Number.parseInt(contactLimit, 10);
+  const parsedMonthlyMessageLimit = Number.parseInt(monthlyMessageLimit, 10);
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (
+      !Number.isFinite(parsedAmountPaise) ||
+      !Number.isFinite(parsedContactLimit) ||
+      !Number.isFinite(parsedMonthlyMessageLimit)
+    ) {
+      setError("Enter valid numbers for price, contact limit, and message limit.");
+      return;
+    }
+
+    setConfirming(true);
+  }
+
+  async function confirmSave() {
     setBusy(true);
     setError(null);
     setSuccess(null);
@@ -58,9 +84,9 @@ function PlanCatalogueEntryForm({
           body: JSON.stringify({
             label,
             description,
-            amountPaise: Math.round(Number.parseFloat(priceRupees) * 100),
-            contactLimit: Number.parseInt(contactLimit, 10),
-            monthlyMessageLimit: Number.parseInt(monthlyMessageLimit, 10),
+            amountPaise: parsedAmountPaise,
+            contactLimit: parsedContactLimit,
+            monthlyMessageLimit: parsedMonthlyMessageLimit,
           }),
         },
       );
@@ -75,6 +101,7 @@ function PlanCatalogueEntryForm({
       setError("Failed to save changes");
     } finally {
       setBusy(false);
+      setConfirming(false);
     }
   }
 
@@ -90,6 +117,17 @@ function PlanCatalogueEntryForm({
           {entry.updatedByAdminName ? ` by ${entry.updatedByAdminName}` : ""}
         </p>
       </div>
+
+      {entry.razorpayPricePinned ? (
+        <InlineAlert tone="warning">
+          This plan&rsquo;s price is pinned to an existing Razorpay Plan
+          (RAZORPAY_PLAN_{entry.plan} is set on the server). Editing the price
+          below will <strong>not</strong> change what Razorpay subscription
+          checkouts actually charge — only the contact/message limits and
+          display text update. To change the charged amount, update or
+          unpin the Razorpay Plan itself.
+        </InlineAlert>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">
@@ -158,6 +196,49 @@ function PlanCatalogueEntryForm({
 
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
       {success ? <InlineAlert tone="success">{success}</InlineAlert> : null}
+
+      <ConfirmDialog
+        open={confirming}
+        title={`Update ${entry.plan} pricing?`}
+        message={
+          <>
+            <p>
+              This takes effect immediately for new checkouts and signups.
+              Clients already on {entry.plan} keep their current limits.
+            </p>
+            <dl className="mt-3 space-y-1">
+              <div className="flex justify-between gap-4">
+                <dt className="text-stone-500">Price</dt>
+                <dd className="font-medium text-stone-900">
+                  {formatRupees(entry.amountPaise)} → {formatRupees(parsedAmountPaise)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-stone-500">Contact limit</dt>
+                <dd className="font-medium text-stone-900">
+                  {entry.contactLimit} → {parsedContactLimit}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-stone-500">Monthly message limit</dt>
+                <dd className="font-medium text-stone-900">
+                  {entry.monthlyMessageLimit} → {parsedMonthlyMessageLimit}
+                </dd>
+              </div>
+            </dl>
+            {entry.razorpayPricePinned ? (
+              <p className="mt-3 font-medium text-amber-800">
+                This plan&rsquo;s Razorpay price is pinned, so the price
+                change above will not affect what is actually charged.
+              </p>
+            ) : null}
+          </>
+        }
+        confirmLabel="Save changes"
+        busy={busy}
+        onConfirm={() => void confirmSave()}
+        onCancel={() => setConfirming(false)}
+      />
     </form>
   );
 }

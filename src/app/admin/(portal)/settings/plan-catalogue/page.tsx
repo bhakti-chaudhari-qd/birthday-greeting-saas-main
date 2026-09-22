@@ -18,10 +18,10 @@ export default async function AdminPlanCataloguePage() {
           <p className="text-sm text-stone-600">
             Changes apply going forward only — clients already on
             STARTER or PRO keep their existing contact/message limits
-            unchanged. If <code>RAZORPAY_PLAN_STARTER</code>/
-            <code>RAZORPAY_PLAN_PRO</code> is configured, that pinned
-            Razorpay Plan&rsquo;s price is unaffected by editing the amount
-            here.
+            unchanged. A plan whose Razorpay price is pinned via{" "}
+            <code>RAZORPAY_PLAN_STARTER</code>/<code>RAZORPAY_PLAN_PRO</code>{" "}
+            is flagged below — editing the amount there changes limits and
+            display only, not what Razorpay actually charges.
           </p>
         </div>
         <PlanCatalogueEditor entries={entries} />
