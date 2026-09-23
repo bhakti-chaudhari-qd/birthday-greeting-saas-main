@@ -65,7 +65,7 @@ export async function exportContactsCsv(
 
   return {
     csv: serializeContactsToCsv(
-      contacts.map(serializeContact),
+      contacts.map((contact) => serializeContact(contact)),
       attributeFields,
       occasions,
       locale,
@@ -106,7 +106,7 @@ export async function exportContactsCsvByIds(
 
   return {
     csv: serializeContactsToCsv(
-      contacts.map(serializeContact),
+      contacts.map((contact) => serializeContact(contact)),
       attributeFields,
       occasions,
       locale,

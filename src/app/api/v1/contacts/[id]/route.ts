@@ -1,3 +1,4 @@
+import { UserRole } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
@@ -33,7 +34,11 @@ export async function GET(_request: Request, context: RouteContext) {
     const { id } = await context.params;
     const contact = await getContactById(auth.organizationId, id);
 
-    return NextResponse.json({ data: serializeContact(contact) });
+    return NextResponse.json({
+      data: serializeContact(contact, {
+        maskAdminAdded: auth.role !== UserRole.ADMIN,
+      }),
+    });
   } catch (error) {
     const authError = sessionAuthErrorResponse(error);
     if (authError) {
@@ -57,7 +62,11 @@ export async function PATCH(request: Request, context: RouteContext) {
     const input = updateContactSchema.parse(body);
     const contact = await updateContact(auth.organizationId, id, input);
 
-    return NextResponse.json({ data: serializeContact(contact) });
+    return NextResponse.json({
+      data: serializeContact(contact, {
+        maskAdminAdded: auth.role !== UserRole.ADMIN,
+      }),
+    });
   } catch (error) {
     const authError = sessionAuthErrorResponse(error);
     if (authError) {

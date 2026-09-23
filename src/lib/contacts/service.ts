@@ -236,6 +236,7 @@ async function applyContactCategoryTags(
 export async function createContact(
   organizationId: string,
   input: CreateContactInput,
+  options: { addedByPlatformAdmin?: boolean } = {},
 ) {
   const mapped = mapContactInput(input, { requireMobile: true });
 
@@ -276,6 +277,7 @@ export async function createContact(
     note: mapped.note ?? null,
     attributes: (mapped.attributes ?? {}) as Prisma.InputJsonObject,
     isActive: mapped.isActive ?? true,
+    addedByPlatformAdmin: options.addedByPlatformAdmin ?? false,
   };
 
   try {
@@ -320,6 +322,7 @@ export async function createContact(
 export async function listContacts(
   organizationId: string,
   query: ListContactsQuery,
+  options: { maskAdminAdded?: boolean } = {},
 ) {
   const where = buildContactListWhere(organizationId, query);
 
@@ -335,7 +338,7 @@ export async function listContacts(
   ]);
 
   return {
-    data: contacts.map(serializeContact),
+    data: contacts.map((contact) => serializeContact(contact, options)),
     meta: {
       page: query.page,
       limit: query.limit,
@@ -362,7 +365,9 @@ export async function updateContact(
   organizationId: string,
   contactId: string,
   input: UpdateContactInput,
+  options: { clearAdminAddedFlag?: boolean } = {},
 ) {
+  const clearAdminAddedFlag = options.clearAdminAddedFlag ?? true;
   const existing = await getContactById(organizationId, contactId);
   const mapped = mapContactInput(input);
   if (mapped.attributes !== undefined) {
@@ -412,6 +417,13 @@ export async function updateContact(
             : {}),
           ...(mapped.email !== undefined ? { email: mapped.email } : {}),
           ...(mapped.isActive !== undefined ? { isActive: mapped.isActive } : {}),
+          // The client editing/saving a Platform-Admin-added contact treats
+          // it as their own data from here on (see serializeContact's
+          // maskAdminAdded option) - not conditional on which fields
+          // changed, matching the "any save unmasks" product decision.
+          ...(clearAdminAddedFlag && existing.addedByPlatformAdmin
+            ? { addedByPlatformAdmin: false }
+            : {}),
         },
       });
 

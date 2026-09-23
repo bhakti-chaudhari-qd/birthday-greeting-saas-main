@@ -85,6 +85,7 @@ async function importParsedContacts(
   organizationId: string,
   parsed: ParseContactCsvResult,
   duplicateInFileLabel: string,
+  options: { addedByPlatformAdmin?: boolean } = {},
 ): Promise<ContactImportSummary> {
   const errors: ContactCsvRowError[] = [...parsed.errors];
   let created = 0;
@@ -179,7 +180,9 @@ async function importParsedContacts(
         continue;
       }
 
-      await createContact(organizationId, contactInput);
+      await createContact(organizationId, contactInput, {
+        addedByPlatformAdmin: options.addedByPlatformAdmin,
+      });
       seenMobiles.add(mobileKey);
       created += 1;
     } catch (error) {
@@ -271,7 +274,10 @@ async function importParsedContacts(
 export async function importContactsFromCsv(
   organizationId: string,
   csvText: string,
-  options: { fieldMappings?: Array<{ header: string; action: "ignore" | "existing" | "create"; fieldKey?: string; label?: string }> } = {},
+  options: {
+    fieldMappings?: Array<{ header: string; action: "ignore" | "existing" | "create"; fieldKey?: string; label?: string }>;
+    addedByPlatformAdmin?: boolean;
+  } = {},
 ): Promise<ContactImportSummary> {
   let parsed: ParseContactCsvResult;
   try {
@@ -286,11 +292,9 @@ export async function importContactsFromCsv(
     );
   }
 
-  return importParsedContacts(
-    organizationId,
-    parsed,
-    "Duplicate mobile in this CSV",
-  );
+  return importParsedContacts(organizationId, parsed, "Duplicate mobile in this CSV", {
+    addedByPlatformAdmin: options.addedByPlatformAdmin,
+  });
 }
 
 /**
@@ -300,7 +304,10 @@ export async function importContactsFromCsv(
 export async function importContactsFromExcelBase64(
   organizationId: string,
   excelBase64: string,
-  options: { fieldMappings?: Array<{ header: string; action: "ignore" | "existing" | "create"; fieldKey?: string; label?: string }> } = {},
+  options: {
+    fieldMappings?: Array<{ header: string; action: "ignore" | "existing" | "create"; fieldKey?: string; label?: string }>;
+    addedByPlatformAdmin?: boolean;
+  } = {},
 ): Promise<ContactImportSummary> {
   let parsed: ParseContactCsvResult;
   try {
@@ -320,6 +327,7 @@ export async function importContactsFromExcelBase64(
     organizationId,
     parsed,
     "Duplicate mobile in this Excel file",
+    { addedByPlatformAdmin: options.addedByPlatformAdmin },
   );
 }
 

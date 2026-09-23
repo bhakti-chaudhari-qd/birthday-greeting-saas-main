@@ -7,6 +7,7 @@ import type {
 } from "@prisma/client";
 
 import { formatOccasionDate } from "@/lib/contacts/dates";
+import { maskEmailForDisplay, maskMobileForDisplay } from "@/lib/contacts/mask";
 
 type ContactWithCategory = Contact & {
   category?: Pick<ContactCategoryDefinition, "id" | "name"> | null;
@@ -20,7 +21,18 @@ type ContactWithCategory = Contact & {
   >;
 };
 
-export function serializeContact(contact: ContactWithCategory) {
+/**
+ * `maskAdminAdded: true` hides the real mobile/email of a contact a
+ * Platform Admin added on the client's behalf (Contact.addedByPlatformAdmin)
+ * behind a display mask - used for Staff viewers; the org Owner always sees
+ * the real values. The mask clears once the client edits and saves the
+ * contact (see updateContact).
+ */
+export function serializeContact(
+  contact: ContactWithCategory,
+  options: { maskAdminAdded?: boolean } = {},
+) {
+  const isMasked = options.maskAdminAdded === true && contact.addedByPlatformAdmin;
   const occasionDates: Record<string, string> = {};
   const occasionDateDetails: Array<{
     occasionId: string;
@@ -50,8 +62,13 @@ export function serializeContact(contact: ContactWithCategory) {
   return {
     id: contact.id,
     name: contact.name,
-    mobile: contact.mobile,
-    email: contact.email,
+    mobile: isMasked ? maskMobileForDisplay(contact.mobile) : contact.mobile,
+    email:
+      isMasked && contact.email
+        ? maskEmailForDisplay(contact.email)
+        : contact.email,
+    mobileMasked: isMasked,
+    addedByPlatformAdmin: contact.addedByPlatformAdmin,
     occasionDates,
     occasionDateDetails,
     categoryId: contact.categoryId,

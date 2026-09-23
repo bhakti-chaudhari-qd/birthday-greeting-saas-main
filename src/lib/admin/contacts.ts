@@ -61,14 +61,18 @@ export async function addContactForPlatformAdmin(
     occasionDates = { [birthdayOccasion.id]: input.birthday.trim() };
   }
 
-  const contact = await createContact(input.organizationId, {
-    name: input.name,
-    mobile: input.mobile,
-    email: input.email?.trim() ? input.email.trim() : undefined,
-    occasionDates,
-    categoryName: input.categoryName?.trim() || undefined,
-    isActive: true,
-  });
+  const contact = await createContact(
+    input.organizationId,
+    {
+      name: input.name,
+      mobile: input.mobile,
+      email: input.email?.trim() ? input.email.trim() : undefined,
+      occasionDates,
+      categoryName: input.categoryName?.trim() || undefined,
+      isActive: true,
+    },
+    { addedByPlatformAdmin: true },
+  );
 
   await createPlatformAdminAuditEvent({
     actorAdminId: input.actorAdminId,
@@ -111,10 +115,11 @@ export async function importContactsForPlatformAdmin(
     ? await importContactsFromExcelBase64(
         input.organizationId,
         input.excelBase64,
-        { fieldMappings: input.fieldMappings },
+        { fieldMappings: input.fieldMappings, addedByPlatformAdmin: true },
       )
     : await importContactsFromCsv(input.organizationId, input.csv ?? "", {
         fieldMappings: input.fieldMappings,
+        addedByPlatformAdmin: true,
       });
 
   await createPlatformAdminAuditEvent({

@@ -1,3 +1,4 @@
+import { UserRole } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
@@ -79,7 +80,9 @@ export async function GET(request: Request) {
       occasionId: searchParams.get("occasionId") ?? undefined,
     });
 
-    const result = await listContacts(auth.organizationId, query);
+    const result = await listContacts(auth.organizationId, query, {
+      maskAdminAdded: auth.role !== UserRole.ADMIN,
+    });
 
     return NextResponse.json(result);
   } catch (error) {

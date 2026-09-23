@@ -113,6 +113,8 @@ export type ContactsDict = {
     mobileHint: string;
     email: string;
     emailPlaceholder: string;
+    changeMasked: string;
+    maskedMobileHint: string;
     category: string;
     noCategory: string;
     newCategoryAction: string;
@@ -267,6 +269,9 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       mobile: "Mobile *",
       phoneNumberPlaceholder: "Phone Number",
       mobileHint: "10 digits. Country code (+91) is added automatically.",
+      changeMasked: "Change",
+      maskedMobileHint:
+        "Hidden until you enter and save the real number - your team's Owner can see it in full.",
       email: "Email",
       emailPlaceholder: "Needed for email greetings",
       category: "Category *",
@@ -424,6 +429,9 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       mobile: "मोबाइल *",
       phoneNumberPlaceholder: "फ़ोन नंबर",
       mobileHint: "10 अंक। कंट्री कोड (+91) अपने आप जुड़ जाता है।",
+      changeMasked: "बदलें",
+      maskedMobileHint:
+        "असली नंबर डालकर सेव करने तक छुपा रहेगा - आपकी टीम का Owner इसे पूरा देख सकता है।",
       email: "ईमेल",
       emailPlaceholder: "ईमेल ग्रीटिंग के लिए ज़रूरी",
       category: "श्रेणी *",
@@ -581,6 +589,9 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       mobile: "मोबाइल *",
       phoneNumberPlaceholder: "फोन नंबर",
       mobileHint: "10 अंक. कंट्री कोड (+91) आपोआप जोडला जातो.",
+      changeMasked: "बदला",
+      maskedMobileHint:
+        "खरा नंबर टाकून सेव्ह करेपर्यंत लपलेला राहील - तुमच्या टीमचा Owner तो पूर्ण पाहू शकतो.",
       email: "ईमेल",
       emailPlaceholder: "ईमेल ग्रीटिंगसाठी आवश्यक",
       category: "श्रेणी *",

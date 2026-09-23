@@ -1,3 +1,4 @@
+import { UserRole } from "@prisma/client";
 import { notFound } from "next/navigation";
 
 import { ContactDeleteButton } from "@/components/contacts/contact-delete-button";
@@ -34,7 +35,9 @@ export default async function EditContactPage({ params }: EditContactPageProps) 
     throw error;
   }
 
-  const serialized = serializeContact(contact);
+  const serialized = serializeContact(contact, {
+    maskAdminAdded: auth.role !== UserRole.ADMIN,
+  });
 
   return (
     <main className="mx-auto max-w-xl px-4 py-6 sm:px-6 sm:py-8">
@@ -54,10 +57,11 @@ export default async function EditContactPage({ params }: EditContactPageProps) 
       <ContactForm
         mode="edit"
         contactId={contact.id}
+        maskedContact={serialized.mobileMasked}
         initialValues={{
           name: contact.name,
-          mobile: contact.mobile,
-          email: contact.email ?? "",
+          mobile: serialized.mobile,
+          email: serialized.email ?? "",
           occasionDates: serialized.occasionDates,
           categoryId: contact.categoryId ?? "",
           categoryTagIds: serialized.categoryTagIds,

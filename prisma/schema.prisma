@@ -226,6 +226,11 @@ model Contact {
   note                String?
   attributes          Json     @default("{}")
   isActive            Boolean   @default(true)
+  /// Set when a Platform Admin created this contact (e.g. onboarding import)
+  /// rather than the client themselves. Masks mobile/email from Staff
+  /// (not Owner) until the client edits and saves the contact, which
+  /// clears this flag - see updateContact in lib/contacts/service.ts.
+  addedByPlatformAdmin Boolean  @default(false)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 

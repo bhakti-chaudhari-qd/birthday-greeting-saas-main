@@ -41,6 +41,14 @@ type ContactFormProps = {
   mode: "create" | "edit";
   contactId?: string;
   initialValues?: Partial<ContactFormValues>;
+  /**
+   * True when initialValues.mobile/email are masked display values (this
+   * contact was added by a Platform Admin and the current viewer is Staff,
+   * not Owner) - not the real data. Renders a "leave blank to keep" UX for
+   * those two fields instead of a plain pre-filled input, and omits them
+   * from the save payload unless the viewer explicitly changes them.
+   */
+  maskedContact?: boolean;
 };
 
 type AutomationOccasionSummary = {
@@ -109,7 +117,12 @@ function hasOptionalValues(values: ContactFormValues): boolean {
   return Boolean(values.note);
 }
 
-export function ContactForm({ mode, contactId, initialValues }: ContactFormProps) {
+export function ContactForm({
+  mode,
+  contactId,
+  initialValues,
+  maskedContact = false,
+}: ContactFormProps) {
   const router = useRouter();
   const { showToast } = useToast();
   const locale = useLocale();
@@ -117,9 +130,13 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
   const [values, setValues] = useState<ContactFormValues>({
     ...defaultValues,
     ...initialValues,
-    mobile: toLocalMobileDigits(initialValues?.mobile ?? defaultValues.mobile),
-    email: initialValues?.email ?? defaultValues.email,
+    mobile: maskedContact
+      ? ""
+      : toLocalMobileDigits(initialValues?.mobile ?? defaultValues.mobile),
+    email: maskedContact ? "" : (initialValues?.email ?? defaultValues.email),
   });
+  const [mobileRevealed, setMobileRevealed] = useState(!maskedContact);
+  const [emailRevealed, setEmailRevealed] = useState(!maskedContact);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [automation, setAutomation] = useState<AutomationSummary | null>(null);
@@ -207,21 +224,23 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
     event.preventDefault();
     setError(null);
 
-    let mobile: string;
-    try {
-      mobile = normalizeMobile(values.mobile);
-    } catch (validationError) {
-      setError(
-        validationError instanceof Error
-          ? validationError.message
-          : MOBILE_MUST_BE_TEN_DIGITS_MESSAGE,
-      );
-      return;
-    }
+    let mobile: string | undefined;
+    if (mobileRevealed) {
+      try {
+        mobile = normalizeMobile(values.mobile);
+      } catch (validationError) {
+        setError(
+          validationError instanceof Error
+            ? validationError.message
+            : MOBILE_MUST_BE_TEN_DIGITS_MESSAGE,
+        );
+        return;
+      }
 
-    if (mobile.length !== 10) {
-      setError(MOBILE_MUST_BE_TEN_DIGITS_MESSAGE);
-      return;
+      if (mobile.length !== 10) {
+        setError(MOBILE_MUST_BE_TEN_DIGITS_MESSAGE);
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -233,8 +252,11 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
 
     const payload: Record<string, unknown> = {
       name: values.name,
-      mobile,
-      email: values.email.trim() || null,
+      // Omitted (not even null) when a masked mobile/email was left
+      // untouched, so the server keeps the real stored value unchanged -
+      // see ContactFormProps.maskedContact.
+      ...(mobileRevealed ? { mobile } : {}),
+      ...(emailRevealed ? { email: values.email.trim() || null } : {}),
       occasionDates,
       categoryId: values.categoryId || null,
       categoryTagIds: values.categoryTagIds,
@@ -314,55 +336,94 @@ export function ContactForm({ mode, contactId, initialValues }: ContactFormProps
               />
             </label>
 
-            <label className="block text-sm">
-              <span className="font-medium text-stone-800">{dict.mobile}</span>
-              <div className="mt-1 flex overflow-hidden rounded-lg border border-stone-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
-                <span
-                  className="flex shrink-0 items-center border-r border-stone-200 bg-stone-50 px-3 text-sm font-medium text-stone-600"
-                  aria-hidden="true"
-                >
-                  +91
+            {maskedContact && !mobileRevealed ? (
+              <div className="block text-sm">
+                <span className="font-medium text-stone-800">{dict.mobile}</span>
+                <div className="mt-1 flex items-center justify-between gap-3 rounded-lg border border-stone-300 bg-stone-50 px-3 py-2">
+                  <span className="tracking-widest text-stone-500">
+                    {initialValues?.mobile || "••••••••••"}
+                  </span>
+                  <button
+                    type="button"
+                    className="shrink-0 text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    onClick={() => setMobileRevealed(true)}
+                  >
+                    {dict.changeMasked}
+                  </button>
+                </div>
+                <span className="mt-1 block text-xs text-stone-500">
+                  {dict.maskedMobileHint}
                 </span>
+              </div>
+            ) : (
+              <label className="block text-sm">
+                <span className="font-medium text-stone-800">{dict.mobile}</span>
+                <div className="mt-1 flex overflow-hidden rounded-lg border border-stone-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
+                  <span
+                    className="flex shrink-0 items-center border-r border-stone-200 bg-stone-50 px-3 text-sm font-medium text-stone-600"
+                    aria-hidden="true"
+                  >
+                    +91
+                  </span>
+                  <input
+                    className="min-w-0 flex-1 border-0 px-3 py-2 text-sm outline-none"
+                    value={values.mobile}
+                    onChange={(event) =>
+                      setValues((current) => ({
+                        ...current,
+                        mobile: sanitizeMobileInput(event.target.value),
+                      }))
+                    }
+                    placeholder={dict.phoneNumberPlaceholder}
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    pattern="[6-9][0-9]{9}"
+                    maxLength={10}
+                    minLength={10}
+                    title="Enter exactly 10 digits"
+                    required
+                  />
+                </div>
+                <span className="mt-1 block text-xs text-stone-500">
+                  {dict.mobileHint}
+                </span>
+              </label>
+            )}
+
+            {maskedContact && !emailRevealed && initialValues?.email ? (
+              <div className="block text-sm">
+                <span className="font-medium text-stone-800">{dict.email}</span>
+                <div className="mt-1 flex items-center justify-between gap-3 rounded-lg border border-stone-300 bg-stone-50 px-3 py-2">
+                  <span className="tracking-widest text-stone-500">
+                    {initialValues.email}
+                  </span>
+                  <button
+                    type="button"
+                    className="shrink-0 text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    onClick={() => setEmailRevealed(true)}
+                  >
+                    {dict.changeMasked}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="block text-sm">
+                <span className="font-medium text-stone-800">{dict.email}</span>
                 <input
-                  className="min-w-0 flex-1 border-0 px-3 py-2 text-sm outline-none"
-                  value={values.mobile}
+                  className={`${inputClass} mt-1`}
+                  type="email"
+                  value={values.email}
                   onChange={(event) =>
                     setValues((current) => ({
                       ...current,
-                      mobile: sanitizeMobileInput(event.target.value),
+                      email: event.target.value,
                     }))
                   }
-                  placeholder={dict.phoneNumberPlaceholder}
-                  inputMode="numeric"
-                  autoComplete="tel-national"
-                  pattern="[6-9][0-9]{9}"
-                  maxLength={10}
-                  minLength={10}
-                  title="Enter exactly 10 digits"
-                  required
+                  placeholder={dict.emailPlaceholder}
+                  autoComplete="email"
                 />
-              </div>
-              <span className="mt-1 block text-xs text-stone-500">
-                {dict.mobileHint}
-              </span>
-            </label>
-
-            <label className="block text-sm">
-              <span className="font-medium text-stone-800">{dict.email}</span>
-              <input
-                className={`${inputClass} mt-1`}
-                type="email"
-                value={values.email}
-                onChange={(event) =>
-                  setValues((current) => ({
-                    ...current,
-                    email: event.target.value,
-                  }))
-                }
-                placeholder={dict.emailPlaceholder}
-                autoComplete="email"
-              />
-            </label>
+              </label>
+            )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {occasions.map((occasion) => (
