@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
+import { AddClientContactsPanel } from "@/components/admin/add-client-contacts-panel";
 import { ChannelTopUpPanel } from "@/components/admin/channel-top-up-panel";
 import { DealHistoryPanel } from "@/components/admin/deal-history-panel";
 import { FailedQueueTable } from "@/components/admin/failed-queue-table";
@@ -307,6 +308,21 @@ export default async function AdminOrganizationDetailPage({
     </Panel>
   );
 
+  const contactsTab = (
+    <Panel>
+      <div className="border-b border-stone-200 px-5 py-3 sm:px-6">
+        <h2 className="text-sm font-semibold text-stone-900">Contacts</h2>
+        <p className="mt-0.5 text-sm text-stone-600">
+          Add contacts to this client&rsquo;s account, or import a CSV/Excel
+          file on their behalf.
+        </p>
+      </div>
+      <div className="px-5 py-4 sm:px-6">
+        <AddClientContactsPanel organizationId={organization.id} />
+      </div>
+    </Panel>
+  );
+
   return (
     <PageShell>
       <PageHeader
@@ -407,6 +423,7 @@ export default async function AdminOrganizationDetailPage({
           billing={billingTab}
           activity={activityTab}
           users={usersTab}
+          contacts={contactsTab}
         />
       </Suspense>
     </PageShell>

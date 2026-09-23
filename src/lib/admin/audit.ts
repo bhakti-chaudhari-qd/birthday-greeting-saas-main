@@ -21,6 +21,8 @@ export const PLATFORM_ADMIN_AUDIT_ACTIONS = {
   PAYMENT_LINK_CANCELLED: "PAYMENT_LINK_CANCELLED",
   CUSTOM_PLAN_CHANNEL_TOPPED_UP: "CUSTOM_PLAN_CHANNEL_TOPPED_UP",
   PLAN_CATALOGUE_ENTRY_UPDATED: "PLAN_CATALOGUE_ENTRY_UPDATED",
+  CONTACT_CREATED: "CONTACT_CREATED",
+  CONTACTS_IMPORTED: "CONTACTS_IMPORTED",
 } as const;
 
 export type PlatformAdminAuditAction =
@@ -31,7 +33,8 @@ export type PlatformAdminAuditTargetType =
   | "organization_user"
   | "vendor"
   | "send_queue"
-  | "plan_catalogue";
+  | "plan_catalogue"
+  | "contact";
 
 const ALLOWED_VALUE_KEYS = new Set([
   "isActive",
@@ -66,6 +69,14 @@ const ALLOWED_METADATA_KEYS = new Set([
   "messagesAdded",
   "resultingMonthlyLimit",
   "plan",
+  "contactName",
+  "contactMobile",
+  "fileName",
+  "importCreated",
+  "importUpdated",
+  "importSkippedDuplicate",
+  "importSkippedLimit",
+  "importInvalid",
 ]);
 
 export type PlatformAdminAuditValues = Partial<{
@@ -101,6 +112,14 @@ export type PlatformAdminAuditMetadata = Partial<{
   messagesAdded: number;
   resultingMonthlyLimit: number;
   plan: string;
+  contactName: string;
+  contactMobile: string;
+  fileName: string;
+  importCreated: number;
+  importUpdated: number;
+  importSkippedDuplicate: number;
+  importSkippedLimit: number;
+  importInvalid: number;
 }>;
 
 export type CreatePlatformAdminAuditEventInput = {

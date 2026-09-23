@@ -6,13 +6,14 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { primaryButtonClass, secondaryButtonClass } from "@/components/ui/page";
 
-type TabKey = "overview" | "billing" | "activity" | "users";
+type TabKey = "overview" | "billing" | "activity" | "users" | "contacts";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Overview" },
   { key: "billing", label: "Billing" },
   { key: "activity", label: "Activity" },
   { key: "users", label: "Users" },
+  { key: "contacts", label: "Contacts" },
 ];
 
 function parseTab(value: string | null): TabKey {
@@ -24,6 +25,7 @@ type OrganizationDetailTabsProps = {
   billing: ReactNode;
   activity: ReactNode;
   users: ReactNode;
+  contacts: ReactNode;
 };
 
 export function OrganizationDetailTabs({
@@ -31,6 +33,7 @@ export function OrganizationDetailTabs({
   billing,
   activity,
   users,
+  contacts,
 }: OrganizationDetailTabsProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -58,6 +61,7 @@ export function OrganizationDetailTabs({
     billing,
     activity,
     users,
+    contacts,
   };
 
   return (

@@ -1,4 +1,4 @@
-import { Channel, ChannelProvider } from "@prisma/client";
+import { ChannelProvider } from "@prisma/client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createRegisteredOrganization } from "@/lib/auth/register";
