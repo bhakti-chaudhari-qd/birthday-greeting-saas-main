@@ -19,6 +19,8 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
   const [liveChannelsApproved, setLiveChannelsApproved] = useState(
     organization.liveChannelsApproved,
   );
+  const [staffContactVisibilityAdminAllowed, setStaffContactVisibilityAdminAllowed] =
+    useState(organization.staffContactVisibilityAdminAllowed);
   const [timezone, setTimezone] = useState(organization.timezone);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
           body: JSON.stringify({
             isActive,
             liveChannelsApproved,
+            staffContactVisibilityAdminAllowed,
             timezone,
           }),
         },
@@ -85,6 +88,27 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
         />
         <span className="font-medium">
           Approve live Custom HTTP (even on FREE)
+        </span>
+      </label>
+
+      <label className="flex items-start gap-2 text-sm text-stone-800">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={staffContactVisibilityAdminAllowed}
+          onChange={(event) =>
+            setStaffContactVisibilityAdminAllowed(event.target.checked)
+          }
+        />
+        <span>
+          <span className="font-medium">
+            Allow Staff to see admin-added contact details
+          </span>
+          <span className="mt-0.5 block text-xs text-stone-500">
+            Sets the ceiling only - the client&rsquo;s Owner still decides
+            whether Staff actually sees it. Turn off to force-hide it
+            regardless of what the Owner sets.
+          </span>
         </span>
       </label>
 

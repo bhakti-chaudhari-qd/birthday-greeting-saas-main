@@ -115,6 +115,16 @@ model Organization {
   isActive                           Boolean  @default(true)
   /// Platform Admin may approve live CUSTOM_HTTP for FREE/unpaid orgs.
   liveChannelsApproved               Boolean  @default(false)
+  /// Admin-controlled ceiling: whether Staff may ever see full mobile/email
+  /// of a Contact.addedByPlatformAdmin contact. Both this AND
+  /// staffContactVisibilityOwnerAllowed must be true for Staff to see it -
+  /// most-restrictive-wins between admin and the client's Owner.
+  staffContactVisibilityAdminAllowed Boolean  @default(true)
+  /// Owner-controlled: whether Staff may see full mobile/email of a
+  /// Contact.addedByPlatformAdmin contact, subject to the admin ceiling
+  /// above. Defaults to false so existing (always-masked) behavior is
+  /// unchanged until the Owner explicitly opts in.
+  staffContactVisibilityOwnerAllowed Boolean  @default(false)
   /// Vendor who referred this org at signup (optional attribution).
   referredByVendorId                 String?
   referredAt                         DateTime?

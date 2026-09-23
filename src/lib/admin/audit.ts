@@ -57,6 +57,7 @@ const ALLOWED_VALUE_KEYS = new Set([
   "description",
   "amountPaise",
   "role",
+  "staffContactVisibilityAdminAllowed",
 ]);
 
 const ALLOWED_METADATA_KEYS = new Set([
@@ -101,6 +102,7 @@ export type PlatformAdminAuditValues = Partial<{
   description: string;
   amountPaise: number;
   role: string;
+  staffContactVisibilityAdminAllowed: boolean;
 }>;
 
 export type PlatformAdminAuditMetadata = Partial<{

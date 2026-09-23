@@ -1,3 +1,42 @@
+import { UserRole } from "@prisma/client";
+
+import { prisma } from "@/lib/db";
+
+/**
+ * Whether a Staff viewer should see a Platform-Admin-added contact's real
+ * mobile/email masked. The Owner always sees it in full. For Staff, both
+ * the admin-controlled ceiling (Organization.staffContactVisibilityAdminAllowed)
+ * and the Owner's own choice (staffContactVisibilityOwnerAllowed) must allow
+ * it - most-restrictive-wins - otherwise it's masked. Defaults preserve the
+ * original always-masked-for-Staff behavior until the Owner opts in.
+ */
+export async function shouldMaskAdminAddedContactsForViewer(
+  organizationId: string,
+  viewerRole: UserRole,
+): Promise<boolean> {
+  if (viewerRole === UserRole.ADMIN) {
+    return false;
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: {
+      staffContactVisibilityAdminAllowed: true,
+      staffContactVisibilityOwnerAllowed: true,
+    },
+  });
+
+  if (!organization) {
+    return true;
+  }
+
+  const staffAllowed =
+    organization.staffContactVisibilityAdminAllowed &&
+    organization.staffContactVisibilityOwnerAllowed;
+
+  return !staffAllowed;
+}
+
 /** Same shape as the provider-log masking (e.g. "******3210"). */
 export function maskMobileForDisplay(mobile: string): string {
   return mobile.length <= 4

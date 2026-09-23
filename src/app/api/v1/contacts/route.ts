@@ -1,4 +1,3 @@
-import { UserRole } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
@@ -13,6 +12,7 @@ import {
   ContactLimitError,
   ContactValidationError,
 } from "@/lib/contacts/errors";
+import { shouldMaskAdminAddedContactsForViewer } from "@/lib/contacts/mask";
 import {
   createContact,
   listContacts,
@@ -81,7 +81,10 @@ export async function GET(request: Request) {
     });
 
     const result = await listContacts(auth.organizationId, query, {
-      maskAdminAdded: auth.role !== UserRole.ADMIN,
+      maskAdminAdded: await shouldMaskAdminAddedContactsForViewer(
+        auth.organizationId,
+        auth.role,
+      ),
     });
 
     return NextResponse.json(result);

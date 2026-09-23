@@ -1,4 +1,3 @@
-import { UserRole } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
@@ -14,6 +13,7 @@ import {
   ContactNotFoundError,
   ContactValidationError,
 } from "@/lib/contacts/errors";
+import { shouldMaskAdminAddedContactsForViewer } from "@/lib/contacts/mask";
 import {
   deleteContact,
   getContactById,
@@ -36,7 +36,10 @@ export async function GET(_request: Request, context: RouteContext) {
 
     return NextResponse.json({
       data: serializeContact(contact, {
-        maskAdminAdded: auth.role !== UserRole.ADMIN,
+        maskAdminAdded: await shouldMaskAdminAddedContactsForViewer(
+          auth.organizationId,
+          auth.role,
+        ),
       }),
     });
   } catch (error) {
@@ -64,7 +67,10 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     return NextResponse.json({
       data: serializeContact(contact, {
-        maskAdminAdded: auth.role !== UserRole.ADMIN,
+        maskAdminAdded: await shouldMaskAdminAddedContactsForViewer(
+          auth.organizationId,
+          auth.role,
+        ),
       }),
     });
   } catch (error) {

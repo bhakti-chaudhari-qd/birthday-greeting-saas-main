@@ -1,4 +1,3 @@
-import { UserRole } from "@prisma/client";
 import { notFound } from "next/navigation";
 
 import { ContactDeleteButton } from "@/components/contacts/contact-delete-button";
@@ -9,6 +8,7 @@ import {
 } from "@/components/contacts/contact-form-page-header";
 import { getAuthContext } from "@/lib/auth/context";
 import { ContactNotFoundError } from "@/lib/contacts/errors";
+import { shouldMaskAdminAddedContactsForViewer } from "@/lib/contacts/mask";
 import { getContactById, serializeContact } from "@/lib/contacts/service";
 
 type EditContactPageProps = {
@@ -36,7 +36,10 @@ export default async function EditContactPage({ params }: EditContactPageProps) 
   }
 
   const serialized = serializeContact(contact, {
-    maskAdminAdded: auth.role !== UserRole.ADMIN,
+    maskAdminAdded: await shouldMaskAdminAddedContactsForViewer(
+      auth.organizationId,
+      auth.role,
+    ),
   });
 
   return (
