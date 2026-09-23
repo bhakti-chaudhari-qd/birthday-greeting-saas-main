@@ -21,12 +21,28 @@ type RouteContext = {
 
 const addContactSchema = createContactSchema
   .innerType()
-  .pick({ name: true, mobile: true, email: true, categoryName: true })
+  .pick({
+    name: true,
+    mobile: true,
+    email: true,
+    categoryId: true,
+    categoryName: true,
+    categoryTagIds: true,
+  })
   .extend({
     /** Any format parseOccasionDate accepts, e.g. an <input type="date"> value. */
     birthday: z.string().trim().min(1).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.categoryId != null && value.categoryName != null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Provide categoryId or categoryName, not both",
+        path: ["categoryName"],
+      });
+    }
+  });
 
 export async function POST(request: Request, context: RouteContext) {
   try {
@@ -46,7 +62,9 @@ export async function POST(request: Request, context: RouteContext) {
       mobile: input.mobile,
       email: input.email,
       birthday: input.birthday,
+      categoryId: input.categoryId,
       categoryName: input.categoryName,
+      categoryTagIds: input.categoryTagIds,
     });
 
     return NextResponse.json(

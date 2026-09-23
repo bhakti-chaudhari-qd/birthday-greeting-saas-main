@@ -38,7 +38,12 @@ export type AddContactForPlatformAdminInput = {
   email?: string | null;
   /** Any format parseOccasionDate accepts, e.g. an <input type="date"> value (YYYY-MM-DD). */
   birthday?: string | null;
+  /** Primary category - an existing category's id. Mutually exclusive with categoryName. */
+  categoryId?: string | null;
+  /** Primary category - creates the category if it doesn't already exist. */
   categoryName?: string | null;
+  /** Extra categories beyond the primary one, same as the client's own "additional categories". */
+  categoryTagIds?: string[];
 };
 
 /**
@@ -68,7 +73,9 @@ export async function addContactForPlatformAdmin(
       mobile: input.mobile,
       email: input.email?.trim() ? input.email.trim() : undefined,
       occasionDates,
+      categoryId: input.categoryId?.trim() || undefined,
       categoryName: input.categoryName?.trim() || undefined,
+      categoryTagIds: input.categoryTagIds,
       isActive: true,
     },
     { addedByPlatformAdmin: true },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { InlineAlert } from "@/components/ui/feedback";
@@ -11,7 +11,12 @@ type AddContactFormState = {
   mobile: string;
   email: string;
   birthday: string;
-  categoryName: string;
+  /** Existing category id, or "" for none. Mutually exclusive with newCategoryName. */
+  categoryId: string;
+  /** Typed to create a brand-new primary category (mutually exclusive with categoryId). */
+  newCategoryName: string;
+  /** Extra categories beyond the primary one - same as the client's own "additional categories". */
+  categoryTagIds: string[];
 };
 
 const emptyForm: AddContactFormState = {
@@ -19,7 +24,14 @@ const emptyForm: AddContactFormState = {
   mobile: "",
   email: "",
   birthday: "",
-  categoryName: "",
+  categoryId: "",
+  newCategoryName: "",
+  categoryTagIds: [],
+};
+
+type ClientCategory = {
+  id: string;
+  name: string;
 };
 
 type ImportSummary = {
@@ -51,6 +63,9 @@ export function AddClientContactsPanel({
 }) {
   const router = useRouter();
 
+  const [categories, setCategories] = useState<ClientCategory[]>([]);
+  const [addingNewCategory, setAddingNewCategory] = useState(false);
+
   const [form, setForm] = useState<AddContactFormState>(emptyForm);
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -60,6 +75,24 @@ export function AddClientContactsPanel({
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const response = await fetch(
+          `/api/v1/admin/organizations/${organizationId}/categories`,
+        );
+        const body = await response.json();
+        if (response.ok) {
+          setCategories(body.data as ClientCategory[]);
+        }
+      } catch {
+        // Optional - the form still works with a typed-in new category name.
+      }
+    }
+
+    void loadCategories();
+  }, [organizationId]);
 
   async function handleAddContact(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,7 +111,10 @@ export function AddClientContactsPanel({
             mobile: form.mobile.trim(),
             email: form.email.trim() || undefined,
             birthday: form.birthday.trim() || undefined,
-            categoryName: form.categoryName.trim() || undefined,
+            ...(addingNewCategory
+              ? { categoryName: form.newCategoryName.trim() || undefined }
+              : { categoryId: form.categoryId || undefined }),
+            categoryTagIds: form.categoryTagIds,
           }),
         },
       );
@@ -91,6 +127,17 @@ export function AddClientContactsPanel({
 
       setAddSuccess(`Added ${body.data.name}.`);
       setForm(emptyForm);
+      setAddingNewCategory(false);
+      if (body.data.category) {
+        setCategories((current) => {
+          if (current.some((category) => category.id === body.data.category.id)) {
+            return current;
+          }
+          return [...current, body.data.category].sort((a, b) =>
+            a.name.localeCompare(b.name),
+          );
+        });
+      }
       router.refresh();
     } catch {
       setAddError("Failed to add contact");
@@ -213,26 +260,111 @@ export function AddClientContactsPanel({
               }
             />
           </label>
-          <label className="block text-sm sm:col-span-2">
-            <span className="font-medium text-stone-800">
-              Category (optional)
-            </span>
-            <input
-              className={`mt-1 ${inputClass}`}
-              value={form.categoryName}
-              placeholder="e.g. Friend, Relative, Client"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  categoryName: event.target.value,
-                }))
-              }
-            />
-            <span className="mt-0.5 block text-xs text-stone-500">
-              Creates the category for this client if it doesn&rsquo;t
-              already exist.
-            </span>
-          </label>
+          <div className="block text-sm sm:col-span-2">
+            <span className="font-medium text-stone-800">Category</span>
+            {addingNewCategory ? (
+              <div className="mt-1 flex gap-2">
+                <input
+                  className={inputClass}
+                  value={form.newCategoryName}
+                  placeholder="New category name"
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      newCategoryName: event.target.value,
+                    }))
+                  }
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddingNewCategory(false);
+                    setForm((current) => ({ ...current, newCategoryName: "" }));
+                  }}
+                  className={`${secondaryButtonClass} shrink-0 whitespace-nowrap`}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="mt-1 flex gap-2">
+                <select
+                  className={inputClass}
+                  value={form.categoryId}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      categoryId: event.target.value,
+                      categoryTagIds: current.categoryTagIds.filter(
+                        (id) => id !== event.target.value,
+                      ),
+                    }))
+                  }
+                >
+                  <option value="">No category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setAddingNewCategory(true)}
+                  className={`${secondaryButtonClass} shrink-0 whitespace-nowrap`}
+                >
+                  + New category
+                </button>
+              </div>
+            )}
+          </div>
+
+          {categories.length > 0 ? (
+            <div className="block text-sm sm:col-span-2">
+              <span className="font-medium text-stone-800">
+                Additional categories (optional)
+              </span>
+              <span className="mt-0.5 block text-xs text-stone-500">
+                A contact can belong to more than one category, same as on
+                the client&rsquo;s own Contacts page.
+              </span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {categories
+                  .filter((category) => category.id !== form.categoryId)
+                  .map((category) => {
+                    const checked = form.categoryTagIds.includes(category.id);
+                    return (
+                      <label
+                        key={category.id}
+                        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-sm ${
+                          checked
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-stone-300 text-stone-700 hover:bg-stone-50"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={checked}
+                          onChange={(event) =>
+                            setForm((current) => ({
+                              ...current,
+                              categoryTagIds: event.target.checked
+                                ? [...current.categoryTagIds, category.id]
+                                : current.categoryTagIds.filter(
+                                    (id) => id !== category.id,
+                                  ),
+                            }))
+                          }
+                        />
+                        {category.name}
+                      </label>
+                    );
+                  })}
+              </div>
+            </div>
+          ) : null}
 
           {addError ? <InlineAlert tone="error">{addError}</InlineAlert> : null}
           {addSuccess ? (
