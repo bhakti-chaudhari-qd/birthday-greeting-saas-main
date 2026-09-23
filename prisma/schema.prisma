@@ -119,7 +119,7 @@ model Organization {
   /// of a Contact.addedByPlatformAdmin contact. Both this AND
   /// staffContactVisibilityOwnerAllowed must be true for Staff to see it -
   /// most-restrictive-wins between admin and the client's Owner.
-  staffContactVisibilityAdminAllowed Boolean  @default(true)
+  staffContactVisibilityAdminAllowed Boolean  @default(false)
   /// Owner-controlled: whether Staff may see full mobile/email of a
   /// Contact.addedByPlatformAdmin contact, subject to the admin ceiling
   /// above. Defaults to false so existing (always-masked) behavior is

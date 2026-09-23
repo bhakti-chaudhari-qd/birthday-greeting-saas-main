@@ -78,7 +78,31 @@ describe("shouldMaskAdminAddedContactsForViewer", () => {
     await cleanupOrganization(org.organization.id);
   });
 
-  it("Staff sees full data once Owner opts in (admin allows)", async ({
+  it("Staff sees full data once both admin and Owner opt in", async ({
+    skip,
+  }) => {
+    if (!databaseAvailable) skip();
+
+    const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
+
+    await prisma.organization.update({
+      where: { id: org.organization.id },
+      data: {
+        staffContactVisibilityOwnerAllowed: true,
+        staffContactVisibilityAdminAllowed: true,
+      },
+    });
+
+    const shouldMask = await shouldMaskAdminAddedContactsForViewer(
+      org.organization.id,
+      UserRole.STAFF,
+    );
+    expect(shouldMask).toBe(false);
+
+    await cleanupOrganization(org.organization.id);
+  });
+
+  it("admin's default (off) still masks even when the Owner opts in, until admin explicitly allows", async ({
     skip,
   }) => {
     if (!databaseAvailable) skip();
@@ -88,13 +112,14 @@ describe("shouldMaskAdminAddedContactsForViewer", () => {
     await prisma.organization.update({
       where: { id: org.organization.id },
       data: { staffContactVisibilityOwnerAllowed: true },
+      // staffContactVisibilityAdminAllowed left untouched - defaults to false.
     });
 
     const shouldMask = await shouldMaskAdminAddedContactsForViewer(
       org.organization.id,
       UserRole.STAFF,
     );
-    expect(shouldMask).toBe(false);
+    expect(shouldMask).toBe(true);
 
     await cleanupOrganization(org.organization.id);
   });
@@ -140,7 +165,8 @@ describe("staff-contact-visibility settings API", () => {
     });
 
     expect(updated.staffContactVisibilityOwnerAllowed).toBe(true);
-    expect(updated.staffContactVisibilityAdminAllowed).toBe(true);
+    // Admin ceiling defaults to false (off) and is untouched by this update.
+    expect(updated.staffContactVisibilityAdminAllowed).toBe(false);
 
     await cleanupOrganization(org.organization.id);
   });
