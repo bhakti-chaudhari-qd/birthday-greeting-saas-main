@@ -6,7 +6,7 @@ import {
 } from "@/lib/auth/password-policy";
 import { normalizeMobile } from "@/lib/contacts/mobile";
 
-const strongPassword = z
+export const strongPassword = z
   .string()
   .max(128)
   .refine(isStrongPassword, { message: STRONG_PASSWORD_MESSAGE });

@@ -7,6 +7,7 @@ export const PLATFORM_ADMIN_AUDIT_ACTIONS = {
   ORGANIZATION_UPDATED: "ORGANIZATION_UPDATED",
   USER_ACTIVATED: "ORGANIZATION_USER_ACTIVATED",
   USER_DEACTIVATED: "ORGANIZATION_USER_DEACTIVATED",
+  ORGANIZATION_USER_ADDED: "ORGANIZATION_USER_ADDED",
   PASSWORD_RESET_REQUESTED: "ORGANIZATION_USER_PASSWORD_RESET_REQUESTED",
   VENDOR_CREATED: "VENDOR_CREATED",
   VENDOR_INVITE_SENT: "VENDOR_INVITE_SENT",
@@ -55,6 +56,7 @@ const ALLOWED_VALUE_KEYS = new Set([
   "label",
   "description",
   "amountPaise",
+  "role",
 ]);
 
 const ALLOWED_METADATA_KEYS = new Set([
@@ -98,6 +100,7 @@ export type PlatformAdminAuditValues = Partial<{
   label: string;
   description: string;
   amountPaise: number;
+  role: string;
 }>;
 
 export type PlatformAdminAuditMetadata = Partial<{

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
 import { AddClientContactsPanel } from "@/components/admin/add-client-contacts-panel";
+import { AddOrganizationUserForm } from "@/components/admin/add-organization-user-form";
 import { ChannelTopUpPanel } from "@/components/admin/channel-top-up-panel";
 import { DealHistoryPanel } from "@/components/admin/deal-history-panel";
 import { FailedQueueTable } from "@/components/admin/failed-queue-table";
@@ -298,9 +299,11 @@ export default async function AdminOrganizationDetailPage({
       <div className="border-b border-stone-200 px-5 py-3 sm:px-6">
         <h2 className="text-sm font-semibold text-stone-900">Users</h2>
         <p className="mt-0.5 text-sm text-stone-600">
-          Activate or deactivate client users (Owner / Staff).
+          Activate or deactivate client users (Owner / Staff), or add one
+          directly.
         </p>
       </div>
+      <AddOrganizationUserForm organizationId={organization.id} />
       <OrganizationUsersTable
         organizationId={organization.id}
         users={organization.users}
