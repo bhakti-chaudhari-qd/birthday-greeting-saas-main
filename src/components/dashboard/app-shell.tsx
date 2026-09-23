@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { LogoutButton } from "@/components/auth/logout-button";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { getShellDict, type ShellDict } from "@/lib/i18n/dictionaries/shell";
 import { useLocale } from "@/lib/i18n/use-locale";
@@ -356,7 +355,145 @@ function BrandMark({
   );
 }
 
+function UserMenu({
+  user,
+  logoutPath,
+  redirectTo,
+  showEverywhereOption,
+}: {
+  user: AppShellProps["user"];
+  logoutPath: string;
+  redirectTo: string;
+  showEverywhereOption: boolean;
+}) {
+  const router = useRouter();
+  const dict = getShellDict(useLocale()).signOut;
+  const menuId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function onPointerDown(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  async function runLogout(mode: "current" | "everywhere") {
+    if (mode === "everywhere") {
+      const confirmed = window.confirm(dict.confirmEverywhere);
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    setOpen(false);
+    setIsSubmitting(true);
+
+    try {
+      await fetch(
+        mode === "everywhere" ? "/api/auth/sessions/revoke-all" : logoutPath,
+        { method: "POST" },
+      );
+      router.push(redirectTo);
+      router.refresh();
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const initial = user.name.trim().charAt(0).toUpperCase() || "?";
+
+  return (
+    <div ref={rootRef} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        disabled={isSubmitting}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-controls={open ? menuId : undefined}
+        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-stone-300 bg-white py-1 pl-1 pr-3 text-sm font-medium text-stone-900 outline-none hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-60"
+      >
+        <span
+          aria-hidden
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-stone-900 text-xs font-semibold text-white"
+        >
+          {initial}
+        </span>
+        <span className="hidden max-w-[8rem] truncate sm:inline">
+          {isSubmitting ? dict.signingOut : user.name}
+        </span>
+        <span aria-hidden className="text-xs opacity-70">
+          {open ? "▴" : "▾"}
+        </span>
+      </button>
+
+      {open ? (
+        <div
+          id={menuId}
+          role="menu"
+          aria-label={user.name}
+          className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-stone-200 bg-white py-1 shadow-lg"
+        >
+          <div className="border-b border-stone-100 px-4 py-3">
+            <p className="truncate text-sm font-semibold text-stone-900">
+              {user.name}
+            </p>
+            <p className="mt-0.5 truncate text-xs text-stone-500">
+              {user.email}
+            </p>
+            {user.roleLabel ? (
+              <span className="mt-1.5 inline-block rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-700">
+                {user.roleLabel}
+              </span>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            role="menuitem"
+            className="block w-full px-4 py-2.5 text-left text-sm text-stone-900 hover:bg-stone-50"
+            onClick={() => void runLogout("current")}
+          >
+            {dict.signOut}
+          </button>
+          {showEverywhereOption ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="block w-full px-4 py-2.5 text-left text-sm text-stone-900 hover:bg-stone-50"
+              onClick={() => void runLogout("everywhere")}
+            >
+              {dict.signOutEverywhere}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function AppShell({
+  user,
   children,
   nav = DASHBOARD_NAV,
   homeHref = "/dashboard",
@@ -497,11 +634,11 @@ export function AppShell({
 
           <div className="ml-auto flex shrink-0 items-center gap-2 justify-self-end md:ml-0">
             <LanguageSwitcher className="rounded-full border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-800 outline-none hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-primary" />
-            <LogoutButton
+            <UserMenu
+              user={user}
               logoutPath={logoutPath}
               redirectTo={loginPath}
               showEverywhereOption={showSignOutEverywhere}
-              className="shrink-0 border-stone-300 bg-white hover:bg-stone-50"
             />
           </div>
         </header>
