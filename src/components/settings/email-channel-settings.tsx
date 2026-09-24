@@ -9,6 +9,8 @@ import {
   inputClass,
   primaryButtonClass,
 } from "@/components/ui/page";
+import { getChannelSettingsDict } from "@/lib/i18n/dictionaries/channel-settings";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { getCustomerEmailProviderLabel } from "@/lib/ui/customer-labels";
 
 type EmailChannelConfigView = {
@@ -41,6 +43,9 @@ const emptyForm: FormState = {
 };
 
 export function EmailChannelSettings() {
+  const channelDict = getChannelSettingsDict(useLocale());
+  const dict = channelDict.email;
+  const common = channelDict.common;
   const [config, setConfig] = useState<EmailChannelConfigView | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [loading, setLoading] = useState(true);
@@ -59,9 +64,7 @@ export function EmailChannelSettings() {
         const body = await response.json();
 
         if (!response.ok) {
-          setError(
-            body.error?.message ?? "Failed to load Email channel configuration",
-          );
+          setError(body.error?.message ?? dict.failedToLoad);
           return;
         }
 
@@ -75,7 +78,7 @@ export function EmailChannelSettings() {
           fromName: data.fromName ?? "",
         });
       } catch {
-        setError("Failed to load Email channel configuration");
+        setError(dict.failedToLoad);
       } finally {
         setLoading(false);
       }
@@ -114,16 +117,14 @@ export function EmailChannelSettings() {
       const body = await response.json();
 
       if (!response.ok) {
-        setError(
-          body.error?.message ?? "Failed to save Email channel configuration",
-        );
+        setError(body.error?.message ?? dict.failedToSave);
         return;
       }
 
-      setSuccess("Configuration saved successfully.");
+      setSuccess(dict.savedSuccess);
       setReloadToken((current) => current + 1);
     } catch {
-      setError("Failed to save Email channel configuration");
+      setError(dict.failedToSave);
     } finally {
       setSaving(false);
     }
@@ -137,12 +138,12 @@ export function EmailChannelSettings() {
   return (
     <div className="flex flex-col gap-4">
       {loading ? (
-        <p className="text-sm text-stone-600">Loading configuration…</p>
+        <p className="text-sm text-stone-600">{common.loadingConfiguration}</p>
       ) : (
         <Panel className="p-4 sm:p-5">
           <form className="flex flex-col gap-4" onSubmit={handleSave}>
             <div className="block text-sm">
-              <span className="font-medium text-stone-800">Email service</span>
+              <span className="font-medium text-stone-800">{dict.emailService}</span>
               <div className="mt-1 rounded-lg border border-stone-300 bg-stone-50 px-3 py-2 text-stone-700">
                 {getCustomerEmailProviderLabel(form.provider)}
               </div>
@@ -151,7 +152,7 @@ export function EmailChannelSettings() {
             {isResend ? (
               <>
                 <label className="block text-sm">
-                  <span className="font-medium text-stone-800">From email</span>
+                  <span className="font-medium text-stone-800">{dict.fromEmail}</span>
                   <input
                     type="email"
                     className={`${inputClass} mt-1`}
@@ -166,7 +167,9 @@ export function EmailChannelSettings() {
                 </label>
 
                 <label className="block text-sm">
-                  <span className="font-medium text-stone-800">From name (optional)</span>
+                  <span className="font-medium text-stone-800">
+                    {dict.fromNameOptional}
+                  </span>
                   <input
                     className={`${inputClass} mt-1`}
                     value={form.fromName}
@@ -179,12 +182,12 @@ export function EmailChannelSettings() {
                 </label>
 
                 <MaskedPasswordField
-                  label="Resend API key"
+                  label={dict.resendApiKey}
                   configured={apiKeyConfigured}
                   value={form.apiKey}
                   onChange={(value) => setForm((current) => ({ ...current, apiKey: value }))}
                   required
-                  hint={apiKeyConfigured ? undefined : "Required the first time you set up Resend."}
+                  hint={apiKeyConfigured ? undefined : dict.resendApiKeyHint}
                 />
               </>
             ) : null}
@@ -197,19 +200,19 @@ export function EmailChannelSettings() {
                   setForm((current) => ({ ...current, isActive: event.target.checked }))
                 }
               />
-              Active
+              {common.active}
             </label>
 
             <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
-              <p className="font-medium text-stone-800">Current status</p>
+              <p className="font-medium text-stone-800">{common.currentStatus}</p>
               <p className="mt-1">
                 {config?.configured
-                  ? `Configured · ${getCustomerEmailProviderLabel(config.provider)} · ${
-                      config.isActive ? "active" : "inactive"
+                  ? `${common.configured} · ${getCustomerEmailProviderLabel(config.provider)} · ${
+                      config.isActive ? common.activeWord : common.inactiveWord
                     }`
                   : config?.platformDefaultFrom
-                    ? `Not configured - Email is sent from the platform default sender (${config.platformDefaultFrom}). Add your own Resend details to send from your own address.`
-                    : "Not configured - Email is unavailable until you add your Resend details"}
+                    ? dict.notConfiguredDefault(config.platformDefaultFrom)
+                    : dict.notConfiguredNoDefault}
               </p>
               {config?.provider === "RESEND" && config.fromEmail ? (
                 <p className="mt-1 break-all text-xs text-stone-500">
@@ -223,7 +226,7 @@ export function EmailChannelSettings() {
 
             <div className="flex flex-wrap gap-2">
               <button type="submit" disabled={saving} className={primaryButtonClass}>
-                {saving ? "Saving…" : "Save Configuration"}
+                {saving ? common.saving : common.saveConfiguration}
               </button>
             </div>
           </form>

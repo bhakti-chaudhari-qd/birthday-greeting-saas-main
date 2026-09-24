@@ -13,6 +13,8 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/ui/page";
+import { getChannelSettingsDict } from "@/lib/i18n/dictionaries/channel-settings";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export type ChannelSettingsTab = "sms" | "whatsapp" | "email";
 
@@ -30,6 +32,7 @@ const TAB_LABEL: Record<ChannelSettingsTab, string> = {
 };
 
 function ChannelSettingsTabs() {
+  const dict = getChannelSettingsDict(useLocale()).page;
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<ChannelSettingsTab>(() =>
@@ -64,7 +67,7 @@ function ChannelSettingsTabs() {
 
   return (
     <PageShell>
-      <PageHeader title="Channels" />
+      <PageHeader title={dict.title} />
 
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Channel">
         <button
@@ -109,16 +112,20 @@ function ChannelSettingsTabs() {
   );
 }
 
+function ChannelSettingsFallback() {
+  const dict = getChannelSettingsDict(useLocale()).page;
+
+  return (
+    <PageShell>
+      <PageHeader title={dict.title} />
+      <p className="text-sm text-stone-600">{dict.loading}</p>
+    </PageShell>
+  );
+}
+
 export default function ChannelSettingsPage() {
   return (
-    <Suspense
-      fallback={
-        <PageShell>
-          <PageHeader title="Channels" />
-          <p className="text-sm text-stone-600">Loading channel settings…</p>
-        </PageShell>
-      }
-    >
+    <Suspense fallback={<ChannelSettingsFallback />}>
       <ChannelSettingsTabs />
     </Suspense>
   );

@@ -11,6 +11,8 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/ui/page";
+import { getChannelSettingsDict } from "@/lib/i18n/dictionaries/channel-settings";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { getCustomerWhatsAppProviderLabel } from "@/lib/ui/customer-labels";
 
 type WhatsAppChannelConfigView = {
@@ -89,6 +91,9 @@ function withDemoCustomHttpDefaults(form: FormState): FormState {
 }
 
 export function WhatsAppChannelSettings() {
+  const channelDict = getChannelSettingsDict(useLocale());
+  const dict = channelDict.whatsapp;
+  const common = channelDict.common;
   const [config, setConfig] = useState<WhatsAppChannelConfigView | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [loading, setLoading] = useState(true);
@@ -107,10 +112,7 @@ export function WhatsAppChannelSettings() {
         const body = await response.json();
 
         if (!response.ok) {
-          setError(
-            body.error?.message ??
-              "Failed to load WhatsApp channel configuration",
-          );
+          setError(body.error?.message ?? dict.failedToLoad);
           return;
         }
 
@@ -133,7 +135,7 @@ export function WhatsAppChannelSettings() {
           }),
         );
       } catch {
-        setError("Failed to load WhatsApp channel configuration");
+        setError(dict.failedToLoad);
       } finally {
         setLoading(false);
       }
@@ -189,16 +191,14 @@ export function WhatsAppChannelSettings() {
       const body = await response.json();
 
       if (!response.ok) {
-        setError(
-          body.error?.message ?? "Failed to save WhatsApp channel configuration",
-        );
+        setError(body.error?.message ?? dict.failedToSave);
         return;
       }
 
-      setSuccess("Configuration saved successfully.");
+      setSuccess(dict.savedSuccess);
       setReloadToken((value) => value + 1);
     } catch {
-      setError("Failed to save WhatsApp channel configuration");
+      setError(dict.failedToSave);
     } finally {
       setSaving(false);
     }
@@ -225,23 +225,23 @@ export function WhatsAppChannelSettings() {
   return (
     <div className="flex flex-col gap-4">
       {loading ? (
-        <p className="text-sm text-stone-600">Loading configuration…</p>
+        <p className="text-sm text-stone-600">{common.loadingConfiguration}</p>
       ) : (
         <>
           <Panel className="p-4 sm:p-5">
-            <p className="text-sm font-medium text-stone-800">WhatsApp wallet balance</p>
+            <p className="text-sm font-medium text-stone-800">{dict.walletBalance}</p>
             <p className="mt-1 text-2xl font-semibold text-stone-900">-</p>
             <p className="mt-1 text-sm text-stone-600">
               {config?.walletBalanceSupported
-                ? "Refresh to load your live WhatsApp gateway balance."
-                : "Not available from the current WhatsApp provider."}
+                ? dict.refreshLiveBalance
+                : dict.notAvailable}
             </p>
           </Panel>
 
           <Panel className="p-4 sm:p-5">
             <form className="flex flex-col gap-4" onSubmit={handleSave}>
               <label className="block text-sm">
-                <span className="font-medium text-stone-800">WhatsApp gateway</span>
+                <span className="font-medium text-stone-800">{dict.gateway}</span>
                 <select
                   className={`${inputClass} mt-1`}
                   value={form.provider}
@@ -265,7 +265,7 @@ export function WhatsAppChannelSettings() {
                 <>
                   <label className="block text-sm">
                     <span className="font-medium text-stone-800">
-                      Phone number ID
+                      {dict.phoneNumberId}
                     </span>
                     <input
                       className={`${inputClass} mt-1`}
@@ -281,29 +281,24 @@ export function WhatsAppChannelSettings() {
                       required
                     />
                     <span className="mt-0.5 block text-xs text-stone-500">
-                      From Meta&rsquo;s WhatsApp API Setup page - the number
-                      before /messages in your API URL.
+                      {dict.phoneNumberIdHint}
                     </span>
                   </label>
 
                   <MaskedPasswordField
-                    label="Access token"
+                    label={dict.accessToken}
                     configured={accessTokenConfigured}
                     value={form.accessToken}
                     onChange={(value) =>
                       setForm((current) => ({ ...current, accessToken: value }))
                     }
                     required={!accessTokenConfigured}
-                    hint={
-                      accessTokenConfigured
-                        ? undefined
-                        : "A permanent System User token is recommended - a temporary token from the Meta dashboard expires within hours/days."
-                    }
+                    hint={accessTokenConfigured ? undefined : dict.accessTokenHint}
                   />
 
                   <label className="block text-sm">
                     <span className="font-medium text-stone-800">
-                      API version (optional)
+                      {dict.apiVersionOptional}
                     </span>
                     <input
                       className={`${inputClass} mt-1`}
@@ -324,7 +319,7 @@ export function WhatsAppChannelSettings() {
               {form.provider === "CUSTOM_HTTP" ? (
                 <>
                   <label className="block text-sm">
-                    <span className="font-medium text-stone-800">Base URL</span>
+                    <span className="font-medium text-stone-800">{dict.baseUrl}</span>
                     <input
                       className={`${inputClass} mt-1`}
                       value={form.baseUrl}
@@ -337,7 +332,7 @@ export function WhatsAppChannelSettings() {
                     />
                   </label>
                   <label className="block text-sm">
-                    <span className="font-medium text-stone-800">Send path</span>
+                    <span className="font-medium text-stone-800">{dict.sendPath}</span>
                     <input
                       className={`${inputClass} mt-1`}
                       value={form.sendPath}
@@ -350,7 +345,9 @@ export function WhatsAppChannelSettings() {
                     />
                   </label>
                   <label className="block text-sm">
-                    <span className="font-medium text-stone-800">Authentication method</span>
+                    <span className="font-medium text-stone-800">
+                      {dict.authenticationMethod}
+                    </span>
                     <select
                       className={`${inputClass} mt-1`}
                       value={form.authMode}
@@ -363,14 +360,14 @@ export function WhatsAppChannelSettings() {
                         }))
                       }
                     >
-                      <option value="password">Username &amp; Password</option>
-                      <option value="apiKey">API Key</option>
+                      <option value="password">{dict.usernamePassword}</option>
+                      <option value="apiKey">{dict.apiKey}</option>
                     </select>
                   </label>
 
                   {form.authMode === "apiKey" ? (
                     <MaskedPasswordField
-                      label="API Key"
+                      label={dict.apiKey}
                       configured={apiKeyConfigured}
                       value={form.apiKey}
                       onChange={(value) =>
@@ -381,7 +378,7 @@ export function WhatsAppChannelSettings() {
                   ) : (
                     <>
                       <label className="block text-sm">
-                        <span className="font-medium text-stone-800">Username</span>
+                        <span className="font-medium text-stone-800">{dict.username}</span>
                         <input
                           className={`${inputClass} mt-1`}
                           value={form.username}
@@ -397,9 +394,7 @@ export function WhatsAppChannelSettings() {
                         configured={passwordConfigured}
                         value={form.password}
                         onChange={(value) => setForm((current) => ({ ...current, password: value }))}
-                        hint={
-                          passwordConfigured ? undefined : "Leave blank if your provider doesn't require one."
-                        }
+                        hint={passwordConfigured ? undefined : dict.passwordHint}
                       />
                     </>
                   )}
@@ -415,10 +410,10 @@ export function WhatsAppChannelSettings() {
                     />
                     <span>
                       <span className="font-medium text-stone-800">
-                        Allow insecure TLS (testing)
+                        {dict.allowInsecureTls}
                       </span>
                       <span className="mt-0.5 block text-xs text-stone-500">
-                        For self-signed test gateways.
+                        {dict.allowInsecureTlsHint}
                       </span>
                     </span>
                   </label>
@@ -433,17 +428,18 @@ export function WhatsAppChannelSettings() {
                     setForm((current) => ({ ...current, isActive: event.target.checked }))
                   }
                 />
-                Active
+                {common.active}
               </label>
 
               <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
-                <p className="font-medium text-stone-800">Current status</p>
+                <p className="font-medium text-stone-800">{common.currentStatus}</p>
                 <p className="mt-1">
                   {config?.configured
-                    ? `Configured · ${getCustomerWhatsAppProviderLabel(
-                        config.provider,
-                      )} · ${config.isActive ? "active" : "inactive"}`
-                    : "Not configured - WhatsApp Send will fail closed"}
+                    ? dict.currentStatusConfigured(
+                        getCustomerWhatsAppProviderLabel(config.provider),
+                        config.isActive ? common.activeWord : common.inactiveWord,
+                      )
+                    : dict.currentStatusNotConfigured}
                 </p>
                 {config?.provider === "CUSTOM_HTTP" && config.baseUrl ? (
                   <p className="mt-1 break-all text-xs text-stone-500">
@@ -453,7 +449,7 @@ export function WhatsAppChannelSettings() {
                 ) : null}
                 {config?.provider === "META" && config.phoneNumberId ? (
                   <p className="mt-1 break-all text-xs text-stone-500">
-                    Phone number ID: {config.phoneNumberId}
+                    {dict.phoneNumberIdLabel}: {config.phoneNumberId}
                   </p>
                 ) : null}
               </div>
@@ -463,10 +459,10 @@ export function WhatsAppChannelSettings() {
 
               <div className="flex flex-wrap gap-2">
                 <button type="submit" disabled={saving} className={primaryButtonClass}>
-                  {saving ? "Saving…" : "Save Configuration"}
+                  {saving ? common.saving : common.saveConfiguration}
                 </button>
                 <Link href="/dashboard/messages" className={secondaryButtonClass}>
-                  Send Messages
+                  {dict.sendMessages}
                 </Link>
               </div>
             </form>

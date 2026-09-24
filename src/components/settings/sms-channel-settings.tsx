@@ -10,6 +10,8 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/ui/page";
+import { getChannelSettingsDict } from "@/lib/i18n/dictionaries/channel-settings";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { getCustomerSmsProviderLabel } from "@/lib/ui/customer-labels";
 
 type SmsChannelConfigView = {
@@ -92,6 +94,9 @@ function withDemoCustomHttpDefaults(form: FormState): FormState {
 }
 
 export function SmsChannelSettings() {
+  const channelDict = getChannelSettingsDict(useLocale());
+  const dict = channelDict.sms;
+  const common = channelDict.common;
   const [config, setConfig] = useState<SmsChannelConfigView | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [loading, setLoading] = useState(true);
@@ -117,7 +122,7 @@ export function SmsChannelSettings() {
         const body = await response.json();
 
         if (!response.ok) {
-          setError(body.error?.message ?? "Failed to load SMS channel configuration");
+          setError(body.error?.message ?? dict.failedToLoad);
           return;
         }
 
@@ -140,7 +145,7 @@ export function SmsChannelSettings() {
           }),
         );
       } catch {
-        setError("Failed to load SMS channel configuration");
+        setError(dict.failedToLoad);
       } finally {
         setLoading(false);
       }
@@ -186,13 +191,13 @@ export function SmsChannelSettings() {
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Failed to load SMS wallet balance");
+        setError(body.error?.message ?? dict.failedToLoadBalance);
         return;
       }
 
       setWalletBalance(body.data as SmsWalletBalanceView);
     } catch {
-      setError("Failed to load SMS wallet balance");
+      setError(dict.failedToLoadBalance);
     } finally {
       setRefreshingBalance(false);
     }
@@ -234,7 +239,7 @@ export function SmsChannelSettings() {
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Failed to save SMS channel configuration");
+        setError(body.error?.message ?? dict.failedToSave);
         return;
       }
 
@@ -253,10 +258,10 @@ export function SmsChannelSettings() {
         ),
         successStatusCode: String(data.successStatusCode ?? 1),
       }));
-      setSuccess("Configuration saved successfully.");
+      setSuccess(dict.savedSuccess);
       setReloadToken((current) => current + 1);
     } catch {
-      setError("Failed to save SMS channel configuration");
+      setError(dict.failedToSave);
     } finally {
       setSaving(false);
     }
@@ -274,11 +279,11 @@ export function SmsChannelSettings() {
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Failed to verify SMS channel configuration");
+        setError(body.error?.message ?? dict.failedToVerify);
         return;
       }
 
-      setVerifyMessage(body.data?.message ?? "Configuration verified");
+      setVerifyMessage(body.data?.message ?? dict.verifiedDefault);
       if (body.data) {
         setWalletBalance({
           provider: body.data.provider,
@@ -288,7 +293,7 @@ export function SmsChannelSettings() {
         });
       }
     } catch {
-      setError("Failed to verify SMS channel configuration");
+      setError(dict.failedToVerify);
     } finally {
       setVerifying(false);
     }
@@ -306,28 +311,30 @@ export function SmsChannelSettings() {
   return (
     <div className="flex flex-col gap-4">
       {loading ? (
-        <p className="text-sm text-stone-600">Loading configuration…</p>
+        <p className="text-sm text-stone-600">{common.loadingConfiguration}</p>
       ) : (
         <>
           <Panel className="p-4 sm:p-5">
             <p className="text-sm font-medium text-stone-800">
               {config?.configured
-                ? "Configured"
+                ? common.configured
                 : config?.usingPlatformDefault
-                  ? "Using the platform SMS service"
-                  : "Not configured"}
+                  ? dict.usingPlatformDefault
+                  : common.notConfigured}
             </p>
             <p className="mt-1 text-sm text-stone-600">
               {config?.configured
-                ? `Provider: ${getCustomerSmsProviderLabel(config.provider)}`
+                ? `${common.provider}: ${getCustomerSmsProviderLabel(config.provider)}`
                 : config?.usingPlatformDefault
-                  ? "SMS is ready to use with the platform gateway. Save your own gateway below if you prefer to send through your own account."
-                  : "Save a configuration to enable SMS."}
+                  ? dict.platformReadyHint
+                  : dict.saveOwnGatewayHint}
             </p>
             {config?.configured && config.provider === "CUSTOM_HTTP" ? (
               <p className="mt-1 text-sm text-stone-600">
-                Credentials:{" "}
-                {config.credentialsConfigured ? "configured" : "missing or invalid"}
+                {dict.credentials}:{" "}
+                {config.credentialsConfigured
+                  ? dict.credentialsConfigured
+                  : dict.credentialsMissing}
               </p>
             ) : null}
           </Panel>
@@ -336,18 +343,20 @@ export function SmsChannelSettings() {
             <Panel className="p-4 sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium text-stone-800">SMS wallet balance</p>
+                  <p className="text-sm font-medium text-stone-800">{dict.walletBalance}</p>
                   <p className="mt-1 text-2xl font-semibold text-stone-900">
                     {walletBalanceLabel}
                     {walletBalance?.walletBalanceSupported ? (
-                      <span className="ml-2 text-sm font-normal text-stone-500">credits</span>
+                      <span className="ml-2 text-sm font-normal text-stone-500">
+                        {dict.credits}
+                      </span>
                     ) : null}
                   </p>
                   <p className="mt-1 text-sm text-stone-600">
                     {walletBalance?.message ??
                       (config.walletBalanceSupported
-                        ? "Refresh to load your live SMS gateway balance."
-                        : "Test provider has no live wallet balance.")}
+                        ? dict.refreshLiveBalance
+                        : dict.testProviderNoBalance)}
                   </p>
                 </div>
                 <button
@@ -356,7 +365,7 @@ export function SmsChannelSettings() {
                   disabled={saving || verifying || refreshingBalance}
                   onClick={() => void handleRefreshBalance()}
                 >
-                  {refreshingBalance ? "Refreshing…" : "Refresh balance"}
+                  {refreshingBalance ? dict.refreshing : dict.refresh}
                 </button>
               </div>
             </Panel>
@@ -365,14 +374,16 @@ export function SmsChannelSettings() {
           <Panel className="p-4 sm:p-5">
             <form className="flex flex-col gap-4" onSubmit={handleSave}>
               <div className="block text-sm">
-                <span className="font-medium text-stone-800">SMS gateway</span>
+                <span className="font-medium text-stone-800">{dict.gateway}</span>
                 <div className="mt-1 rounded-lg border border-stone-300 bg-stone-50 px-3 py-2 text-stone-700">
                   {getCustomerSmsProviderLabel(form.provider)}
                 </div>
               </div>
 
               <p className="text-sm text-stone-600">
-                {`Enter your SMS gateway details.${isLocalDemoPrefill ? " Empty fields are prefilled locally for testing." : ""}`}
+                {dict.enterGatewayDetails(
+                  isLocalDemoPrefill ? dict.demoPrefillNote : "",
+                )}
               </p>
 
               <label className="flex items-center gap-2 text-sm">
@@ -383,13 +394,13 @@ export function SmsChannelSettings() {
                     setForm((current) => ({ ...current, isActive: event.target.checked }))
                   }
                 />
-                <span className="font-medium text-stone-800">Active</span>
+                <span className="font-medium text-stone-800">{common.active}</span>
               </label>
 
               {isCustomHttp ? (
                 <>
                   <label className="block text-sm">
-                    <span className="font-medium text-stone-800">Base URL</span>
+                    <span className="font-medium text-stone-800">{dict.baseUrl}</span>
                     <input
                       className={`${inputClass} mt-1`}
                       value={form.baseUrl}
@@ -403,7 +414,7 @@ export function SmsChannelSettings() {
                   </label>
 
                   <label className="block text-sm">
-                    <span className="font-medium text-stone-800">Send path</span>
+                    <span className="font-medium text-stone-800">{dict.sendPath}</span>
                     <input
                       className={`${inputClass} mt-1`}
                       value={form.sendPath}
@@ -415,12 +426,12 @@ export function SmsChannelSettings() {
                       autoComplete="off"
                     />
                     <span className="mt-1 block text-xs text-stone-500">
-                      Must start with <code className="rounded bg-stone-100 px-1">/</code>.
+                      {dict.sendPathHint}
                     </span>
                   </label>
 
                   <label className="block text-sm">
-                    <span className="font-medium text-stone-800">Username</span>
+                    <span className="font-medium text-stone-800">{dict.username}</span>
                     <input
                       className={`${inputClass} mt-1`}
                       value={form.username}
@@ -437,15 +448,11 @@ export function SmsChannelSettings() {
                     value={form.password}
                     onChange={(value) => setForm((current) => ({ ...current, password: value }))}
                     required
-                    hint={
-                      passwordConfigured
-                        ? undefined
-                        : "Required the first time you set up Custom HTTP."
-                    }
+                    hint={passwordConfigured ? undefined : dict.passwordHint}
                   />
 
                   <label className="block text-sm">
-                    <span className="font-medium text-stone-800">Route</span>
+                    <span className="font-medium text-stone-800">{dict.route}</span>
                     <input
                       className={`${inputClass} mt-1`}
                       value={form.route}
@@ -456,20 +463,12 @@ export function SmsChannelSettings() {
                       required
                     />
                     <span className="mt-1 block text-xs text-stone-500">
-                      Exact route code from your SMS provider
-                      {isLocalDemoPrefill ? (
-                        <>
-                          {" "}
-                          (local demo:{" "}
-                          <code className="rounded bg-stone-100 px-1">trans1</code>)
-                        </>
-                      ) : null}
-                      .
+                      {dict.routeHint(isLocalDemoPrefill ? dict.routeDemoNote : "")}
                     </span>
                   </label>
 
                   <label className="block text-sm">
-                    <span className="font-medium text-stone-800">Sender ID</span>
+                    <span className="font-medium text-stone-800">{dict.senderId}</span>
                     <input
                       className={`${inputClass} mt-1`}
                       value={form.senderId}
@@ -482,7 +481,9 @@ export function SmsChannelSettings() {
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="block text-sm">
-                      <span className="font-medium text-stone-800">Request timeout</span>
+                      <span className="font-medium text-stone-800">
+                        {dict.requestTimeout}
+                      </span>
                       <input
                         type="number"
                         min={1}
@@ -498,12 +499,12 @@ export function SmsChannelSettings() {
                         required
                       />
                       <span className="mt-1 block text-xs text-stone-500">
-                        Seconds to wait for the SMS provider response.
+                        {dict.requestTimeoutHint}
                       </span>
                     </label>
 
                     <label className="block text-sm">
-                      <span className="font-medium text-stone-800">Success code</span>
+                      <span className="font-medium text-stone-800">{dict.successCode}</span>
                       <input
                         type="number"
                         min={0}
@@ -519,7 +520,7 @@ export function SmsChannelSettings() {
                         required
                       />
                       <span className="mt-1 block text-xs text-stone-500">
-                        First value in a successful provider response.
+                        {dict.successCodeHint}
                       </span>
                     </label>
                   </div>
@@ -532,7 +533,7 @@ export function SmsChannelSettings() {
 
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <button type="submit" disabled={saving} className={primaryButtonClass}>
-                  {saving ? "Saving…" : "Save Configuration"}
+                  {saving ? common.saving : common.saveConfiguration}
                 </button>
 
                 <button
@@ -541,13 +542,11 @@ export function SmsChannelSettings() {
                   disabled={saving || verifying || !config?.configured}
                   onClick={() => void handleVerify()}
                 >
-                  {verifying ? "Verifying…" : "Verify Connection"}
+                  {verifying ? dict.verifying : dict.verifyConnection}
                 </button>
               </div>
               {!config?.configured ? (
-                <p className="text-xs text-stone-500">
-                  Save a configuration before verifying the connection.
-                </p>
+                <p className="text-xs text-stone-500">{dict.saveBeforeVerify}</p>
               ) : null}
             </form>
           </Panel>
