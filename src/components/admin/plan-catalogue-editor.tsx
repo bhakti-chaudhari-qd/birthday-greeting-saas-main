@@ -7,6 +7,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass } from "@/components/ui/page";
 import type { PlanCatalogueEntrySummary } from "@/lib/admin/plan-catalogue-ops";
+import { getAdminPlanCatalogueDict } from "@/lib/i18n/dictionaries/admin-plan-catalogue";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { formatCustomerDateTime } from "@/lib/ui/datetime";
 
 function formatRupees(amountPaise: number): string {
@@ -33,6 +35,7 @@ function PlanCatalogueEntryForm({
   entry: PlanCatalogueEntrySummary;
 }) {
   const router = useRouter();
+  const dict = getAdminPlanCatalogueDict(useLocale());
   const [label, setLabel] = useState(entry.label);
   const [description, setDescription] = useState(entry.description);
   const [priceRupees, setPriceRupees] = useState(
@@ -63,7 +66,7 @@ function PlanCatalogueEntryForm({
       !Number.isFinite(parsedContactLimit) ||
       !Number.isFinite(parsedMonthlyMessageLimit)
     ) {
-      setError("Enter valid numbers for price, contact limit, and message limit.");
+      setError(dict.invalidNumbers);
       return;
     }
 
@@ -92,13 +95,13 @@ function PlanCatalogueEntryForm({
       );
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to save changes");
+        setError(payload.error?.message ?? dict.failedToSave);
         return;
       }
-      setSuccess("Saved. New checkouts and signups will use these values.");
+      setSuccess(dict.savedSuccess);
       router.refresh();
     } catch {
-      setError("Failed to save changes");
+      setError(dict.failedToSave);
     } finally {
       setBusy(false);
       setConfirming(false);
@@ -112,26 +115,23 @@ function PlanCatalogueEntryForm({
           {entry.plan}
         </h4>
         <p className="text-xs text-stone-500">
-          Last updated{" "}
+          {dict.lastUpdated}{" "}
           {formatCustomerDateTime(entry.updatedAt)}
-          {entry.updatedByAdminName ? ` by ${entry.updatedByAdminName}` : ""}
+          {entry.updatedByAdminName
+            ? ` ${dict.by(entry.updatedByAdminName)}`
+            : ""}
         </p>
       </div>
 
       {entry.razorpayPricePinned ? (
         <InlineAlert tone="warning">
-          This plan&rsquo;s price is pinned to an existing Razorpay Plan
-          (RAZORPAY_PLAN_{entry.plan} is set on the server). Editing the price
-          below will <strong>not</strong> change what Razorpay subscription
-          checkouts actually charge — only the contact/message limits and
-          display text update. To change the charged amount, update or
-          unpin the Razorpay Plan itself.
+          {dict.razorpayPinnedWarning(entry.plan)}
         </InlineAlert>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Name</span>
+          <span className="font-medium text-stone-800">{dict.name}</span>
           <input
             className={`mt-1 ${inputClass}`}
             value={label}
@@ -141,7 +141,7 @@ function PlanCatalogueEntryForm({
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Price (INR)</span>
+          <span className="font-medium text-stone-800">{dict.priceInr}</span>
           <input
             className={`mt-1 ${inputClass}`}
             type="number"
@@ -153,7 +153,7 @@ function PlanCatalogueEntryForm({
           />
         </label>
         <label className="block text-sm sm:col-span-2">
-          <span className="font-medium text-stone-800">Description</span>
+          <span className="font-medium text-stone-800">{dict.description2}</span>
           <input
             className={`mt-1 ${inputClass}`}
             value={description}
@@ -163,7 +163,7 @@ function PlanCatalogueEntryForm({
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Contact limit</span>
+          <span className="font-medium text-stone-800">{dict.contactLimit}</span>
           <input
             className={`mt-1 ${inputClass}`}
             type="number"
@@ -176,7 +176,7 @@ function PlanCatalogueEntryForm({
         </label>
         <label className="block text-sm">
           <span className="font-medium text-stone-800">
-            Monthly message limit
+            {dict.monthlyMessageLimit}
           </span>
           <input
             className={`mt-1 ${inputClass}`}
@@ -191,7 +191,7 @@ function PlanCatalogueEntryForm({
       </div>
 
       <button type="submit" disabled={busy} className={primaryButtonClass}>
-        {busy ? "Saving…" : "Save changes"}
+        {busy ? dict.saving : dict.saveChanges}
       </button>
 
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
@@ -199,28 +199,25 @@ function PlanCatalogueEntryForm({
 
       <ConfirmDialog
         open={confirming}
-        title={`Update ${entry.plan} pricing?`}
+        title={dict.confirmTitle(entry.plan)}
         message={
           <>
-            <p>
-              This takes effect immediately for new checkouts and signups.
-              Clients already on {entry.plan} keep their current limits.
-            </p>
+            <p>{dict.confirmIntro(entry.plan)}</p>
             <dl className="mt-3 space-y-1">
               <div className="flex justify-between gap-4">
-                <dt className="text-stone-500">Price</dt>
+                <dt className="text-stone-500">{dict.price}</dt>
                 <dd className="font-medium text-stone-900">
                   {formatRupees(entry.amountPaise)} → {formatRupees(parsedAmountPaise)}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-stone-500">Contact limit</dt>
+                <dt className="text-stone-500">{dict.contactLimit}</dt>
                 <dd className="font-medium text-stone-900">
                   {entry.contactLimit} → {parsedContactLimit}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-stone-500">Monthly message limit</dt>
+                <dt className="text-stone-500">{dict.monthlyMessageLimit}</dt>
                 <dd className="font-medium text-stone-900">
                   {entry.monthlyMessageLimit} → {parsedMonthlyMessageLimit}
                 </dd>
@@ -228,13 +225,12 @@ function PlanCatalogueEntryForm({
             </dl>
             {entry.razorpayPricePinned ? (
               <p className="mt-3 font-medium text-amber-800">
-                This plan&rsquo;s Razorpay price is pinned, so the price
-                change above will not affect what is actually charged.
+                {dict.confirmRazorpayPinnedNote}
               </p>
             ) : null}
           </>
         }
-        confirmLabel="Save changes"
+        confirmLabel={dict.saveChanges}
         busy={busy}
         onConfirm={() => void confirmSave()}
         onCancel={() => setConfirming(false)}
