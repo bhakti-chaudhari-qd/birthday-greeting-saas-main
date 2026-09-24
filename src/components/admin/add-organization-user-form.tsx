@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/page";
 import { PasswordField } from "@/components/ui/password-field";
+import { getAdminClientDetailDict } from "@/lib/i18n/dictionaries/admin-client-detail";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export function AddOrganizationUserForm({
   organizationId,
@@ -13,6 +15,7 @@ export function AddOrganizationUserForm({
   organizationId: string;
 }) {
   const router = useRouter();
+  const dict = getAdminClientDetailDict(useLocale());
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,14 +45,14 @@ export function AddOrganizationUserForm({
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Failed to add user");
+        setError(body.error?.message ?? dict.addUser.failedToAdd);
         return;
       }
 
       setOpen(false);
       router.refresh();
     } catch {
-      setError("Failed to add user");
+      setError(dict.addUser.failedToAdd);
     } finally {
       setSubmitting(false);
     }
@@ -63,7 +66,7 @@ export function AddOrganizationUserForm({
           onClick={() => setOpen(true)}
           className={secondaryButtonClass}
         >
-          + Add user
+          {dict.usersTable.addUser}
         </button>
       </div>
     );
@@ -73,7 +76,7 @@ export function AddOrganizationUserForm({
     <div className="border-b border-stone-200 px-5 py-4 sm:px-6">
       <form className="grid gap-3 sm:grid-cols-2" onSubmit={handleSubmit}>
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Name</span>
+          <span className="font-medium text-stone-800">{dict.addUser.name}</span>
           <input
             name="name"
             className={`mt-1 ${inputClass}`}
@@ -84,14 +87,14 @@ export function AddOrganizationUserForm({
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Role</span>
+          <span className="font-medium text-stone-800">{dict.addUser.role}</span>
           <select name="role" className={`mt-1 ${inputClass}`} defaultValue="STAFF">
-            <option value="STAFF">Staff</option>
-            <option value="ADMIN">Owner</option>
+            <option value="STAFF">{dict.addUser.staff}</option>
+            <option value="ADMIN">{dict.addUser.owner}</option>
           </select>
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Email</span>
+          <span className="font-medium text-stone-800">{dict.addUser.email}</span>
           <input
             name="email"
             type="email"
@@ -103,7 +106,7 @@ export function AddOrganizationUserForm({
         </label>
         <label className="block text-sm">
           <span className="font-medium text-stone-800">
-            Mobile (optional)
+            {dict.addUser.mobile} {dict.addUser.optional}
           </span>
           <input
             name="mobile"
@@ -116,15 +119,12 @@ export function AddOrganizationUserForm({
         </label>
         <div className="sm:col-span-2">
           <PasswordField
-            label="Initial password"
+            label={dict.addUser.initialPassword}
             name="password"
             required
             autoComplete="new-password"
           />
-          <p className="mt-1 text-xs text-stone-500">
-            At least 10 characters, or 8+ with uppercase, lowercase, and a
-            number. Share it with the client securely.
-          </p>
+          <p className="mt-1 text-xs text-stone-500">{dict.addUser.passwordHint}</p>
         </div>
 
         {error ? (
@@ -139,7 +139,7 @@ export function AddOrganizationUserForm({
             disabled={submitting}
             className={primaryButtonClass}
           >
-            {submitting ? "Adding…" : "Add user"}
+            {submitting ? dict.addUser.adding : dict.addUser.add}
           </button>
           <button
             type="button"
@@ -149,7 +149,7 @@ export function AddOrganizationUserForm({
             }}
             className={secondaryButtonClass}
           >
-            Cancel
+            {dict.addUser.cancel}
           </button>
         </div>
       </form>

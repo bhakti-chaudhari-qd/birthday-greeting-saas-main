@@ -6,6 +6,8 @@ import { useState, useTransition } from "react";
 import { StatusBadge } from "@/components/ui/feedback";
 import { compactSecondaryButtonClass } from "@/components/ui/page";
 import type { PlatformFailedQueueDiagnostic } from "@/lib/admin/failed-queue";
+import { getAdminClientDetailDict } from "@/lib/i18n/dictionaries/admin-client-detail";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { formatCustomerDateTime } from "@/lib/ui/datetime";
 
 type FailedQueueTableProps = {
@@ -20,6 +22,7 @@ export function FailedQueueTable({
   items,
 }: FailedQueueTableProps) {
   const router = useRouter();
+  const dict = getAdminClientDetailDict(useLocale()).failedQueue;
   const [pendingQueueId, setPendingQueueId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, startRefreshTransition] = useTransition();
@@ -29,12 +32,7 @@ export function FailedQueueTable({
       AMBIGUOUS_FAILURE_PREFIX,
     );
 
-    if (
-      requiresConfirmation &&
-      !window.confirm(
-        "This may send a second message if the first already went through. Retry anyway?",
-      )
-    ) {
+    if (requiresConfirmation && !window.confirm(dict.ambiguousConfirm)) {
       return;
     }
 
@@ -55,13 +53,13 @@ export function FailedQueueTable({
       const payload = await response.json();
 
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to schedule retry");
+        setError(payload.error?.message ?? dict.failedToRetry);
         return;
       }
 
       router.refresh();
     } catch {
-      setError("Failed to schedule retry");
+      setError(dict.failedToRetry);
     } finally {
       setPendingQueueId(null);
     }
@@ -83,7 +81,7 @@ export function FailedQueueTable({
           disabled={isRefreshing || pendingQueueId !== null}
           onClick={refresh}
         >
-          {isRefreshing ? "Refreshing…" : "Refresh"}
+          {isRefreshing ? dict.refreshing : dict.refresh}
         </button>
       </div>
       {error ? (
@@ -95,19 +93,19 @@ export function FailedQueueTable({
         <table className="min-w-full text-left text-xs">
           <thead className="border-b border-stone-200 bg-stone-50 text-stone-600">
             <tr>
-              <th className="px-4 py-2.5 font-medium">Queue</th>
-              <th className="px-4 py-2.5 font-medium">Channel</th>
-              <th className="px-4 py-2.5 font-medium">Failure</th>
-              <th className="px-4 py-2.5 font-medium">Attempts</th>
-              <th className="px-4 py-2.5 font-medium">Updated</th>
-              <th className="px-4 py-2.5 font-medium">Action</th>
+              <th className="px-4 py-2.5 font-medium">{dict.queue}</th>
+              <th className="px-4 py-2.5 font-medium">{dict.channel}</th>
+              <th className="px-4 py-2.5 font-medium">{dict.failure}</th>
+              <th className="px-4 py-2.5 font-medium">{dict.attempts}</th>
+              <th className="px-4 py-2.5 font-medium">{dict.updated}</th>
+              <th className="px-4 py-2.5 font-medium">{dict.action}</th>
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
               <tr>
                 <td className="px-4 py-5 text-stone-500" colSpan={6}>
-                  No failed queue items.
+                  {dict.noFailedItems}
                 </td>
               </tr>
             ) : (
@@ -139,7 +137,7 @@ export function FailedQueueTable({
                       disabled={pendingQueueId !== null}
                       onClick={() => retry(item)}
                     >
-                      {pendingQueueId === item.id ? "Scheduling…" : "Retry"}
+                      {pendingQueueId === item.id ? dict.scheduling : dict.retry}
                     </button>
                   </td>
                 </tr>

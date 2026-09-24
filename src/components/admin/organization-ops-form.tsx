@@ -7,6 +7,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass } from "@/components/ui/page";
 import type { PlatformOrganizationDetail } from "@/lib/admin/org-ops";
+import { getAdminClientDetailDict } from "@/lib/i18n/dictionaries/admin-client-detail";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type OrganizationOpsFormProps = {
   organization: PlatformOrganizationDetail;
@@ -15,6 +17,7 @@ type OrganizationOpsFormProps = {
 /** Basic account-level flags: active/inactive, live-channel approval, timezone. Not billing. */
 export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) {
   const router = useRouter();
+  const dict = getAdminClientDetailDict(useLocale()).opsForm;
   const [isActive, setIsActive] = useState(organization.isActive);
   const [liveChannelsApproved, setLiveChannelsApproved] = useState(
     organization.liveChannelsApproved,
@@ -57,13 +60,13 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
       );
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to save client");
+        setError(payload.error?.message ?? dict.failedToSaveClient);
         return;
       }
-      setSuccess("Client updated.");
+      setSuccess(dict.clientUpdated);
       router.refresh();
     } catch {
-      setError("Failed to save client");
+      setError(dict.failedToSaveClient);
     } finally {
       setSaving(false);
     }
@@ -77,7 +80,7 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
           checked={isActive}
           onChange={(event) => setIsActive(event.target.checked)}
         />
-        <span className="font-medium">Client active</span>
+        <span className="font-medium">{dict.clientActive}</span>
       </label>
 
       <label className="flex items-center gap-2 text-sm text-stone-800">
@@ -86,9 +89,7 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
           checked={liveChannelsApproved}
           onChange={(event) => setLiveChannelsApproved(event.target.checked)}
         />
-        <span className="font-medium">
-          Approve live Custom HTTP (even on FREE)
-        </span>
+        <span className="font-medium">{dict.approveLiveCustomHttp}</span>
       </label>
 
       <label className="flex items-start gap-2 text-sm text-stone-800">
@@ -101,19 +102,15 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
           }
         />
         <span>
-          <span className="font-medium">
-            Allow Staff to see admin-added contact details
-          </span>
+          <span className="font-medium">{dict.allowStaffVisibility}</span>
           <span className="mt-0.5 block text-xs text-stone-500">
-            Sets the ceiling only - the client&rsquo;s Owner still decides
-            whether Staff actually sees it. Turn off to force-hide it
-            regardless of what the Owner sets.
+            {dict.allowStaffVisibilityHint}
           </span>
         </span>
       </label>
 
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Timezone</span>
+        <span className="font-medium text-stone-800">{dict.timezone}</span>
         <input
           className={`mt-1 ${inputClass}`}
           value={timezone}
@@ -123,7 +120,7 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
       </label>
 
       <button type="submit" disabled={saving} className={primaryButtonClass}>
-        {saving ? "Saving…" : "Save ops settings"}
+        {saving ? dict.saving : dict.saveOpsSettings}
       </button>
 
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
@@ -131,16 +128,10 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
 
       <ConfirmDialog
         open={pendingDeactivateConfirm}
-        title="Deactivate client?"
-        message={
-          <>
-            <strong>{organization.name}</strong> and everyone in it will
-            immediately lose access. This can be undone later by re-activating
-            the client.
-          </>
-        }
-        confirmLabel="Deactivate"
-        cancelLabel="Cancel"
+        title={dict.deactivateTitle}
+        message={dict.deactivateMessage(organization.name)}
+        confirmLabel={dict.deactivate}
+        cancelLabel={dict.cancel}
         busy={saving}
         onConfirm={() => {
           setPendingDeactivateConfirm(false);

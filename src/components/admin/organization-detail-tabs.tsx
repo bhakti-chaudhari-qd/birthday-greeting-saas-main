@@ -1,23 +1,19 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { primaryButtonClass, secondaryButtonClass } from "@/components/ui/page";
+import { getAdminClientDetailDict } from "@/lib/i18n/dictionaries/admin-client-detail";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type TabKey = "overview" | "billing" | "activity" | "users" | "contacts";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "overview", label: "Overview" },
-  { key: "billing", label: "Billing" },
-  { key: "activity", label: "Activity" },
-  { key: "users", label: "Users" },
-  { key: "contacts", label: "Contacts" },
-];
+const TAB_KEYS: TabKey[] = ["overview", "billing", "activity", "users", "contacts"];
 
 function parseTab(value: string | null): TabKey {
-  return TABS.some((tab) => tab.key === value) ? (value as TabKey) : "overview";
+  return TAB_KEYS.includes(value as TabKey) ? (value as TabKey) : "overview";
 }
 
 type OrganizationDetailTabsProps = {
@@ -39,6 +35,12 @@ export function OrganizationDetailTabs({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tab = parseTab(searchParams.get("tab"));
+  const dict = getAdminClientDetailDict(useLocale());
+  const TABS = useMemo(
+    () =>
+      TAB_KEYS.map((key) => ({ key, label: dict.tabs[key] })),
+    [dict],
+  );
 
   const selectTab = useCallback(
     (next: TabKey) => {

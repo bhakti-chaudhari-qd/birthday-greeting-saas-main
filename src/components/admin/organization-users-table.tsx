@@ -10,6 +10,8 @@ import { StatusBadge } from "@/components/ui/feedback";
 import { compactSecondaryButtonClass } from "@/components/ui/page";
 import type { PlatformOrganizationUser } from "@/lib/admin/org-ops";
 import { getOrganizationRoleLabel } from "@/lib/auth/org-role-labels";
+import { getAdminClientDetailDict } from "@/lib/i18n/dictionaries/admin-client-detail";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type OrganizationUsersTableProps = {
   organizationId: string;
@@ -21,6 +23,7 @@ export function OrganizationUsersTable({
   users,
 }: OrganizationUsersTableProps) {
   const router = useRouter();
+  const dict = getAdminClientDetailDict(useLocale()).usersTable;
   const [pendingAction, setPendingAction] = useState<{
     userId: string;
     type: "status" | "password-reset";
@@ -53,12 +56,12 @@ export function OrganizationUsersTable({
       );
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to update user");
+        setError(payload.error?.message ?? dict.failedToUpdate);
         return;
       }
       router.refresh();
     } catch {
-      setError("Failed to update user");
+      setError(dict.failedToUpdate);
     } finally {
       setPendingAction(null);
     }
@@ -75,12 +78,12 @@ export function OrganizationUsersTable({
       );
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to send password reset email");
+        setError(payload.error?.message ?? dict.failedToSendReset);
         return;
       }
-      setMessage(payload.data?.message ?? "Password reset email sent");
+      setMessage(payload.data?.message ?? dict.resetEmailSentDefault);
     } catch {
-      setError("Failed to send password reset email");
+      setError(dict.failedToSendReset);
     } finally {
       setPendingAction(null);
     }
@@ -101,18 +104,18 @@ export function OrganizationUsersTable({
       <table className="min-w-full text-left text-sm">
         <thead className="border-b border-stone-200 bg-stone-50 text-stone-600">
           <tr>
-            <th className="px-4 py-3 font-medium">Name</th>
-            <th className="px-4 py-3 font-medium">Email</th>
-            <th className="px-4 py-3 font-medium">Role</th>
-            <th className="px-4 py-3 font-medium">Status</th>
-            <th className="px-4 py-3 font-medium">Action</th>
+            <th className="px-4 py-3 font-medium">{dict.name}</th>
+            <th className="px-4 py-3 font-medium">{dict.email}</th>
+            <th className="px-4 py-3 font-medium">{dict.role}</th>
+            <th className="px-4 py-3 font-medium">{dict.status}</th>
+            <th className="px-4 py-3 font-medium">{dict.action}</th>
           </tr>
         </thead>
         <tbody>
           {users.length === 0 ? (
             <tr>
               <td className="px-4 py-6 text-stone-500" colSpan={5}>
-                No users in this client.
+                {dict.noUsers}
               </td>
             </tr>
           ) : (
@@ -129,7 +132,7 @@ export function OrganizationUsersTable({
                 </td>
                 <td className="px-4 py-3">
                   <StatusBadge
-                    label={user.isActive ? "Active" : "Inactive"}
+                    label={user.isActive ? dict.active : dict.inactive}
                     tone={user.isActive ? "success" : "neutral"}
                   />
                 </td>
@@ -143,10 +146,10 @@ export function OrganizationUsersTable({
                     >
                       {pendingAction?.userId === user.id &&
                       pendingAction.type === "status"
-                        ? "Updating…"
+                        ? dict.updating
                         : user.isActive
-                          ? "Deactivate"
-                          : "Activate"}
+                          ? dict.deactivate
+                          : dict.activate}
                     </button>
                     <button
                       type="button"
@@ -156,8 +159,8 @@ export function OrganizationUsersTable({
                     >
                       {pendingAction?.userId === user.id &&
                       pendingAction.type === "password-reset"
-                        ? "Sending…"
-                        : "Send password reset link"}
+                        ? dict.sending
+                        : dict.sendPasswordReset}
                     </button>
                   </div>
                 </td>
@@ -169,18 +172,14 @@ export function OrganizationUsersTable({
 
       <ConfirmDialog
         open={pendingDeactivate !== null}
-        title="Deactivate user?"
+        title={dict.deactivateTitle}
         message={
-          pendingDeactivate ? (
-            <>
-              <strong>{pendingDeactivate.name}</strong> ({pendingDeactivate.email})
-              will immediately lose access to this client. They can be
-              reactivated later.
-            </>
-          ) : null
+          pendingDeactivate
+            ? dict.deactivateMessage(pendingDeactivate.name, pendingDeactivate.email)
+            : null
         }
-        confirmLabel="Deactivate"
-        cancelLabel="Cancel"
+        confirmLabel={dict.deactivateConfirm}
+        cancelLabel={dict.cancel}
         busy={pendingAction !== null}
         onConfirm={() => {
           if (pendingDeactivate) {

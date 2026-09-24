@@ -7,6 +7,8 @@ import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass } from "@/components/ui/page";
 import { formatInrFromPaise } from "@/lib/billing/catalogue";
 import type { PlanPaymentSummary } from "@/lib/billing/plan-ledger";
+import { getAdminClientDetailDict } from "@/lib/i18n/dictionaries/admin-client-detail";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { formatCustomerDateTime } from "@/lib/ui/datetime";
 
 type RecordPaymentPanelProps = {
@@ -20,6 +22,7 @@ export function RecordPaymentPanel({
   payments,
 }: RecordPaymentPanelProps) {
   const router = useRouter();
+  const dict = getAdminClientDetailDict(useLocale()).recordPayment;
   const [amountRupees, setAmountRupees] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -47,17 +50,15 @@ export function RecordPaymentPanel({
       );
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to record payment");
+        setError(payload.error?.message ?? dict.failedToRecord);
         return;
       }
-      setSuccess(
-        "Payment recorded. It does not change access or the expiry date.",
-      );
+      setSuccess(dict.recordedSuccess);
       setAmountRupees("");
       setNote("");
       router.refresh();
     } catch {
-      setError("Failed to record payment");
+      setError(dict.failedToRecord);
     } finally {
       setBusy(false);
     }
@@ -68,7 +69,7 @@ export function RecordPaymentPanel({
       <form className="space-y-3" onSubmit={handleRecordPayment}>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Amount (INR)</span>
+            <span className="font-medium text-stone-800">{dict.amountInr}</span>
             <input
               className={`mt-1 ${inputClass}`}
               type="number"
@@ -80,7 +81,9 @@ export function RecordPaymentPanel({
             />
           </label>
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Note (optional)</span>
+            <span className="font-medium text-stone-800">
+              {dict.note} {dict.optional}
+            </span>
             <input
               className={`mt-1 ${inputClass}`}
               value={note}
@@ -89,11 +92,9 @@ export function RecordPaymentPanel({
             />
           </label>
         </div>
-        <p className="text-xs text-stone-500">
-          Applied automatically to the oldest unpaid deal(s)/top-up(s) first.
-        </p>
+        <p className="text-xs text-stone-500">{dict.hint}</p>
         <button type="submit" disabled={busy} className={primaryButtonClass}>
-          {busy ? "Recording…" : "Record payment"}
+          {busy ? dict.recording : dict.recordPayment}
         </button>
 
         {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
@@ -103,7 +104,7 @@ export function RecordPaymentPanel({
       {payments.length > 0 ? (
         <div className="border-t border-stone-200 pt-4">
           <h4 className="text-sm font-semibold text-stone-900">
-            Payment history
+            {dict.history}
           </h4>
           <ul className="mt-2 divide-y divide-stone-100 text-sm">
             {payments.map((payment) => (
@@ -115,7 +116,7 @@ export function RecordPaymentPanel({
                   {formatInrFromPaise(payment.amountPaise)}
                   {payment.note ? ` — ${payment.note}` : ""}
                   {payment.recordedByAdminName
-                    ? ` (by ${payment.recordedByAdminName})`
+                    ? ` ${dict.by(payment.recordedByAdminName)}`
                     : ""}
                 </span>
                 <span className="text-xs text-stone-500">

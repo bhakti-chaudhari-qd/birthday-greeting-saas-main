@@ -12,6 +12,8 @@ import {
   type PlanLabelMap,
 } from "@/lib/billing/catalogue";
 import type { AdminPaymentLinkSummary } from "@/lib/billing/service";
+import { getAdminClientDetailDict } from "@/lib/i18n/dictionaries/admin-client-detail";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { formatCustomerDateTime } from "@/lib/ui/datetime";
 
 type PaymentLinksPanelProps = {
@@ -33,6 +35,7 @@ export function PaymentLinksPanel({
   planLabels,
 }: PaymentLinksPanelProps) {
   const router = useRouter();
+  const dict = getAdminClientDetailDict(useLocale()).paymentLinks;
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingCancelId, setPendingCancelId] = useState<string | null>(null);
@@ -48,12 +51,12 @@ export function PaymentLinksPanel({
       );
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to cancel payment link");
+        setError(payload.error?.message ?? dict.failedToCancel);
         return;
       }
       router.refresh();
     } catch {
-      setError("Failed to cancel payment link");
+      setError(dict.failedToCancel);
     } finally {
       setBusyId(null);
     }
@@ -62,17 +65,17 @@ export function PaymentLinksPanel({
   return (
     <div className="space-y-4 p-5 sm:p-6">
       {paymentLinks.length === 0 ? (
-        <p className="text-sm text-stone-500">No payment links created yet.</p>
+        <p className="text-sm text-stone-500">{dict.noLinks}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-stone-200 text-sm">
             <thead>
               <tr className="text-left text-xs font-medium uppercase tracking-wide text-stone-500">
-                <th className="py-2 pr-4">Created</th>
-                <th className="py-2 pr-4">Plan</th>
-                <th className="py-2 pr-4">Amount</th>
-                <th className="py-2 pr-4">Status</th>
-                <th className="py-2 pr-4">Duration</th>
+                <th className="py-2 pr-4">{dict.created}</th>
+                <th className="py-2 pr-4">{dict.plan}</th>
+                <th className="py-2 pr-4">{dict.amount}</th>
+                <th className="py-2 pr-4">{dict.status}</th>
+                <th className="py-2 pr-4">{dict.duration}</th>
                 <th className="py-2 pr-4"></th>
               </tr>
             </thead>
@@ -108,7 +111,7 @@ export function PaymentLinksPanel({
                         className={secondaryButtonClass}
                         onClick={() => setPendingCancelId(link.id)}
                       >
-                        {busyId === link.id ? "Cancelling…" : "Cancel"}
+                        {busyId === link.id ? dict.cancelling : dict.cancel}
                       </button>
                     ) : null}
                   </td>
@@ -123,10 +126,10 @@ export function PaymentLinksPanel({
 
       <ConfirmDialog
         open={pendingCancelId !== null}
-        title="Cancel payment link?"
-        message="It will no longer be payable. This can't be undone from here."
-        confirmLabel="Cancel link"
-        cancelLabel="Keep it"
+        title={dict.cancelTitle}
+        message={dict.cancelMessage}
+        confirmLabel={dict.cancelLink}
+        cancelLabel={dict.keepIt}
         busy={busyId !== null}
         onConfirm={() => {
           if (pendingCancelId) {

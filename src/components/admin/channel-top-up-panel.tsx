@@ -7,6 +7,8 @@ import { InlineAlert, StatusBadge } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass } from "@/components/ui/page";
 import { formatInrFromPaise } from "@/lib/billing/catalogue";
 import type { CustomPlanTopUpSummary } from "@/lib/billing/plan-ledger";
+import { getAdminClientDetailDict } from "@/lib/i18n/dictionaries/admin-client-detail";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { formatCustomerDateTime } from "@/lib/ui/datetime";
 
 type ChannelLimitInfo = {
@@ -36,6 +38,7 @@ export function ChannelTopUpPanel({
   channelLimits,
 }: ChannelTopUpPanelProps) {
   const router = useRouter();
+  const dict = getAdminClientDetailDict(useLocale()).channelTopUp;
   const [topUpChannel, setTopUpChannel] =
     useState<(typeof TOP_UP_CHANNELS)[number]>("SMS");
   const [topUpMessages, setTopUpMessages] = useState("");
@@ -72,17 +75,15 @@ export function ChannelTopUpPanel({
       );
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to add channel capacity");
+        setError(payload.error?.message ?? dict.failedToAdd);
         return;
       }
-      setSuccess(
-        `Added ${topUpMessages} messages to ${topUpChannel}. Access and expiry are unchanged.`,
-      );
+      setSuccess(dict.addedSuccess(topUpMessages, topUpChannel));
       setTopUpMessages("");
       setTopUpAmountRupees("");
       router.refresh();
     } catch {
-      setError("Failed to add channel capacity");
+      setError(dict.failedToAdd);
     } finally {
       setTopUpBusy(false);
     }
@@ -91,13 +92,10 @@ export function ChannelTopUpPanel({
   return (
     <div className="space-y-6 p-5 sm:p-6">
       <form className="space-y-3" onSubmit={handleTopUp}>
-        <p className="text-xs text-stone-500">
-          Increases one channel&rsquo;s limit for the current period only —
-          never extends access or resets the other channels.
-        </p>
+        <p className="text-xs text-stone-500">{dict.hint}</p>
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Channel</span>
+            <span className="font-medium text-stone-800">{dict.channel}</span>
             <select
               className={`mt-1 ${inputClass}`}
               value={topUpChannel}
@@ -116,7 +114,7 @@ export function ChannelTopUpPanel({
           </label>
           <label className="block text-sm">
             <span className="font-medium text-stone-800">
-              Messages to add
+              {dict.messagesToAdd}
             </span>
             <input
               className={`mt-1 ${inputClass}`}
@@ -129,7 +127,7 @@ export function ChannelTopUpPanel({
             />
           </label>
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Amount (INR)</span>
+            <span className="font-medium text-stone-800">{dict.amountInr}</span>
             <input
               className={`mt-1 ${inputClass}`}
               type="number"
@@ -142,13 +140,16 @@ export function ChannelTopUpPanel({
           </label>
         </div>
         <p className="text-xs text-stone-500">
-          Current {topUpChannel} limit:{" "}
           {selectedChannelInfo
-            ? `${selectedChannelInfo.messagesSentThisMonth.toLocaleString("en-IN")} / ${selectedChannelInfo.monthlyLimit.toLocaleString("en-IN")} used this month`
-            : "no dedicated allocation yet — using the shared aggregate limit"}
+            ? dict.currentLimit(
+                topUpChannel,
+                selectedChannelInfo.messagesSentThisMonth.toLocaleString("en-IN"),
+                selectedChannelInfo.monthlyLimit.toLocaleString("en-IN"),
+              )
+            : dict.currentLimitNoAllocation}
         </p>
         <button type="submit" disabled={topUpBusy} className={primaryButtonClass}>
-          {topUpBusy ? "Adding…" : "Add Capacity Without Payment"}
+          {topUpBusy ? dict.adding : dict.addCapacity}
         </button>
 
         {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
@@ -157,22 +158,20 @@ export function ChannelTopUpPanel({
 
       <div className="border-t border-stone-200 pt-4">
         <h4 className="text-sm font-semibold text-stone-900">
-          Channel top-up history
+          {dict.history}
         </h4>
         {topUps.length === 0 ? (
-          <p className="mt-2 text-sm text-stone-500">
-            No channel top-ups added yet.
-          </p>
+          <p className="mt-2 text-sm text-stone-500">{dict.noTopUps}</p>
         ) : (
           <div className="mt-2 overflow-x-auto">
             <table className="min-w-full divide-y divide-stone-200 text-sm">
               <thead>
                 <tr className="text-left text-xs font-medium uppercase tracking-wide text-stone-500">
-                  <th className="py-2 pr-4">Date</th>
-                  <th className="py-2 pr-4">Channel</th>
-                  <th className="py-2 pr-4">Messages added</th>
-                  <th className="py-2 pr-4">Amount</th>
-                  <th className="py-2 pr-4">Status</th>
+                  <th className="py-2 pr-4">{dict.date}</th>
+                  <th className="py-2 pr-4">{dict.channel}</th>
+                  <th className="py-2 pr-4">{dict.messagesAdded}</th>
+                  <th className="py-2 pr-4">{dict.amountInr}</th>
+                  <th className="py-2 pr-4">{dict.status}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -187,7 +186,7 @@ export function ChannelTopUpPanel({
                     <td className="py-2 pr-4 whitespace-nowrap text-stone-700">
                       +{topUp.messagesAdded.toLocaleString("en-IN")} (
                       {topUp.resultingMonthlyLimit.toLocaleString("en-IN")}{" "}
-                      total)
+                      {dict.total})
                     </td>
                     <td className="py-2 pr-4 whitespace-nowrap text-stone-700">
                       {formatInrFromPaise(topUp.amountPaidPaise)} /{" "}

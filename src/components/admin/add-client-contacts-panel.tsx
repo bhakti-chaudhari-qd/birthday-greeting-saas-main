@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/page";
+import { getAdminClientDetailDict } from "@/lib/i18n/dictionaries/admin-client-detail";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type AddContactFormState = {
   name: string;
@@ -62,6 +64,7 @@ export function AddClientContactsPanel({
   organizationId: string;
 }) {
   const router = useRouter();
+  const dict = getAdminClientDetailDict(useLocale()).contactsTab;
 
   const [categories, setCategories] = useState<ClientCategory[]>([]);
   const [addingNewCategory, setAddingNewCategory] = useState(false);
@@ -121,11 +124,11 @@ export function AddClientContactsPanel({
       const body = await response.json();
 
       if (!response.ok) {
-        setAddError(body.error?.message ?? "Failed to add contact");
+        setAddError(body.error?.message ?? dict.failedToAdd);
         return;
       }
 
-      setAddSuccess(`Added ${body.data.name}.`);
+      setAddSuccess(dict.addedSuccess(body.data.name));
       setForm(emptyForm);
       setAddingNewCategory(false);
       if (body.data.category) {
@@ -140,7 +143,7 @@ export function AddClientContactsPanel({
       }
       router.refresh();
     } catch {
-      setAddError("Failed to add contact");
+      setAddError(dict.failedToAdd);
     } finally {
       setAdding(false);
     }
@@ -179,14 +182,14 @@ export function AddClientContactsPanel({
       const body = await response.json();
 
       if (!response.ok) {
-        setImportError(body.error?.message ?? "Failed to import contacts");
+        setImportError(body.error?.message ?? dict.failedToImport);
         return;
       }
 
       setImportSummary(body.data as ImportSummary);
       router.refresh();
     } catch {
-      setImportError("Failed to import contacts");
+      setImportError(dict.failedToImport);
     } finally {
       setImporting(false);
       if (fileInputRef.current) {
@@ -198,18 +201,16 @@ export function AddClientContactsPanel({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h3 className="text-sm font-semibold text-stone-900">Add a contact</h3>
+        <h3 className="text-sm font-semibold text-stone-900">{dict.addContact}</h3>
         <p className="mt-1 text-xs text-stone-500">
-          Adds a contact directly into this client&rsquo;s account, the same
-          as if they added it themselves. Useful when onboarding a client who
-          has handed you their contact list.
+          {dict.addContactDescription}
         </p>
         <form
           className="mt-3 grid gap-3 sm:grid-cols-2"
           onSubmit={handleAddContact}
         >
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Name</span>
+            <span className="font-medium text-stone-800">{dict.name}</span>
             <input
               className={`mt-1 ${inputClass}`}
               value={form.name}
@@ -220,7 +221,7 @@ export function AddClientContactsPanel({
             />
           </label>
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Mobile</span>
+            <span className="font-medium text-stone-800">{dict.mobile}</span>
             <input
               className={`mt-1 ${inputClass}`}
               value={form.mobile}
@@ -233,7 +234,7 @@ export function AddClientContactsPanel({
           </label>
           <label className="block text-sm">
             <span className="font-medium text-stone-800">
-              Birthday (optional)
+              {dict.birthday} {dict.optional}
             </span>
             <input
               type="date"
@@ -249,7 +250,7 @@ export function AddClientContactsPanel({
           </label>
           <label className="block text-sm">
             <span className="font-medium text-stone-800">
-              Email (optional)
+              {dict.email} {dict.optional}
             </span>
             <input
               type="email"
@@ -261,7 +262,7 @@ export function AddClientContactsPanel({
             />
           </label>
           <div className="block text-sm sm:col-span-2">
-            <span className="font-medium text-stone-800">Category</span>
+            <span className="font-medium text-stone-800">{dict.category}</span>
             {addingNewCategory ? (
               <div className="mt-1 flex gap-2">
                 <input
@@ -284,7 +285,7 @@ export function AddClientContactsPanel({
                   }}
                   className={`${secondaryButtonClass} shrink-0 whitespace-nowrap`}
                 >
-                  Cancel
+                  {dict.cancel}
                 </button>
               </div>
             ) : (
@@ -302,7 +303,7 @@ export function AddClientContactsPanel({
                     }))
                   }
                 >
-                  <option value="">No category</option>
+                  <option value="">{dict.noCategory}</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -314,7 +315,7 @@ export function AddClientContactsPanel({
                   onClick={() => setAddingNewCategory(true)}
                   className={`${secondaryButtonClass} shrink-0 whitespace-nowrap`}
                 >
-                  + New category
+                  {dict.newCategory}
                 </button>
               </div>
             )}
@@ -323,11 +324,10 @@ export function AddClientContactsPanel({
           {categories.length > 0 ? (
             <div className="block text-sm sm:col-span-2">
               <span className="font-medium text-stone-800">
-                Additional categories (optional)
+                {dict.additionalCategories}
               </span>
               <span className="mt-0.5 block text-xs text-stone-500">
-                A contact can belong to more than one category, same as on
-                the client&rsquo;s own Contacts page.
+                {dict.additionalCategoriesHint}
               </span>
               <div className="mt-2 flex flex-wrap gap-2">
                 {categories
@@ -373,7 +373,7 @@ export function AddClientContactsPanel({
 
           <div className="sm:col-span-2">
             <button type="submit" disabled={adding} className={primaryButtonClass}>
-              {adding ? "Adding…" : "Add contact"}
+              {adding ? dict.adding : dict.add}
             </button>
           </div>
         </form>
@@ -381,13 +381,10 @@ export function AddClientContactsPanel({
 
       <div className="border-t border-stone-200 pt-4">
         <h3 className="text-sm font-semibold text-stone-900">
-          Import contacts (CSV/Excel)
+          {dict.importTitle}
         </h3>
         <p className="mt-1 text-xs text-stone-500">
-          Columns: Name, Mobile, Email, Birthday, Category (matches this
-          client&rsquo;s existing custom fields and occasions automatically).
-          For files with thousands of rows, prefer the client&rsquo;s own
-          dashboard, which processes large imports in the background.
+          {dict.importDescription}
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <input
@@ -404,7 +401,7 @@ export function AddClientContactsPanel({
             className="text-sm text-stone-700"
           />
           {importing ? (
-            <span className={secondaryButtonClass}>Importing…</span>
+            <span className={secondaryButtonClass}>{dict.importing}</span>
           ) : null}
         </div>
 
@@ -416,10 +413,13 @@ export function AddClientContactsPanel({
 
         {importSummary ? (
           <div className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700">
-            {importSummary.created} added · {importSummary.updated} updated ·{" "}
-            {importSummary.skippedDuplicate} duplicate ·{" "}
-            {importSummary.skippedLimit} skipped (limit) ·{" "}
-            {importSummary.invalid} invalid
+            {dict.importSummary(
+              importSummary.created,
+              importSummary.updated,
+              importSummary.skippedDuplicate,
+              importSummary.skippedLimit,
+              importSummary.invalid,
+            )}
           </div>
         ) : null}
       </div>

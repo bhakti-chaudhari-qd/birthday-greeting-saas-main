@@ -12,6 +12,8 @@ import {
   type PlanLabelMap,
 } from "@/lib/billing/catalogue";
 import type { PlatformOrganizationDetail } from "@/lib/admin/org-ops";
+import { getAdminClientDetailDict } from "@/lib/i18n/dictionaries/admin-client-detail";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { formatCustomerDateTime } from "@/lib/ui/datetime";
 
 const DEAL_PLANS = ["STARTER", "PRO", "CUSTOM"] as const;
@@ -27,6 +29,7 @@ export function PlanActivationForm({
   planLabels,
 }: PlanActivationFormProps) {
   const router = useRouter();
+  const dict = getAdminClientDetailDict(useLocale()).planActivation;
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -80,9 +83,11 @@ export function PlanActivationForm({
     const changingPlan = active.plan !== dealPlan;
     const activeLabel = getPlanDisplayLabel(active.plan, planLabels);
     const dealLabel = getPlanDisplayLabel(dealPlan, planLabels);
-    return (
-      `This client already has an active ${activeLabel} plan until ${formatCustomerDateTime(active.paidUntil)}. ` +
-      `Once paid, this link will ${changingPlan ? `replace it with ${dealLabel}` : `renew it, extending access from ${formatCustomerDateTime(active.paidUntil)}`}.`
+    return dict.paymentLinkWarning(
+      activeLabel,
+      formatCustomerDateTime(active.paidUntil),
+      changingPlan,
+      dealLabel,
     );
   }
 
@@ -137,16 +142,18 @@ export function PlanActivationForm({
       );
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to create payment link");
+        setError(payload.error?.message ?? dict.failedToCreateLink);
         return;
       }
       setPaymentLinkUrl(payload.data.shortUrl);
       setSuccess(
-        `Payment link created for ${getPlanDisplayLabel(payload.data.plan, planLabels)}. Send it to the client — plan updates only after Razorpay payment.`,
+        dict.linkCreatedSuccess(
+          getPlanDisplayLabel(payload.data.plan, planLabels),
+        ),
       );
       router.refresh();
     } catch {
-      setError("Failed to create payment link");
+      setError(dict.failedToCreateLink);
     } finally {
       setLinkBusy(false);
     }
@@ -167,15 +174,18 @@ export function PlanActivationForm({
     const amountPaise = Math.round(Number.parseFloat(amountRupees) * 100);
     const amountLabel = Number.isFinite(amountPaise) && amountPaise > 0
       ? formatInrFromPaise(amountPaise)
-      : "its catalogue price";
+      : dict.itsCatalougePrice;
     const changingPlan = active.plan !== dealPlan;
     const activeLabel = getPlanDisplayLabel(active.plan, planLabels);
     const dealLabel = getPlanDisplayLabel(dealPlan, planLabels);
 
-    return (
-      `This client already has an active ${activeLabel} plan until ${formatCustomerDateTime(active.paidUntil)}. ` +
-      `Activating ${dealLabel} will ${changingPlan ? "switch the plan and extend" : "extend"} access to ${formatCustomerDateTime(newPaidUntil)} ` +
-      `and add ${amountLabel} to the outstanding balance.`
+    return dict.renewalWarning(
+      activeLabel,
+      formatCustomerDateTime(active.paidUntil),
+      changingPlan,
+      dealLabel,
+      formatCustomerDateTime(newPaidUntil),
+      amountLabel,
     );
   }
 
@@ -227,15 +237,13 @@ export function PlanActivationForm({
       );
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload.error?.message ?? "Failed to activate deal");
+        setError(payload.error?.message ?? dict.failedToActivate);
         return;
       }
-      setSuccess(
-        `${getPlanDisplayLabel(dealPlan, planLabels)} activated immediately — access is live now. Payment is tracked separately in the ledger below.`,
-      );
+      setSuccess(dict.activatedSuccess(getPlanDisplayLabel(dealPlan, planLabels)));
       router.refresh();
     } catch {
-      setError("Failed to activate deal");
+      setError(dict.failedToActivate);
     } finally {
       setActivateBusy(false);
     }
@@ -245,35 +253,31 @@ export function PlanActivationForm({
     <div className="space-y-4 p-5 sm:p-6">
       <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
         <p>
-          Current plan:{" "}
+          {dict.currentPlan}:{" "}
           <strong>{getPlanDisplayLabel(organization.plan, planLabels)}</strong>{" "}
           · {organization.subscriptionStatus ?? "n/a"}
         </p>
         <p className="mt-1">
-          Limits: {(organization.contactLimit ?? 0).toLocaleString("en-IN")}{" "}
-          contacts ·{" "}
+          {dict.limits}: {(organization.contactLimit ?? 0).toLocaleString("en-IN")}{" "}
+          {dict.contactsWord} ·{" "}
           {(organization.monthlyMessageLimit ?? 0).toLocaleString("en-IN")}{" "}
-          messages/mo · sent{" "}
+          {dict.messagesPerMonth} · {dict.sent}{" "}
           {(organization.messagesSentThisMonth ?? 0).toLocaleString("en-IN")}
         </p>
         <p className="mt-1">
-          Access until:{" "}
+          {dict.accessUntil}:{" "}
           <strong>
             {organization.paidUntil
               ? formatCustomerDateTime(organization.paidUntil)
-              : "Not set"}
+              : dict.notSet}
           </strong>
         </p>
       </div>
 
-      <p className="text-sm text-stone-600">
-        Create a Razorpay link for STARTER, PRO, or a CUSTOM deal — limits
-        apply only after the client pays. You can also activate immediately
-        without payment and settle later (see below).
-      </p>
+      <p className="text-sm text-stone-600">{dict.description}</p>
 
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Plan</span>
+        <span className="font-medium text-stone-800">{dict.plan}</span>
         <select
           className={`mt-1 ${inputClass}`}
           value={dealPlan}
@@ -292,7 +296,8 @@ export function PlanActivationForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">
           <span className="font-medium text-stone-800">
-            Amount (INR){dealPlan === "CUSTOM" ? "" : " optional override"}
+            {dict.amountInr}
+            {dealPlan === "CUSTOM" ? "" : dict.optionalOverride}
           </span>
           <input
             className={`mt-1 ${inputClass}`}
@@ -305,7 +310,7 @@ export function PlanActivationForm({
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Duration (days)</span>
+          <span className="font-medium text-stone-800">{dict.durationDays}</span>
           <input
             className={`mt-1 ${inputClass}`}
             type="number"
@@ -321,7 +326,7 @@ export function PlanActivationForm({
       {dealPlan === "CUSTOM" ? (
         <div className="space-y-4">
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Contact limit</span>
+            <span className="font-medium text-stone-800">{dict.contactLimit}</span>
             <input
               className={`mt-1 ${inputClass}`}
               type="number"
@@ -334,7 +339,7 @@ export function PlanActivationForm({
           <div className="grid gap-4 sm:grid-cols-3">
             <label className="block text-sm">
               <span className="font-medium text-stone-800">
-                SMS messages/mo
+                {dict.smsMessagesPerMonth}
               </span>
               <input
                 className={`mt-1 ${inputClass}`}
@@ -347,7 +352,7 @@ export function PlanActivationForm({
             </label>
             <label className="block text-sm">
               <span className="font-medium text-stone-800">
-                WhatsApp messages/mo
+                {dict.whatsappMessagesPerMonth}
               </span>
               <input
                 className={`mt-1 ${inputClass}`}
@@ -362,7 +367,7 @@ export function PlanActivationForm({
             </label>
             <label className="block text-sm">
               <span className="font-medium text-stone-800">
-                Email messages/mo
+                {dict.emailMessagesPerMonth}
               </span>
               <input
                 className={`mt-1 ${inputClass}`}
@@ -375,7 +380,7 @@ export function PlanActivationForm({
             </label>
           </div>
           <p className="text-sm text-stone-600">
-            Total monthly messages:{" "}
+            {dict.totalMonthlyMessages}:{" "}
             <strong>
               {(
                 (Number.parseInt(smsMonthlyLimit, 10) || 0) +
@@ -383,15 +388,13 @@ export function PlanActivationForm({
                 (Number.parseInt(emailMonthlyLimit, 10) || 0)
               ).toLocaleString("en-IN")}
             </strong>{" "}
-            (computed automatically as SMS + WhatsApp + Email)
+            {dict.totalMonthlyMessagesHint}
           </p>
         </div>
       ) : null}
 
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">
-          Customer email (optional)
-        </span>
+        <span className="font-medium text-stone-800">{dict.customerEmail}</span>
         <input
           className={`mt-1 ${inputClass}`}
           type="email"
@@ -407,7 +410,7 @@ export function PlanActivationForm({
           className={secondaryButtonClass}
           onClick={handleCreatePaymentLinkClick}
         >
-          {linkBusy ? "Creating link…" : "Create Razorpay payment link"}
+          {linkBusy ? dict.creatingLink : dict.createPaymentLink}
         </button>
 
         <button
@@ -416,21 +419,17 @@ export function PlanActivationForm({
           className={secondaryButtonClass}
           onClick={handleActivateWithoutPaymentClick}
         >
-          {activateBusy ? "Activating…" : "Activate Without Payment"}
+          {activateBusy ? dict.activating : dict.activateWithoutPayment}
         </button>
       </div>
 
       <p className="text-xs text-stone-500">
-        &ldquo;Activate Without Payment&rdquo; turns on access and starts the{" "}
-        {durationDays}-day period immediately; the amount (catalogue price
-        for STARTER/PRO unless overridden above) is tracked as outstanding
-        balance below until you record a payment. It never extends/restarts
-        access on its own.
+        {dict.activateWithoutPaymentNote(Number(durationDays))}
       </p>
 
       {paymentLinkUrl ? (
         <p className="break-all text-sm text-sky-900">
-          Link:{" "}
+          {dict.link}:{" "}
           <a
             href={paymentLinkUrl}
             target="_blank"
@@ -441,7 +440,7 @@ export function PlanActivationForm({
           </a>
           {Number.isFinite(Number.parseFloat(amountRupees)) ? (
             <span className="mt-1 block text-stone-600">
-              Amount preview:{" "}
+              {dict.amountPreview}:{" "}
               {formatInrFromPaise(
                 Math.round(Number.parseFloat(amountRupees) * 100),
               )}
@@ -455,10 +454,10 @@ export function PlanActivationForm({
 
       <ConfirmDialog
         open={pendingConfirm !== null}
-        title="Confirm renewal"
+        title={dict.confirmRenewalTitle}
         message={pendingConfirm?.message ?? null}
-        confirmLabel="Continue anyway"
-        cancelLabel="Cancel"
+        confirmLabel={dict.continueAnyway}
+        cancelLabel={dict.cancel}
         busy={activateBusy || linkBusy}
         onConfirm={() => pendingConfirm?.onConfirm()}
         onCancel={() => setPendingConfirm(null)}
