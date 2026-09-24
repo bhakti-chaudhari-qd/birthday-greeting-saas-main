@@ -13,6 +13,8 @@ import {
   resolveContactCsvHeader,
 } from "@/lib/contacts/csv";
 import { worksheetToTable } from "@/lib/contacts/excel";
+import { getContactsDict } from "@/lib/i18n/dictionaries/contacts";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export type CsvImportDialogProps = {
   open: boolean;
@@ -101,6 +103,7 @@ export function CsvImportDialog({
   onClose,
   onStartImport,
 }: CsvImportDialogProps) {
+  const dict = getContactsDict(useLocale()).csvImportDialog;
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [fieldDefinitions, setFieldDefinitions] = useState<ContactFieldDefinition[]>([]);
   const [fieldMappings, setFieldMappings] = useState<Record<string, ImportFieldMapping>>({});
@@ -134,7 +137,7 @@ export function CsvImportDialog({
       isExcelFile(file);
 
     if (!looksSupported) {
-      setParseError("Import a .csv, .xlsx, or .xls file.");
+      setParseError(dict.unsupportedFile);
       return;
     }
 
@@ -160,7 +163,7 @@ export function CsvImportDialog({
 
       const table = await tableFromFile(file);
       if (table.length === 0) {
-        setParseError("This file is empty.");
+        setParseError(dict.emptyFile);
         return;
       }
 
@@ -226,7 +229,7 @@ export function CsvImportDialog({
       });
     } catch (error) {
       setParseError(
-        error instanceof Error ? error.message : "Could not read this file.",
+        error instanceof Error ? error.message : dict.couldNotReadFile,
       );
     } finally {
       setParsing(false);
@@ -253,21 +256,16 @@ export function CsvImportDialog({
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Import CSV" className="max-w-lg">
+    <Modal open={open} onClose={handleClose} title={dict.title} className="max-w-lg">
       {!preview ? (
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-stone-600">
-            Upload a .csv, .xlsx, or .xls file with your contacts. We&apos;ll
-            show a quick preview before anything is imported.
-          </p>
+          <p className="text-sm text-stone-600">{dict.uploadPrompt}</p>
 
           <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 px-4 py-8 text-center transition-colors hover:border-primary/50 hover:bg-primary/[0.03]">
             <span className="text-sm font-medium text-stone-800">
-              Click to choose a file
+              {dict.clickToChoose}
             </span>
-            <span className="text-xs text-stone-500">
-              or drag and drop it here
-            </span>
+            <span className="text-xs text-stone-500">{dict.orDragDrop}</span>
             <input
               ref={fileInputRef}
               type="file"
@@ -283,7 +281,7 @@ export function CsvImportDialog({
           </label>
 
           {parsing ? (
-            <p className="text-sm text-stone-500">Reading file…</p>
+            <p className="text-sm text-stone-500">{dict.readingFile}</p>
           ) : null}
           {parseError ? (
             <p className="text-sm text-red-600">{parseError}</p>
@@ -293,7 +291,7 @@ export function CsvImportDialog({
             href="/api/v1/contacts/import/template"
             className="text-sm font-medium text-primary hover:underline"
           >
-            Download Sample CSV
+            {dict.downloadSample}
           </Link>
         </div>
       ) : (
@@ -303,10 +301,15 @@ export function CsvImportDialog({
               {preview.file.name}
             </p>
             <p className="mt-0.5 text-xs text-stone-500">
-              {preview.totalRows.toLocaleString("en-IN")} row
-              {preview.totalRows === 1 ? "" : "s"} detected
+              {dict.rowsDetected(
+                preview.totalRows.toLocaleString("en-IN"),
+                preview.totalRows === 1 ? "" : "s",
+              )}
               {preview.errorCount > 0
-                ? ` · ${preview.errorCount} issue${preview.errorCount === 1 ? "" : "s"} in the rows shown below`
+                ? dict.issuesInRows(
+                    preview.errorCount,
+                    preview.errorCount === 1 ? "" : "s",
+                  )
                 : ""}
             </p>
           </div>
@@ -315,10 +318,10 @@ export function CsvImportDialog({
             <table className="min-w-full text-left text-xs">
               <thead className="bg-stone-50 text-stone-500">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Name</th>
-                  <th className="px-3 py-2 font-medium">Mobile</th>
-                  <th className="px-3 py-2 font-medium">Category</th>
-                  <th className="px-3 py-2 font-medium">Occasions</th>
+                  <th className="px-3 py-2 font-medium">{dict.colName}</th>
+                  <th className="px-3 py-2 font-medium">{dict.colMobile}</th>
+                  <th className="px-3 py-2 font-medium">{dict.colCategory}</th>
+                  <th className="px-3 py-2 font-medium">{dict.colOccasions}</th>
                 </tr>
               </thead>
               <tbody>
@@ -339,20 +342,20 @@ export function CsvImportDialog({
 
           {preview.totalRows > preview.rows.length ? (
             <p className="text-xs text-stone-500">
-              Showing the first {preview.rows.length} of{" "}
-              {preview.totalRows.toLocaleString("en-IN")} rows. The full file
-              will be imported.
+              {dict.showingFirstRows(
+                preview.rows.length,
+                preview.totalRows.toLocaleString("en-IN"),
+              )}
             </p>
           ) : null}
 
           {preview.unknownHeaders.length > 0 ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
               <p className="text-sm font-semibold text-amber-950">
-                Unknown columns detected
+                {dict.unknownColumnsTitle}
               </p>
               <p className="mt-1 text-xs text-amber-900">
-                Choose what to do with each column before importing. Unknown
-                columns are ignored by default.
+                {dict.unknownColumnsHint}
               </p>
               <div className="mt-3 flex flex-col gap-3">
                 {preview.unknownHeaders.map((header) => {
@@ -373,7 +376,7 @@ export function CsvImportDialog({
                             checked={mapping.action === "ignore"}
                             onChange={() => updateMapping(header, { action: "ignore" })}
                           />
-                          Ignore
+                          {dict.ignore}
                         </label>
                         <label className="flex flex-wrap items-center gap-2">
                           <input
@@ -386,7 +389,7 @@ export function CsvImportDialog({
                               })
                             }
                           />
-                          Map to existing field
+                          {dict.mapToExisting}
                           <select
                             className="rounded border border-stone-300 bg-white px-2 py-1 text-xs"
                             value={mapping.fieldKey ?? ""}
@@ -398,7 +401,7 @@ export function CsvImportDialog({
                               })
                             }
                           >
-                            <option value="">Choose field</option>
+                            <option value="">{dict.chooseField}</option>
                             {fieldDefinitions.map((field) => (
                               <option key={field.id} value={field.key}>
                                 {field.label}
@@ -417,7 +420,7 @@ export function CsvImportDialog({
                               })
                             }
                           />
-                          Create new field
+                          {dict.createNewField}
                         </label>
                       </div>
                     </div>
@@ -433,14 +436,14 @@ export function CsvImportDialog({
               className={secondaryButtonClass}
               onClick={reset}
             >
-              Back
+              {dict.back}
             </button>
             <button
               type="button"
               className={primaryButtonClass}
               onClick={handleConfirmImport}
             >
-              Import
+              {dict.import}
             </button>
           </div>
         </div>

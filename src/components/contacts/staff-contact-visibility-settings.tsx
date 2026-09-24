@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 
 import { InlineAlert } from "@/components/ui/feedback";
 import { Panel } from "@/components/ui/page";
+import { getContactsDict } from "@/lib/i18n/dictionaries/contacts";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type SettingState = {
   staffCanViewContactDetails: boolean;
@@ -18,6 +20,7 @@ type SettingState = {
  * an error worth surfacing.
  */
 export function StaffContactVisibilitySettings() {
+  const dict = getContactsDict(useLocale()).staffVisibility;
   const [setting, setSetting] = useState<SettingState | null>(null);
   const [visible, setVisible] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -55,13 +58,13 @@ export function StaffContactVisibilitySettings() {
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Failed to save setting");
+        setError(body.error?.message ?? dict.failedToSave);
         return;
       }
 
       setSetting(body.data as SettingState);
     } catch {
-      setError("Failed to save setting");
+      setError(dict.failedToSave);
     } finally {
       setSaving(false);
     }
@@ -73,16 +76,8 @@ export function StaffContactVisibilitySettings() {
 
   return (
     <Panel className="p-5">
-      <h2 className="text-sm font-semibold text-stone-900">
-        Staff visibility for admin-added contacts
-      </h2>
-      <p className="mt-1 text-sm text-stone-600">
-        When our platform admin adds or imports contacts into your account
-        on your behalf, their mobile number and email are hidden from Staff
-        users by default. Turning this on lets Staff see those details in
-        full. This never affects what you (Owner) can see, and doesn&rsquo;t
-        change anything for contacts your team added themselves.
-      </p>
+      <h2 className="text-sm font-semibold text-stone-900">{dict.title}</h2>
+      <p className="mt-1 text-sm text-stone-600">{dict.description}</p>
 
       <label className="mt-4 flex items-center gap-2 text-sm">
         <input
@@ -91,17 +86,11 @@ export function StaffContactVisibilitySettings() {
           disabled={saving || !setting.adminAllowed}
           onChange={(event) => void handleToggle(event.target.checked)}
         />
-        <span className="font-medium text-stone-800">
-          Staff can view full details of contacts admin added for us
-        </span>
+        <span className="font-medium text-stone-800">{dict.toggleLabel}</span>
       </label>
 
       {!setting.adminAllowed ? (
-        <p className="mt-2 text-xs text-stone-500">
-          Our platform has restricted this for your account, so it stays
-          hidden from Staff regardless of this setting. Contact support if
-          you have questions.
-        </p>
+        <p className="mt-2 text-xs text-stone-500">{dict.adminRestrictedNote}</p>
       ) : null}
 
       {error ? (

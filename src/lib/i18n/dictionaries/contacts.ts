@@ -149,6 +149,39 @@ export type ContactsDict = {
     couldNotDelete: string;
     couldNotDeleteConn: string;
   };
+  staffVisibility: {
+    title: string;
+    description: string;
+    toggleLabel: string;
+    adminRestrictedNote: string;
+    failedToSave: string;
+  };
+  csvImportDialog: {
+    title: string;
+    uploadPrompt: string;
+    clickToChoose: string;
+    orDragDrop: string;
+    unsupportedFile: string;
+    readingFile: string;
+    downloadSample: string;
+    rowsDetected: (rows: string, plural: string) => string;
+    issuesInRows: (count: number, plural: string) => string;
+    colName: string;
+    colMobile: string;
+    colCategory: string;
+    colOccasions: string;
+    showingFirstRows: (shown: number, total: string) => string;
+    unknownColumnsTitle: string;
+    unknownColumnsHint: string;
+    ignore: string;
+    mapToExisting: string;
+    chooseField: string;
+    createNewField: string;
+    back: string;
+    import: string;
+    emptyFile: string;
+    couldNotReadFile: string;
+  };
 };
 
 const CONTACTS_DICT: Record<Locale, ContactsDict> = {
@@ -311,6 +344,45 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       couldNotDelete: "Could not delete contact. Try again.",
       couldNotDeleteConn: "Could not delete contact. Check your connection and try again.",
     },
+    staffVisibility: {
+      title: "Staff visibility for admin-added contacts",
+      description:
+        "When our platform admin adds or imports contacts into your account on your behalf, their mobile number and email are hidden from Staff users by default. Turning this on lets Staff see those details in full. This never affects what you (Owner) can see, and doesn't change anything for contacts your team added themselves.",
+      toggleLabel: "Staff can view full details of contacts admin added for us",
+      adminRestrictedNote:
+        "Our platform has restricted this for your account, so it stays hidden from Staff regardless of this setting. Contact support if you have questions.",
+      failedToSave: "Failed to save setting",
+    },
+    csvImportDialog: {
+      title: "Import CSV",
+      uploadPrompt:
+        "Upload a .csv, .xlsx, or .xls file with your contacts. We'll show a quick preview before anything is imported.",
+      clickToChoose: "Click to choose a file",
+      orDragDrop: "or drag and drop it here",
+      unsupportedFile: "Import a .csv, .xlsx, or .xls file.",
+      readingFile: "Reading file…",
+      downloadSample: "Download Sample CSV",
+      rowsDetected: (rows, plural) => `${rows} row${plural} detected`,
+      issuesInRows: (count, plural) =>
+        ` · ${count} issue${plural} in the rows shown below`,
+      colName: "Name",
+      colMobile: "Mobile",
+      colCategory: "Category",
+      colOccasions: "Occasions",
+      showingFirstRows: (shown, total) =>
+        `Showing the first ${shown} of ${total} rows. The full file will be imported.`,
+      unknownColumnsTitle: "Unknown columns detected",
+      unknownColumnsHint:
+        "Choose what to do with each column before importing. Unknown columns are ignored by default.",
+      ignore: "Ignore",
+      mapToExisting: "Map to existing field",
+      chooseField: "Choose field",
+      createNewField: "Create new field",
+      back: "Back",
+      import: "Import",
+      emptyFile: "This file is empty.",
+      couldNotReadFile: "Could not read this file.",
+    },
   },
   hi: {
     header: {
@@ -471,6 +543,45 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       couldNotDelete: "कॉन्टैक्ट हटाया नहीं जा सका। फिर कोशिश करें।",
       couldNotDeleteConn: "कॉन्टैक्ट हटाया नहीं जा सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
     },
+    staffVisibility: {
+      title: "एडमिन द्वारा जोड़े गए कॉन्टैक्ट के लिए स्टाफ विज़िबिलिटी",
+      description:
+        "जब हमारा platform admin आपकी ओर से आपके अकाउंट में कॉन्टैक्ट जोड़ता या इम्पोर्ट करता है, तो उनका मोबाइल नंबर और ईमेल डिफ़ॉल्ट रूप से Staff यूज़र से छुपे रहते हैं। इसे ऑन करने पर Staff इन डिटेल्स को पूरा देख सकेंगे। इससे आप (Owner) जो देखते हैं वह कभी नहीं बदलता, और आपकी टीम द्वारा खुद जोड़े गए कॉन्टैक्ट पर कोई असर नहीं पड़ता।",
+      toggleLabel: "Staff हमारी ओर से admin द्वारा जोड़े गए कॉन्टैक्ट की पूरी डिटेल देख सकें",
+      adminRestrictedNote:
+        "हमारे प्लेटफ़ॉर्म ने आपके अकाउंट के लिए इसे प्रतिबंधित किया है, इसलिए यह इस सेटिंग की परवाह किए बिना Staff से छुपा रहेगा। सवाल हों तो सपोर्ट से संपर्क करें।",
+      failedToSave: "सेटिंग सेव नहीं हो सकी",
+    },
+    csvImportDialog: {
+      title: "CSV इम्पोर्ट करें",
+      uploadPrompt:
+        "अपने कॉन्टैक्ट वाली .csv, .xlsx, या .xls फ़ाइल अपलोड करें। इम्पोर्ट होने से पहले हम एक झलक दिखाएँगे।",
+      clickToChoose: "फ़ाइल चुनने के लिए क्लिक करें",
+      orDragDrop: "या इसे यहाँ खींच कर छोड़ें",
+      unsupportedFile: "एक .csv, .xlsx, या .xls फ़ाइल इम्पोर्ट करें।",
+      readingFile: "फ़ाइल पढ़ी जा रही है…",
+      downloadSample: "सैंपल CSV डाउनलोड करें",
+      rowsDetected: (rows, plural) => `${rows} रो${plural} मिलीं`,
+      issuesInRows: (count, plural) =>
+        ` · नीचे दिखाई गई रो में ${count} समस्या${plural}`,
+      colName: "नाम",
+      colMobile: "मोबाइल",
+      colCategory: "कैटेगरी",
+      colOccasions: "Occasions",
+      showingFirstRows: (shown, total) =>
+        `${total} में से पहली ${shown} रो दिखाई जा रही हैं। पूरी फ़ाइल इम्पोर्ट होगी।`,
+      unknownColumnsTitle: "अज्ञात कॉलम मिले",
+      unknownColumnsHint:
+        "इम्पोर्ट करने से पहले हर कॉलम के लिए तय करें कि क्या करना है। अज्ञात कॉलम डिफ़ॉल्ट रूप से नज़रअंदाज़ होते हैं।",
+      ignore: "नज़रअंदाज़ करें",
+      mapToExisting: "मौजूदा फ़ील्ड से मैप करें",
+      chooseField: "फ़ील्ड चुनें",
+      createNewField: "नई फ़ील्ड बनाएँ",
+      back: "वापस",
+      import: "इम्पोर्ट करें",
+      emptyFile: "यह फ़ाइल खाली है।",
+      couldNotReadFile: "यह फ़ाइल पढ़ी नहीं जा सकी।",
+    },
   },
   mr: {
     header: {
@@ -630,6 +741,45 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       deleting: "हटत आहे…",
       couldNotDelete: "कॉन्टॅक्ट हटवता आला नाही. पुन्हा प्रयत्न करा.",
       couldNotDeleteConn: "कॉन्टॅक्ट हटवता आला नाही. तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.",
+    },
+    staffVisibility: {
+      title: "अ‍ॅडमिनने जोडलेल्या कॉन्टॅक्टसाठी स्टाफ व्हिजिबिलिटी",
+      description:
+        "जेव्हा आमचा platform admin तुमच्या वतीने तुमच्या खात्यात कॉन्टॅक्ट जोडतो किंवा इम्पोर्ट करतो, तेव्हा त्यांचा मोबाइल नंबर आणि ईमेल डीफॉल्टनुसार Staff युजरपासून लपलेले असतात. हे चालू केल्यास Staff या तपशील पूर्णपणे पाहू शकतील. यामुळे तुम्ही (Owner) जे पाहता त्यावर कधीच परिणाम होत नाही, आणि तुमच्या टीमने स्वतः जोडलेल्या कॉन्टॅक्टवर काहीही परिणाम होत नाही.",
+      toggleLabel: "Staff ला आमच्या वतीने अ‍ॅडमिनने जोडलेल्या कॉन्टॅक्टचे संपूर्ण तपशील दिसू द्या",
+      adminRestrictedNote:
+        "आमच्या प्लॅटफॉर्मने तुमच्या खात्यासाठी हे प्रतिबंधित केले आहे, त्यामुळे या सेटिंगची पर्वा न करता ते Staff पासून लपलेलेच राहील. प्रश्न असल्यास सपोर्टशी संपर्क साधा.",
+      failedToSave: "सेटिंग सेव्ह होऊ शकली नाही",
+    },
+    csvImportDialog: {
+      title: "CSV इम्पोर्ट करा",
+      uploadPrompt:
+        "तुमच्या कॉन्टॅक्टसह .csv, .xlsx, किंवा .xls फाइल अपलोड करा. इम्पोर्ट होण्यापूर्वी आम्ही एक झलक दाखवू.",
+      clickToChoose: "फाइल निवडण्यासाठी क्लिक करा",
+      orDragDrop: "किंवा ती इथे ड्रॅग करून सोडा",
+      unsupportedFile: "एक .csv, .xlsx, किंवा .xls फाइल इम्पोर्ट करा.",
+      readingFile: "फाइल वाचली जात आहे…",
+      downloadSample: "सॅम्पल CSV डाउनलोड करा",
+      rowsDetected: (rows, plural) => `${rows} रो${plural} आढळल्या`,
+      issuesInRows: (count, plural) =>
+        ` · खाली दाखवलेल्या रोंमध्ये ${count} समस्या${plural}`,
+      colName: "नाव",
+      colMobile: "मोबाइल",
+      colCategory: "कॅटेगरी",
+      colOccasions: "Occasions",
+      showingFirstRows: (shown, total) =>
+        `${total} पैकी पहिल्या ${shown} रो दाखवल्या जात आहेत. संपूर्ण फाइल इम्पोर्ट होईल.`,
+      unknownColumnsTitle: "अज्ञात कॉलम आढळले",
+      unknownColumnsHint:
+        "इम्पोर्ट करण्यापूर्वी प्रत्येक कॉलमसाठी काय करायचे ते निवडा. अज्ञात कॉलम डीफॉल्टनुसार दुर्लक्षित केले जातात.",
+      ignore: "दुर्लक्ष करा",
+      mapToExisting: "सध्याच्या फील्डशी मॅप करा",
+      chooseField: "फील्ड निवडा",
+      createNewField: "नवीन फील्ड तयार करा",
+      back: "मागे",
+      import: "इम्पोर्ट करा",
+      emptyFile: "ही फाइल रिकामी आहे.",
+      couldNotReadFile: "ही फाइल वाचता आली नाही.",
     },
   },
 };
