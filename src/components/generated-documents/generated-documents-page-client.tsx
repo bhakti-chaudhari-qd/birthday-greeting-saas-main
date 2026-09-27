@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { InlineAlert, StatusBadge } from "@/components/ui/feedback";
 import {
@@ -9,6 +9,8 @@ import {
   Panel,
   compactSecondaryButtonClass,
 } from "@/components/ui/page";
+import { getDeliveriesDict } from "@/lib/i18n/dictionaries/deliveries";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type GeneratedDocument = {
   id: string;
@@ -38,44 +40,41 @@ function formatDate(iso: string): string {
 }
 
 export function GeneratedDocumentsPageClient() {
+  const dict = getDeliveriesDict(useLocale()).generatedDocuments;
   const [documents, setDocuments] = useState<GeneratedDocument[]>([]);
   const [canManage, setCanManage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  async function loadDocuments() {
+  const loadDocuments = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch("/api/v1/generated-documents");
       const body = await response.json();
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not load generated documents.");
+        setError(body.error?.message ?? dict.errors.couldNotLoad);
         return;
       }
       setDocuments(body.data as GeneratedDocument[]);
       setCanManage(Boolean(body.meta?.canManage));
     } catch {
-      setError(
-        "Could not load generated documents. Check your connection and try again.",
-      );
+      setError(dict.errors.couldNotLoadRetry);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     async function loadInitialDocuments() {
       await loadDocuments();
     }
     void loadInitialDocuments();
-  }, []);
+  }, [loadDocuments]);
 
   async function handleDelete(document: GeneratedDocument) {
-    const confirmed = window.confirm(
-      `Delete "${document.fileName}"? This cannot be undone.`,
-    );
+    const confirmed = window.confirm(dict.confirmDelete(document.fileName));
     if (!confirmed) {
       return;
     }
@@ -88,12 +87,12 @@ export function GeneratedDocumentsPageClient() {
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        setError(body.error?.message ?? "Could not delete document.");
+        setError(body.error?.message ?? dict.errors.couldNotDelete);
         return;
       }
       await loadDocuments();
     } catch {
-      setError("Could not delete document. Check your connection and try again.");
+      setError(dict.errors.couldNotDeleteRetry);
     } finally {
       setDeletingId(null);
     }
@@ -102,32 +101,29 @@ export function GeneratedDocumentsPageClient() {
   return (
     <PageShell>
       <PageHeader
-        title="Generated Documents"
-        description="Personalized PDFs generated from your document templates. Kept for 7 days, then removed."
+        title={dict.pageTitle}
+        description={dict.pageDescription}
       />
 
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
 
       <Panel>
         {loading ? (
-          <p className="p-6 text-sm text-stone-600">Loading generated documents...</p>
+          <p className="p-6 text-sm text-stone-600">{dict.loading}</p>
         ) : documents.length === 0 ? (
-          <p className="p-6 text-sm text-stone-600">
-            No generated documents yet. Generate one from a document template&apos;s
-            editor.
-          </p>
+          <p className="p-6 text-sm text-stone-600">{dict.emptyState}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-stone-200 bg-stone-50 text-stone-600">
                 <tr>
-                  <th className="px-4 py-2.5 font-medium">File</th>
-                  <th className="px-4 py-2.5 font-medium">Template</th>
-                  <th className="px-4 py-2.5 font-medium">Generated</th>
-                  <th className="px-4 py-2.5 font-medium">Expires</th>
-                  <th className="px-4 py-2.5 font-medium">Status</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.table.file}</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.table.template}</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.table.generated}</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.table.expires}</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.table.status}</th>
                   <th className="px-4 py-2.5 font-medium">
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">{dict.table.actionsSr}</span>
                   </th>
                 </tr>
               </thead>
@@ -153,7 +149,7 @@ export function GeneratedDocumentsPageClient() {
                       </td>
                       <td className="px-4 py-2.5">
                         <StatusBadge
-                          label={expired ? "Expired" : "Active"}
+                          label={expired ? dict.statusExpired : dict.statusActive}
                           tone={expired ? "neutral" : "success"}
                         />
                       </td>
@@ -167,13 +163,13 @@ export function GeneratedDocumentsPageClient() {
                                 rel="noreferrer"
                                 className={compactSecondaryButtonClass}
                               >
-                                View
+                                {dict.view}
                               </a>
                               <a
                                 href={`${document.fileUrl}?download=1`}
                                 className={compactSecondaryButtonClass}
                               >
-                                Download
+                                {dict.download}
                               </a>
                             </>
                           )}
@@ -184,7 +180,7 @@ export function GeneratedDocumentsPageClient() {
                               disabled={deletingId === document.id}
                               onClick={() => void handleDelete(document)}
                             >
-                              {deletingId === document.id ? "Deleting..." : "Delete"}
+                              {deletingId === document.id ? dict.deleting : dict.delete}
                             </button>
                           ) : null}
                         </div>

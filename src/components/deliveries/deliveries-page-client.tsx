@@ -19,6 +19,8 @@ import {
   secondaryButtonClass,
 } from "@/components/ui/page";
 import { StatusFilterChips } from "@/components/ui/status-filter-chips";
+import { getDeliveriesDict } from "@/lib/i18n/dictionaries/deliveries";
+import { useLocale } from "@/lib/i18n/use-locale";
 import {
   DELIVERY_MORE_STATUS_FILTERS,
   DELIVERY_REPORT_FILTERS,
@@ -84,6 +86,7 @@ export type DeliveriesPageClientProps = {
 };
 
 function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
+  const dict = getDeliveriesDict(useLocale()).deliveries;
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialStatus = searchParams.get("status") ?? "";
@@ -144,14 +147,14 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
         const body = await response.json();
 
         if (!response.ok) {
-          setError(body.error?.message ?? "Could not load delivery results.");
+          setError(body.error?.message ?? dict.errors.couldNotLoad);
           return;
         }
 
         setItems(body.data);
         setMeta(body.meta);
       } catch {
-        setError("Could not load delivery results. Try again.");
+        setError(dict.errors.couldNotLoadRetry);
       } finally {
         setLoading(false);
       }
@@ -178,9 +181,7 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
 
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        setError(
-          body?.error?.message ?? "Could not export submitted history. Try again.",
-        );
+        setError(body?.error?.message ?? dict.errors.couldNotExport);
         return;
       }
 
@@ -192,9 +193,7 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
       anchor.click();
       URL.revokeObjectURL(url);
     } catch {
-      setError(
-        "Could not export submitted history. Check your connection and try again.",
-      );
+      setError(dict.errors.couldNotExportRetry);
     } finally {
       setExporting(false);
     }
@@ -215,7 +214,7 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
         setRefreshFeedback({
           deliveryLogId,
           tone: "error",
-          message: body.error?.message ?? "Failed to refresh delivery status",
+          message: body.error?.message ?? dict.errors.failedToRefreshStatus,
         });
         return;
       }
@@ -233,16 +232,14 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
         tone,
         message:
           result.message ??
-          (result.result === "refreshed"
-            ? "Delivery status refreshed"
-            : "Delivery status checked"),
+          (result.result === "refreshed" ? dict.refreshedStatus : dict.checkedStatus),
       });
       reloadDeliveries();
     } catch {
       setRefreshFeedback({
         deliveryLogId,
         tone: "error",
-        message: "Failed to refresh delivery status",
+        message: dict.errors.failedToRefreshStatus,
       });
     } finally {
       setRefreshingId(null);
@@ -256,7 +253,7 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
   return (
     <PageShell wide>
       <PageHeader
-        title="Submitted"
+        title={dict.pageTitle}
         actions={
           <>
             {canExport ? (
@@ -266,20 +263,18 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
                 disabled={exporting || loading}
                 className={secondaryButtonClass}
               >
-                {exporting ? "Exporting…" : "Export report"}
+                {exporting ? dict.exporting : dict.exportReport}
               </button>
             ) : null}
             <SecondaryButtonLink href="/dashboard/queue?status=PENDING">
-              View Scheduled
+              {dict.viewScheduled}
             </SecondaryButtonLink>
           </>
         }
       />
 
       {items.some((item) => item.provider === "TEST") ? (
-        <InlineAlert tone="info">
-          Test messages are simulated. Nothing was actually sent.
-        </InlineAlert>
+        <InlineAlert tone="info">{dict.testMessagesNote}</InlineAlert>
       ) : null}
 
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
@@ -300,7 +295,7 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
       <Panel className="space-y-4 p-4">
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">
-            Status
+            {dict.statusLabel}
           </p>
           <StatusFilterChips
             options={DELIVERY_REPORT_FILTERS}
@@ -310,16 +305,16 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
                 : "__other__"
             }
             onChange={applyStatus}
-            ariaLabel="Delivery status report filters"
+            ariaLabel={dict.ariaLabelStatusFilters}
           />
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           <label className="block text-sm">
-            <span className="sr-only">Search contact</span>
+            <span className="sr-only">{dict.searchContact}</span>
             <input
               className={inputClass}
-              placeholder="Search contact"
+              placeholder={dict.searchContact}
               value={search}
               onChange={(event) => {
                 setPage(1);
@@ -328,13 +323,13 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
             />
           </label>
           <label className="block text-sm">
-            <span className="sr-only">More statuses</span>
+            <span className="sr-only">{dict.moreStatusesLabel}</span>
             <select
               className={inputClass}
               value={moreStatusValue}
               onChange={(event) => applyStatus(event.target.value)}
             >
-              <option value="">More statuses…</option>
+              <option value="">{dict.moreStatusesOption}</option>
               {DELIVERY_MORE_STATUS_FILTERS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -343,7 +338,7 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
             </select>
           </label>
           <label className="block text-sm">
-            <span className="sr-only">Channel filter</span>
+            <span className="sr-only">{dict.channelFilterLabel}</span>
             <select
               className={inputClass}
               value={channel}
@@ -352,13 +347,13 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
                 setChannel(event.target.value);
               }}
             >
-              <option value="">All channels</option>
+              <option value="">{dict.allChannels}</option>
               <option value="SMS">SMS</option>
               <option value="WHATSAPP">WhatsApp</option>
             </select>
           </label>
           <label className="block text-sm">
-            <span className="sr-only">Provider filter</span>
+            <span className="sr-only">{dict.providerFilterLabel}</span>
             <select
               className={inputClass}
               value={provider}
@@ -367,57 +362,53 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
                 setProvider(event.target.value);
               }}
             >
-              <option value="">All providers</option>
-              <option value="TEST">Test</option>
-              <option value="CUSTOM_HTTP">Live / Custom HTTP</option>
+              <option value="">{dict.allProviders}</option>
+              <option value="TEST">{dict.testProvider}</option>
+              <option value="CUSTOM_HTTP">{dict.liveCustomHttp}</option>
             </select>
           </label>
         </div>
         {canExport ? (
-          <p className="text-xs text-stone-500">
-            Export report follows your current filters (up to 5,000 rows).
-          </p>
+          <p className="text-xs text-stone-500">{dict.exportFollowsFilters}</p>
         ) : null}
       </Panel>
 
       <Panel>
         {loading ? (
-          <p className="p-6 text-sm text-stone-600">Loading delivery results…</p>
+          <p className="p-6 text-sm text-stone-600">{dict.loadingResults}</p>
         ) : items.length === 0 ? (
           <EmptyState
-            title={hasFilters ? "No matching results" : "No delivery results yet"}
+            title={hasFilters ? dict.emptyTitleFiltered : dict.emptyTitleDefault}
             description={
-              hasFilters
-                ? "Try another filter, or clear filters."
-                : "Results appear after messages are processed."
+              hasFilters ? dict.emptyDescFiltered : dict.emptyDescDefault
             }
             actionHref={hasFilters ? undefined : "/dashboard/messages"}
-            actionLabel={hasFilters ? undefined : "Send Message"}
+            actionLabel={hasFilters ? undefined : dict.sendMessageAction}
             secondaryHref={
               hasFilters ? undefined : "/dashboard/queue?status=PENDING"
             }
-            secondaryLabel={hasFilters ? undefined : "View Pending"}
+            secondaryLabel={hasFilters ? undefined : dict.viewPendingAction}
           />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-stone-200 bg-stone-50 text-stone-600">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Contact</th>
-                  <th className="px-4 py-3 font-medium">Mobile</th>
+                  <th className="px-4 py-3 font-medium">{dict.table.contact}</th>
+                  <th className="px-4 py-3 font-medium">{dict.table.mobile}</th>
                   <th className="hidden px-4 py-3 font-medium md:table-cell">
-                    Template
+                    {dict.table.template}
                   </th>
-                  <th className="px-4 py-3 font-medium">Channel</th>
+                  <th className="px-4 py-3 font-medium">{dict.table.channel}</th>
                   <th className="hidden px-4 py-3 font-medium lg:table-cell">
-                    Provider
+                    {dict.table.provider}
                   </th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">{dict.table.status}</th>
                   <th className="hidden px-4 py-3 font-medium sm:table-cell">
-                    When
+                    {dict.table.when}
                   </th>
                   <th className="px-4 py-3 font-medium">
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">{dict.table.actionsSr}</span>
                   </th>
                 </tr>
               </thead>
@@ -461,8 +452,8 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
                           {item.mediaFilename ? (
                             <span className="max-w-[14rem] text-xs text-stone-600">
                               {item.mediaSimulated
-                                ? "Simulated with video"
-                                : "Submitted with video"}{" "}
+                                ? dict.simulatedWithVideo
+                                : dict.submittedWithVideo}{" "}
                               · {item.mediaFilename}
                             </span>
                           ) : null}
@@ -480,8 +471,8 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
                             className={compactSecondaryButtonClass}
                           >
                             {refreshingId === item.id
-                              ? "Refreshing…"
-                              : "Refresh"}
+                              ? dict.refreshing
+                              : dict.refresh}
                           </button>
                         ) : (
                           "-"
@@ -498,9 +489,7 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
 
       {meta && meta.totalPages > 1 ? (
         <div className="flex flex-col gap-3 text-sm text-stone-600 sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            Page {meta.page} of {meta.totalPages} ({meta.total} total)
-          </span>
+          <span>{dict.pageOf(meta.page, meta.totalPages, meta.total)}</span>
           <div className="flex gap-2">
             <button
               type="button"
@@ -508,7 +497,7 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
               onClick={() => setPage((current) => current - 1)}
               className={secondaryButtonClass}
             >
-              Previous
+              {dict.previous}
             </button>
             <button
               type="button"
@@ -516,7 +505,7 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
               onClick={() => setPage((current) => current + 1)}
               className={secondaryButtonClass}
             >
-              Next
+              {dict.next}
             </button>
           </div>
         </div>
@@ -526,11 +515,12 @@ function DeliveriesPageContent({ canExport }: DeliveriesPageClientProps) {
 }
 
 export function DeliveriesPageClient({ canExport }: DeliveriesPageClientProps) {
+  const dict = getDeliveriesDict(useLocale()).deliveries;
   return (
     <Suspense
       fallback={
         <PageShell wide>
-          <p className="text-sm text-stone-600">Loading delivery results…</p>
+          <p className="text-sm text-stone-600">{dict.loadingResults}</p>
         </PageShell>
       }
     >
