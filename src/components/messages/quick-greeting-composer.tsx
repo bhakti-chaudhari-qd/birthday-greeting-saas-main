@@ -22,16 +22,24 @@ import {
   WHATSAPP_MEDIA_MAX_BYTES,
   type WhatsAppMediaContentType,
 } from "@/lib/channel-config/whatsapp-types";
+import { getMessagesDict, type MessagesDict } from "@/lib/i18n/dictionaries/messages";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { templateNameForOccasionMedia } from "@/lib/templates/whatsapp-template-name";
 
 type Channel = "SMS" | "WHATSAPP" | "EMAIL";
 type Occasion = "BIRTHDAY" | "ANNIVERSARY" | "CUSTOM";
 
-const occasionNames: Record<Occasion, string> = {
-  BIRTHDAY: "Birthday",
-  ANNIVERSARY: "Anniversary",
-  CUSTOM: "Other occasion",
-};
+function occasionDisplayName(
+  occasion: Occasion,
+  names: MessagesDict["composer"]["occasionNames"],
+): string {
+  const map: Record<Occasion, string> = {
+    BIRTHDAY: names.birthday,
+    ANNIVERSARY: names.anniversary,
+    CUSTOM: names.custom,
+  };
+  return map[occasion];
+}
 
 type Props = {
   channel: Channel;
@@ -76,13 +84,14 @@ function resolveVideoContentType(file: File): "video/mp4" | "video/webm" {
 }
 
 export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
+  const dict = getMessagesDict(useLocale()).composer;
   const [occasion, setOccasion] = useState<Occasion>("BIRTHDAY");
   const [categoryId, setCategoryId] = useState("");
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>(
     [],
   );
-  const [body, setBody] = useState("Happy Birthday {{name}}! Wishing you a wonderful day.");
-  const [emailSubject, setEmailSubject] = useState("Happy Birthday {{name}}!");
+  const [body, setBody] = useState(dict.defaultBody);
+  const [emailSubject, setEmailSubject] = useState(dict.defaultEmailSubject);
   const [mediaBase64, setMediaBase64] = useState<string | null>(null);
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [mediaFilename, setMediaFilename] = useState<string | null>(null);
@@ -196,7 +205,9 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
       const suggestion = payload.data?.body ?? payload.data?.variants?.[0];
       if (suggestion) setBody(suggestion);
     } catch (err) {
-      setError(err instanceof Error && err.message ? err.message : "Could not write a message");
+      setError(
+        err instanceof Error && err.message ? err.message : dict.errors.couldNotWriteMessage,
+      );
     } finally {
       setWorking(false);
     }
@@ -204,7 +215,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
 
   async function selectImage(file: File) {
     if (!isJpegFile(file) || file.size > WHATSAPP_MEDIA_MAX_BYTES) {
-      setError("Choose a JPEG image within the size limit");
+      setError(dict.errors.chooseJpegImage);
       return;
     }
     const base64 = await readFileAsBase64(file);
@@ -218,7 +229,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
 
   async function selectVideo(file: File) {
     if (!isVideoFile(file) || file.size > WHATSAPP_MEDIA_MAX_BYTES) {
-      setError("Choose an MP4 or WebM video within the size limit");
+      setError(dict.errors.chooseVideo);
       return;
     }
     const base64 = await readFileAsBase64(file);
@@ -236,7 +247,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
     setError(null);
     try {
       const result = await generateGreetingImage({
-        occasionName: occasionNames[occasion],
+        occasionName: occasionDisplayName(occasion, dict.occasionNames),
         recipientName: "Alex",
       });
       if (mediaUrl?.startsWith("blob:")) URL.revokeObjectURL(mediaUrl);
@@ -246,7 +257,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
       setMediaFilename(result.filename);
       setMediaContentType(result.contentType);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not generate image");
+      setError(err instanceof Error ? err.message : dict.errors.couldNotGenerateImage);
     } finally {
       setWorking(false);
     }
@@ -257,7 +268,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
     setError(null);
     try {
       const result = await recordGreetingVideo({
-        occasionName: occasionNames[occasion],
+        occasionName: occasionDisplayName(occasion, dict.occasionNames),
         recipientName: "Alex",
       });
       if (mediaUrl?.startsWith("blob:")) URL.revokeObjectURL(mediaUrl);
@@ -267,7 +278,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
       setMediaFilename(result.filename);
       setMediaContentType(result.contentType);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not generate video");
+      setError(err instanceof Error ? err.message : dict.errors.couldNotGenerateVideo);
     } finally {
       setWorking(false);
     }
@@ -351,7 +362,9 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
       if (!response.ok) throw new Error(result.error?.message);
       onCreated(result.data.id, occasion);
     } catch (err) {
-      setError(err instanceof Error && err.message ? err.message : "Could not save message");
+      setError(
+        err instanceof Error && err.message ? err.message : dict.errors.couldNotSaveMessage,
+      );
     } finally {
       setWorking(false);
     }
@@ -366,34 +379,31 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
       <div>
-        <h2 className="text-lg font-semibold text-stone-900">Create a message</h2>
-        <p className="mt-1 text-sm text-stone-600">
-          Write it here, add an optional image or video, and preview everything
-          before sending.
-        </p>
+        <h2 className="text-lg font-semibold text-stone-900">{dict.title}</h2>
+        <p className="mt-1 text-sm text-stone-600">{dict.subtitle}</p>
       </div>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Occasion</span>
+            <span className="font-medium text-stone-800">{dict.occasionLabel}</span>
             <select
               className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
               value={occasion}
               onChange={(event) => setOccasion(event.target.value as Occasion)}
             >
-              <option value="BIRTHDAY">Birthday</option>
-              <option value="ANNIVERSARY">Anniversary</option>
-              <option value="CUSTOM">Other occasion</option>
+              <option value="BIRTHDAY">{dict.occasionNames.birthday}</option>
+              <option value="ANNIVERSARY">{dict.occasionNames.anniversary}</option>
+              <option value="CUSTOM">{dict.occasionNames.custom}</option>
             </select>
           </label>
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Group</span>
+            <span className="font-medium text-stone-800">{dict.groupLabel}</span>
             <select
               className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
               value={categoryId}
               onChange={(event) => setCategoryId(event.target.value)}
             >
-              <option value="">All groups</option>
+              <option value="">{dict.allGroups}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -403,7 +413,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
           </label>
           {channel === "EMAIL" ? (
             <label className="block text-sm">
-              <span className="font-medium text-stone-800">Subject</span>
+              <span className="font-medium text-stone-800">{dict.subjectLabel}</span>
               <input
                 className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
                 value={emailSubject}
@@ -412,7 +422,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
             </label>
           ) : null}
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Message</span>
+            <span className="font-medium text-stone-800">{dict.messageLabel}</span>
             <textarea
               className="mt-1 min-h-32 w-full rounded-lg border border-stone-300 px-3 py-2"
               value={body}
@@ -425,18 +435,15 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
             disabled={working}
             onClick={() => void suggestMessage()}
           >
-            Write with AI
+            {dict.writeWithAi}
           </button>
           {channel === "WHATSAPP" ? (
             <div className="space-y-3 rounded-lg border border-stone-200 p-3">
-              <p className="text-sm font-medium text-stone-800">Media (optional)</p>
-              <p className="text-xs text-stone-600">
-                Attach one JPEG image or one video. For photos you can add a
-                footer PNG that sits on the bottom of the photo like one poster.
-              </p>
+              <p className="text-sm font-medium text-stone-800">{dict.mediaOptionalLabel}</p>
+              <p className="text-xs text-stone-600">{dict.mediaHint}</p>
               <div className="flex flex-wrap gap-2">
                 <label className={secondaryButtonClass}>
-                  Upload image
+                  {dict.uploadImage}
                   <input
                     type="file"
                     accept="image/jpeg,.jpg,.jpeg"
@@ -454,7 +461,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
                   disabled={working}
                   onClick={() => void generateImage()}
                 >
-                  Generate image
+                  {dict.generateImage}
                 </button>
                 <button
                   type="button"
@@ -462,10 +469,10 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
                   disabled={working}
                   onClick={() => void generateVideo()}
                 >
-                  Generate video
+                  {dict.generateVideo}
                 </button>
                 <label className={secondaryButtonClass}>
-                  Upload video
+                  {dict.uploadVideo}
                   <input
                     type="file"
                     accept="video/mp4,video/webm"
@@ -483,15 +490,15 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
                     className={secondaryButtonClass}
                     onClick={() => clearMedia()}
                   >
-                    Remove media
+                    {dict.removeMedia}
                   </button>
                 ) : null}
               </div>
               {mediaFilename ? (
                 <p className="text-xs text-stone-600">
-                  Selected: {mediaFilename}
-                  {isImageMedia ? " (image)" : isVideoMedia ? " (video)" : ""}
-                  {showOverlayPreview ? " · Footer applied" : ""}
+                  {dict.selectedPrefix} {mediaFilename}
+                  {isImageMedia ? dict.imageSuffix : isVideoMedia ? dict.videoSuffix : ""}
+                  {showOverlayPreview ? dict.footerAppliedSuffix : ""}
                 </p>
               ) : null}
               {isImageMedia && mediaUrl ? (
@@ -506,7 +513,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
                     // eslint-disable-next-line @next/next/no-img-element -- blob preview URL
                     <img
                       src={mediaUrl}
-                      alt="WhatsApp image preview"
+                      alt={dict.imageAlt}
                       className="mx-auto block h-auto max-h-[360px] w-auto max-w-full bg-stone-200"
                     />
                   )}
@@ -529,11 +536,11 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
               {provider === "CUSTOM_HTTP" ? (
                 <details>
                   <summary className="cursor-pointer text-sm font-medium text-stone-700">
-                    Delivery setup
+                    {dict.deliverySetup}
                   </summary>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <label className="text-sm">
-                      Provider template name
+                      {dict.providerTemplateName}
                       <input
                         className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
                         value={providerTemplateName}
@@ -541,7 +548,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
                       />
                     </label>
                     <label className="text-sm">
-                      Language
+                      {dict.language}
                       <input
                         className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
                         value={providerLanguage}
@@ -560,7 +567,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
             disabled={working || !body.trim()}
             onClick={() => void saveMessage()}
           >
-            {working ? "Preparing…" : "Use this message"}
+            {working ? dict.preparing : dict.useThisMessage}
           </button>
         </div>
         <div className="space-y-3">
@@ -584,7 +591,7 @@ export function QuickGreetingComposer({ channel, provider, onCreated }: Props) {
             />
           ) : (
             <div className="rounded-xl border border-stone-200 bg-stone-50 p-5">
-              <p className="text-xs font-medium uppercase text-stone-500">Preview</p>
+              <p className="text-xs font-medium uppercase text-stone-500">{dict.previewLabel}</p>
               <p className="mt-3 whitespace-pre-wrap text-sm text-stone-800">
                 {body.replaceAll("{{name}}", "Alex")}
               </p>

@@ -23,6 +23,49 @@ export type MessagesDict = {
     footerFilePrefix: string;
     previewFailed: string;
   };
+  composer: {
+    title: string;
+    subtitle: string;
+    occasionLabel: string;
+    occasionNames: {
+      birthday: string;
+      anniversary: string;
+      custom: string;
+    };
+    groupLabel: string;
+    allGroups: string;
+    subjectLabel: string;
+    messageLabel: string;
+    defaultBody: string;
+    defaultEmailSubject: string;
+    writeWithAi: string;
+    mediaOptionalLabel: string;
+    mediaHint: string;
+    uploadImage: string;
+    generateImage: string;
+    generateVideo: string;
+    uploadVideo: string;
+    removeMedia: string;
+    selectedPrefix: string;
+    imageSuffix: string;
+    videoSuffix: string;
+    footerAppliedSuffix: string;
+    imageAlt: string;
+    deliverySetup: string;
+    providerTemplateName: string;
+    language: string;
+    preparing: string;
+    useThisMessage: string;
+    previewLabel: string;
+    errors: {
+      couldNotWriteMessage: string;
+      chooseJpegImage: string;
+      chooseVideo: string;
+      couldNotGenerateImage: string;
+      couldNotGenerateVideo: string;
+      couldNotSaveMessage: string;
+    };
+  };
 };
 
 const MESSAGES_DICT: Record<Locale, MessagesDict> = {
@@ -52,6 +95,51 @@ const MESSAGES_DICT: Record<Locale, MessagesDict> = {
       footerFilePrefix: "Footer:",
       previewFailed: "Could not build footer preview",
     },
+    composer: {
+      title: "Create a message",
+      subtitle:
+        "Write it here, add an optional image or video, and preview everything before sending.",
+      occasionLabel: "Occasion",
+      occasionNames: {
+        birthday: "Birthday",
+        anniversary: "Anniversary",
+        custom: "Other occasion",
+      },
+      groupLabel: "Group",
+      allGroups: "All groups",
+      subjectLabel: "Subject",
+      messageLabel: "Message",
+      defaultBody: "Happy Birthday {{name}}! Wishing you a wonderful day.",
+      defaultEmailSubject: "Happy Birthday {{name}}!",
+      writeWithAi: "Write with AI",
+      mediaOptionalLabel: "Media (optional)",
+      mediaHint:
+        "Attach one JPEG image or one video. For photos you can add a footer PNG that sits on the bottom of the photo like one poster.",
+      uploadImage: "Upload image",
+      generateImage: "Generate image",
+      generateVideo: "Generate video",
+      uploadVideo: "Upload video",
+      removeMedia: "Remove media",
+      selectedPrefix: "Selected:",
+      imageSuffix: " (image)",
+      videoSuffix: " (video)",
+      footerAppliedSuffix: " · Footer applied",
+      imageAlt: "WhatsApp image preview",
+      deliverySetup: "Delivery setup",
+      providerTemplateName: "Provider template name",
+      language: "Language",
+      preparing: "Preparing…",
+      useThisMessage: "Use this message",
+      previewLabel: "Preview",
+      errors: {
+        couldNotWriteMessage: "Could not write a message",
+        chooseJpegImage: "Choose a JPEG image within the size limit",
+        chooseVideo: "Choose an MP4 or WebM video within the size limit",
+        couldNotGenerateImage: "Could not generate image",
+        couldNotGenerateVideo: "Could not generate video",
+        couldNotSaveMessage: "Could not save message",
+      },
+    },
   },
   hi: {
     whatsappPreview: {
@@ -79,6 +167,51 @@ const MESSAGES_DICT: Record<Locale, MessagesDict> = {
       footerFilePrefix: "फुटर:",
       previewFailed: "फुटर प्रीव्यू नहीं बन सका",
     },
+    composer: {
+      title: "मेसेज बनाएं",
+      subtitle:
+        "इसे यहां लिखें, एक ऑप्शनल इमेज या वीडियो जोड़ें, और भेजने से पहले सब कुछ प्रीव्यू करें।",
+      occasionLabel: "अवसर",
+      occasionNames: {
+        birthday: "जन्मदिन",
+        anniversary: "एनिवर्सरी",
+        custom: "अन्य अवसर",
+      },
+      groupLabel: "ग्रुप",
+      allGroups: "सभी ग्रुप",
+      subjectLabel: "सब्जेक्ट",
+      messageLabel: "मेसेज",
+      defaultBody: "जन्मदिन मुबारक हो {{name}}! आपका दिन शानदार हो।",
+      defaultEmailSubject: "जन्मदिन मुबारक हो {{name}}!",
+      writeWithAi: "AI से लिखवाएं",
+      mediaOptionalLabel: "मीडिया (वैकल्पिक)",
+      mediaHint:
+        "एक JPEG इमेज या एक वीडियो अटैच करें। फोटो के लिए आप एक फुटर PNG जोड़ सकते हैं जो पोस्टर की तरह फोटो के नीचे बैठता है।",
+      uploadImage: "इमेज अपलोड करें",
+      generateImage: "इमेज जनरेट करें",
+      generateVideo: "वीडियो जनरेट करें",
+      uploadVideo: "वीडियो अपलोड करें",
+      removeMedia: "मीडिया हटाएं",
+      selectedPrefix: "चुना गया:",
+      imageSuffix: " (इमेज)",
+      videoSuffix: " (वीडियो)",
+      footerAppliedSuffix: " · फुटर लगाया गया",
+      imageAlt: "WhatsApp इमेज प्रीव्यू",
+      deliverySetup: "डिलीवरी सेटअप",
+      providerTemplateName: "प्रोवाइडर टेम्पलेट नाम",
+      language: "भाषा",
+      preparing: "तैयार हो रहा है…",
+      useThisMessage: "यह मेसेज इस्तेमाल करें",
+      previewLabel: "प्रीव्यू",
+      errors: {
+        couldNotWriteMessage: "मेसेज नहीं लिखा जा सका",
+        chooseJpegImage: "साइज़ लिमिट के भीतर JPEG इमेज चुनें",
+        chooseVideo: "साइज़ लिमिट के भीतर MP4 या WebM वीडियो चुनें",
+        couldNotGenerateImage: "इमेज जनरेट नहीं हो सकी",
+        couldNotGenerateVideo: "वीडियो जनरेट नहीं हो सका",
+        couldNotSaveMessage: "मेसेज सेव नहीं हो सका",
+      },
+    },
   },
   mr: {
     whatsappPreview: {
@@ -105,6 +238,51 @@ const MESSAGES_DICT: Record<Locale, MessagesDict> = {
       removeFooter: "फुटर काढा",
       footerFilePrefix: "फुटर:",
       previewFailed: "फुटर प्रीव्ह्यू तयार होऊ शकला नाही",
+    },
+    composer: {
+      title: "मेसेज तयार करा",
+      subtitle:
+        "इथे लिहा, ऐच्छिक इमेज किंवा व्हिडिओ जोडा आणि पाठवण्यापूर्वी सर्व काही प्रीव्ह्यू करा.",
+      occasionLabel: "प्रसंग",
+      occasionNames: {
+        birthday: "वाढदिवस",
+        anniversary: "अ‍ॅनिव्हर्सरी",
+        custom: "इतर प्रसंग",
+      },
+      groupLabel: "गट",
+      allGroups: "सर्व गट",
+      subjectLabel: "विषय",
+      messageLabel: "मेसेज",
+      defaultBody: "वाढदिवसाच्या हार्दिक शुभेच्छा {{name}}! तुमचा दिवस छान जावो.",
+      defaultEmailSubject: "वाढदिवसाच्या हार्दिक शुभेच्छा {{name}}!",
+      writeWithAi: "AI कडून लिहून घ्या",
+      mediaOptionalLabel: "मीडिया (ऐच्छिक)",
+      mediaHint:
+        "एक JPEG इमेज किंवा एक व्हिडिओ जोडा. फोटोंसाठी तुम्ही एक फुटर PNG जोडू शकता जो पोस्टरप्रमाणे फोटोच्या तळाशी बसतो.",
+      uploadImage: "इमेज अपलोड करा",
+      generateImage: "इमेज जनरेट करा",
+      generateVideo: "व्हिडिओ जनरेट करा",
+      uploadVideo: "व्हिडिओ अपलोड करा",
+      removeMedia: "मीडिया काढा",
+      selectedPrefix: "निवडलेले:",
+      imageSuffix: " (इमेज)",
+      videoSuffix: " (व्हिडिओ)",
+      footerAppliedSuffix: " · फुटर लावला",
+      imageAlt: "WhatsApp इमेज प्रीव्ह्यू",
+      deliverySetup: "डिलिव्हरी सेटअप",
+      providerTemplateName: "प्रोव्हायडर टेम्पलेट नाव",
+      language: "भाषा",
+      preparing: "तयार होत आहे…",
+      useThisMessage: "हा मेसेज वापरा",
+      previewLabel: "प्रीव्ह्यू",
+      errors: {
+        couldNotWriteMessage: "मेसेज लिहिता आला नाही",
+        chooseJpegImage: "साइज लिमिटमधील JPEG इमेज निवडा",
+        chooseVideo: "साइज लिमिटमधील MP4 किंवा WebM व्हिडिओ निवडा",
+        couldNotGenerateImage: "इमेज जनरेट होऊ शकली नाही",
+        couldNotGenerateVideo: "व्हिडिओ जनरेट होऊ शकला नाही",
+        couldNotSaveMessage: "मेसेज सेव्ह होऊ शकला नाही",
+      },
     },
   },
 };

@@ -39,6 +39,9 @@ describe("messages i18n", () => {
 
     expect(hi.imageOverlay.footerLabel).toMatch(DEVANAGARI_PATTERN);
     expect(mr.imageOverlay.footerLabel).toMatch(DEVANAGARI_PATTERN);
+
+    expect(hi.composer.title).toMatch(DEVANAGARI_PATTERN);
+    expect(mr.composer.title).toMatch(DEVANAGARI_PATTERN);
   });
 
   it("hi and mr are genuinely distinct translations", () => {
@@ -48,6 +51,15 @@ describe("messages i18n", () => {
     expect(hi.whatsappPreview.emptyVideo).not.toBe(mr.whatsappPreview.emptyVideo);
     expect(hi.whatsappPreview.disclaimer).not.toBe(mr.whatsappPreview.disclaimer);
     expect(hi.imageOverlay.footerHintDefault).not.toBe(mr.imageOverlay.footerHintDefault);
+    expect(hi.composer.defaultBody).not.toBe(mr.composer.defaultBody);
+  });
+
+  it("composer default body/subject contain the {{name}} placeholder in all locales", () => {
+    for (const locale of LOCALES) {
+      const dict = getMessagesDict(locale);
+      expect(dict.composer.defaultBody).toContain("{{name}}");
+      expect(dict.composer.defaultEmailSubject).toContain("{{name}}");
+    }
   });
 
   it("English defaults match the original hardcoded strings", () => {
@@ -62,5 +74,9 @@ describe("messages i18n", () => {
     expect(dict.imageOverlay.footerLabel).toBe("Footer image");
     expect(dict.imageOverlay.uploadFooterImage).toBe("Upload footer image");
     expect(dict.imageOverlay.removeFooter).toBe("Remove footer");
+    expect(dict.composer.title).toBe("Create a message");
+    expect(dict.composer.writeWithAi).toBe("Write with AI");
+    expect(dict.composer.useThisMessage).toBe("Use this message");
+    expect(dict.composer.occasionNames.birthday).toBe("Birthday");
   });
 });
