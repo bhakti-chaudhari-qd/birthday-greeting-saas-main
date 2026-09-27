@@ -20,14 +20,10 @@ import {
 } from "@/lib/queue/occasions-status";
 import { getOccasionStatusLabel } from "@/lib/ui/customer-labels";
 import { formatDisplayDate, formatScheduledSendDetail } from "@/lib/ui/datetime";
+import { getOccasionsDict } from "@/lib/i18n/dictionaries/occasions";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 const PAGE_SIZE = 50;
-
-const OCCASION_TYPES: Array<{ value: OccasionType; label: string }> = [
-  { value: "BIRTHDAY", label: "Birthdays" },
-  { value: "ANNIVERSARY", label: "Anniversaries" },
-  { value: "CUSTOM", label: "Custom occasions" },
-];
 
 function matchesOccasionType(occasionName: string, type: OccasionType) {
   const normalizedName = occasionName.trim().toLowerCase();
@@ -78,6 +74,12 @@ export function OccasionsListClient({
   initialCategoryId,
   todayDate,
 }: OccasionsListClientProps) {
+  const dict = getOccasionsDict(useLocale()).list;
+  const OCCASION_TYPES: Array<{ value: OccasionType; label: string }> = [
+    { value: "BIRTHDAY", label: dict.typeBirthday },
+    { value: "ANNIVERSARY", label: dict.typeAnniversary },
+    { value: "CUSTOM", label: dict.typeCustom },
+  ];
   const router = useRouter();
   const [date, setDate] = useState(initialView.targetDate);
   const [type, setType] = useState<OccasionType>(initialType);
@@ -113,7 +115,7 @@ export function OccasionsListClient({
         const response = await fetch(`/api/v1/occasions/day?${params}`);
         const body = await response.json();
         if (!response.ok) {
-          throw new Error(body.error?.message ?? "Could not load greetings");
+          throw new Error(body.error?.message ?? dict.couldNotLoadGreetings);
         }
         if (!cancelled) {
           setView(body.data as OccasionsDayView);
@@ -123,7 +125,7 @@ export function OccasionsListClient({
           setError(
             loadError instanceof Error && loadError.message
               ? loadError.message
-              : "Could not load greetings",
+              : dict.couldNotLoadGreetingsGeneric,
           );
         }
       } finally {
@@ -137,6 +139,7 @@ export function OccasionsListClient({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryId, date, refresh]);
 
   const section = useMemo(() => {
@@ -144,25 +147,27 @@ export function OccasionsListClient({
       view.sections.find((item) => matchesOccasionType(item.occasionName, type)) ?? {
         occasionId: `${type.toLowerCase()}-empty`,
         occasionName:
-          OCCASION_TYPES.find((item) => item.value === type)?.label ?? "Occasions",
-        label: OCCASION_TYPES.find((item) => item.value === type)?.label ?? "Occasions",
+          OCCASION_TYPES.find((item) => item.value === type)?.label ?? dict.occasionsFallback,
+        label: OCCASION_TYPES.find((item) => item.value === type)?.label ?? dict.occasionsFallback,
         count: 0,
         automationEnabled: false,
         whatsappAutomationEnabled: false,
         emailAutomationEnabled: false,
-        sendTimeLabel: "Not configured",
+        sendTimeLabel: dict.notConfigured,
         contacts: [],
       }
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, view.sections]);
 
   const selectedCategoryName = useMemo(() => {
     if (categoryId === "all") {
-      return "All groups";
+      return dict.allGroups;
     }
     return (
-      categories.find((category) => category.id === categoryId)?.name ?? "Group"
+      categories.find((category) => category.id === categoryId)?.name ?? dict.groupFallback
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categories, categoryId]);
 
   const totalPages = Math.max(1, Math.ceil(section.contacts.length / PAGE_SIZE));
@@ -172,23 +177,23 @@ export function OccasionsListClient({
     safePage * PAGE_SIZE,
   );
 
-  const dateLabel = date === todayDate ? "today" : formatDisplayDate(date);
+  const dateLabel = date === todayDate ? dict.today : formatDisplayDate(date);
 
   return (
     <PageShell>
       <PageHeader
         title={section.label}
-        description={`People with ${section.label.toLowerCase()} on ${dateLabel}, and their message status.`}
+        description={dict.peopleWith(section.label, dateLabel)}
         actions={
           <Link href="/dashboard" className={compactSecondaryButtonClass}>
-            Back to Today
+            {dict.backToToday}
           </Link>
         }
       />
 
       <Panel className="flex flex-wrap items-end gap-3 p-4">
         <label className="text-sm sm:w-56">
-          <span className="font-medium text-stone-800">Occasion</span>
+          <span className="font-medium text-stone-800">{dict.occasionsFallback}</span>
           <select
             className={`${inputClass} mt-1`}
             value={type}
@@ -205,7 +210,7 @@ export function OccasionsListClient({
           </select>
         </label>
         <label className="text-sm sm:w-56">
-          <span className="font-medium text-stone-800">Group</span>
+          <span className="font-medium text-stone-800">{dict.group}</span>
           <select
             className={`${inputClass} mt-1`}
             value={categoryId}
@@ -214,7 +219,7 @@ export function OccasionsListClient({
               setPage(1);
             }}
           >
-            <option value="all">All groups</option>
+            <option value="all">{dict.allGroups}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -223,7 +228,7 @@ export function OccasionsListClient({
           </select>
         </label>
         <label className="text-sm">
-          <span className="font-medium text-stone-800">Date</span>
+          <span className="font-medium text-stone-800">{dict.date}</span>
           <input
             type="date"
             className={`${inputClass} mt-1`}
@@ -239,15 +244,15 @@ export function OccasionsListClient({
           className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium"
           onClick={() => setRefresh((value) => value + 1)}
         >
-          Refresh
+          {dict.refresh}
         </button>
         <p className="text-sm text-stone-600">
-          Send after {section.sendTimeLabel} · India time
+          {dict.sendAfter(section.sendTimeLabel)}
         </p>
       </Panel>
 
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
-      {loading ? <Panel className="p-5">Loading greetings…</Panel> : null}
+      {loading ? <Panel className="p-5">{dict.loadingGreetings}</Panel> : null}
 
       {!loading ? (
         <Panel className="space-y-3 p-4">
@@ -260,14 +265,14 @@ export function OccasionsListClient({
             <p className="mt-1 text-xs text-stone-500">
               {section.automationEnabled || section.whatsappAutomationEnabled
                 ? formatScheduledSendDetail(date, section.sendTimeLabel)
-                : "Automatic sending is off"}
+                : dict.automaticSendingOff}
             </p>
           </div>
 
           {section.contacts.length === 0 ? (
             <p className="py-3 text-sm text-stone-600">
-              No {section.label.toLowerCase()} for this date
-              {categoryId !== "all" ? ` in ${selectedCategoryName}` : ""}.
+              {dict.noItemsForDate(section.label)}
+              {categoryId !== "all" ? dict.inGroup(selectedCategoryName) : ""}.
             </p>
           ) : (
             <>
@@ -289,7 +294,7 @@ export function OccasionsListClient({
                           {contact.name}
                         </span>
                         <p className="mt-0.5 text-xs text-stone-500">
-                          {contact.categoryName ?? "No group"} ·{" "}
+                          {contact.categoryName ?? dict.noGroup} ·{" "}
                           {contact.mobile}
                         </p>
                         {contact.whatsappMessagePreview ??
@@ -314,7 +319,7 @@ export function OccasionsListClient({
                           }
                         />
                       ) : (
-                        <StatusBadge label="Not set up" tone="neutral" />
+                        <StatusBadge label={dict.notSetUp} tone="neutral" />
                       )}
                     </div>
                   );
@@ -324,7 +329,7 @@ export function OccasionsListClient({
               {totalPages > 1 ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 pt-3">
                   <p className="text-sm text-stone-600">
-                    Page {safePage} of {totalPages} ({section.count} total)
+                    {dict.pageOf(safePage, totalPages, section.count)}
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -333,7 +338,7 @@ export function OccasionsListClient({
                       disabled={safePage <= 1}
                       onClick={() => setPage((value) => Math.max(1, value - 1))}
                     >
-                      Previous
+                      {dict.previous}
                     </button>
                     <button
                       type="button"
@@ -343,7 +348,7 @@ export function OccasionsListClient({
                         setPage((value) => Math.min(totalPages, value + 1))
                       }
                     >
-                      Next
+                      {dict.next}
                     </button>
                   </div>
                 </div>

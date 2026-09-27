@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 
 import { Modal } from "@/components/ui/modal";
 import { inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/page";
+import { getOccasionsDict } from "@/lib/i18n/dictionaries/occasions";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export type OccasionFormModalProps = {
   open: boolean;
@@ -22,6 +24,7 @@ export function OccasionFormModal({
   onClose,
   onSaved,
 }: OccasionFormModalProps) {
+  const dict = getOccasionsDict(useLocale()).form;
   const [name, setName] = useState(initialName ?? "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -44,7 +47,7 @@ export function OccasionFormModal({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!name.trim()) {
-      setError("Occasion name is required");
+      setError(dict.nameRequired);
       return;
     }
 
@@ -63,13 +66,13 @@ export function OccasionFormModal({
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not save occasion");
+        setError(body.error?.message ?? dict.couldNotSave);
         return;
       }
 
       onSaved();
     } catch {
-      setError("Could not save occasion. Check your connection and try again.");
+      setError(dict.couldNotSaveConnection);
     } finally {
       setSubmitting(false);
     }
@@ -79,16 +82,16 @@ export function OccasionFormModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title={mode === "create" ? "Add Occasion" : "Edit Occasion"}
+      title={mode === "create" ? dict.addOccasionTitle : dict.editOccasionTitle}
     >
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Occasion Name</span>
+          <span className="font-medium text-stone-800">{dict.occasionName}</span>
           <input
             className={`${inputClass} mt-1`}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="e.g. Diwali, Retirement, Joining Date"
+            placeholder={dict.namePlaceholder}
             maxLength={50}
             autoFocus
           />
@@ -103,14 +106,14 @@ export function OccasionFormModal({
             onClick={handleClose}
             disabled={submitting}
           >
-            Cancel
+            {dict.cancel}
           </button>
           <button type="submit" className={primaryButtonClass} disabled={submitting}>
             {submitting
-              ? "Saving…"
+              ? dict.saving
               : mode === "create"
-                ? "Add Occasion"
-                : "Save Changes"}
+                ? dict.addOccasionAction
+                : dict.saveChanges}
           </button>
         </div>
       </form>

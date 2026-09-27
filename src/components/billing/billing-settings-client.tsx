@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { formatInrFromPaise } from "@/lib/billing/catalogue";
 import { formatCustomerDateTime } from "@/lib/ui/datetime";
+import { getBillingDict } from "@/lib/i18n/dictionaries/billing";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type CatalogueEntry = {
   plan: "FREE" | "STARTER" | "PRO" | "CUSTOM";
@@ -133,6 +135,7 @@ function loadRazorpayScript(): Promise<void> {
 }
 
 export function BillingSettingsClient() {
+  const dict = getBillingDict(useLocale());
   const [overview, setOverview] = useState<BillingOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -149,14 +152,15 @@ export function BillingSettingsClient() {
         error?: { message?: string };
       };
       if (!response.ok) {
-        throw new Error(body.error?.message || "Failed to load billing");
+        throw new Error(body.error?.message || dict.errors.failedToLoad);
       }
       setOverview(body.data ?? null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load billing");
+      setError(err instanceof Error ? err.message : dict.errors.failedToLoad);
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -168,7 +172,7 @@ export function BillingSettingsClient() {
     await loadRazorpayScript();
 
     if (!window.Razorpay) {
-      throw new Error("Razorpay Checkout is unavailable");
+      throw new Error(dict.errors.razorpayUnavailable);
     }
 
     const description =
@@ -224,20 +228,20 @@ export function BillingSettingsClient() {
             if (!confirmResponse.ok) {
               throw new Error(
                 confirmPayload.error?.message ||
-                  "Payment received but confirmation failed. Refresh shortly.",
+                  dict.errors.paymentReceivedConfirmFailed,
               );
             }
             setSuccess(
               order.kind === "PLAN"
-                ? `${order.label} is now active. Limits will apply immediately.`
-                : `${order.label} added for this month.`,
+                ? dict.errors.planActiveNow(order.label)
+                : dict.errors.creditsAdded(order.label),
             );
             await loadOverview();
           } catch (confirmError) {
             setError(
               confirmError instanceof Error
                 ? confirmError.message
-                : "Payment confirmation failed",
+                : dict.errors.paymentConfirmationFailed,
             );
           } finally {
             setBusyKey(null);
@@ -266,13 +270,13 @@ export function BillingSettingsClient() {
       };
 
       if (!response.ok || !body.data || body.data.kind !== "PLAN") {
-        throw new Error(body.error?.message || "Failed to start checkout");
+        throw new Error(body.error?.message || dict.errors.failedToStartCheckout);
       }
 
       await openRazorpayCheckout(body.data);
       setBusyKey(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Checkout failed");
+      setError(err instanceof Error ? err.message : dict.errors.checkoutFailed);
       setBusyKey(null);
     }
   }
@@ -294,24 +298,24 @@ export function BillingSettingsClient() {
       };
 
       if (!response.ok || !body.data || body.data.kind !== "CREDITS") {
-        throw new Error(body.error?.message || "Failed to start checkout");
+        throw new Error(body.error?.message || dict.errors.failedToStartCheckout);
       }
 
       await openRazorpayCheckout(body.data);
       setBusyKey(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Checkout failed");
+      setError(err instanceof Error ? err.message : dict.errors.checkoutFailed);
       setBusyKey(null);
     }
   }
 
   if (loading && !overview) {
-    return <p className="text-sm text-stone-600">Loading billing…</p>;
+    return <p className="text-sm text-stone-600">{dict.loading}</p>;
   }
 
   if (!overview) {
     return (
-      <p className="text-sm text-red-700">{error || "Billing unavailable."}</p>
+      <p className="text-sm text-red-700">{error || dict.unavailable}</p>
     );
   }
 
@@ -325,8 +329,7 @@ export function BillingSettingsClient() {
     <div className="flex flex-col gap-6">
       {!overview.billingReady ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          Razorpay isn&apos;t configured. Upgrades and credit packs stay disabled
-          until billing keys are set.
+          {dict.razorpayNotConfigured}
         </div>
       ) : null}
 
@@ -343,37 +346,37 @@ export function BillingSettingsClient() {
 
       <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-          Current plan
+          {dict.currentPlan.heading}
         </h2>
         <dl className="mt-4 grid gap-3 sm:grid-cols-2">
           <div>
-            <dt className="text-xs text-stone-500">Plan</dt>
+            <dt className="text-xs text-stone-500">{dict.currentPlan.plan}</dt>
             <dd className="text-lg font-semibold text-stone-900">
               {currentPlanLabel}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-stone-500">Status</dt>
+            <dt className="text-xs text-stone-500">{dict.currentPlan.status}</dt>
             <dd className="text-lg font-semibold text-stone-900">
               {subscription.status}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-stone-500">Contacts limit</dt>
+            <dt className="text-xs text-stone-500">{dict.currentPlan.contactsLimit}</dt>
             <dd className="text-sm text-stone-800">
               {subscription.contactLimit.toLocaleString("en-IN")}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-stone-500">Messages this month</dt>
+            <dt className="text-xs text-stone-500">{dict.currentPlan.messagesThisMonth}</dt>
             <dd className="text-sm text-stone-800">
               {subscription.messagesSentThisMonth.toLocaleString("en-IN")} /{" "}
               {subscription.effectiveMonthlyMessageLimit.toLocaleString("en-IN")}
               {subscription.bonusMessageCredits > 0 ? (
                 <span className="mt-0.5 block text-xs font-normal text-stone-500">
-                  Includes{" "}
-                  {subscription.bonusMessageCredits.toLocaleString("en-IN")}{" "}
-                  bonus credits
+                  {dict.currentPlan.includesBonusCredits(
+                    subscription.bonusMessageCredits.toLocaleString("en-IN"),
+                  )}
                 </span>
               ) : null}
               {subscription.plan === "CUSTOM" &&
@@ -392,7 +395,7 @@ export function BillingSettingsClient() {
           </div>
           {subscription.paidUntil ? (
             <div>
-              <dt className="text-xs text-stone-500">Paid until</dt>
+              <dt className="text-xs text-stone-500">{dict.currentPlan.paidUntil}</dt>
               <dd className="text-sm text-stone-800">
                 {formatCustomerDateTime(subscription.paidUntil)}
               </dd>
@@ -401,15 +404,14 @@ export function BillingSettingsClient() {
         </dl>
         {subscription.status !== "ACTIVE" ? (
           <p className="mt-4 text-sm text-amber-800">
-            Sending is blocked while {subscription.status.toLowerCase()}.
-            Upgrade or contact Platform Admin.
+            {dict.currentPlan.sendingBlocked(subscription.status)}
           </p>
         ) : null}
       </section>
 
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-stone-500">
-          Plans
+          {dict.plans.heading}
         </h2>
         <div className="grid gap-4 md:grid-cols-2">
           {overview.catalogue
@@ -433,16 +435,17 @@ export function BillingSettingsClient() {
                       ? formatInrFromPaise(entry.amountPaise)
                       : "-"}
                     <span className="ml-1 text-sm font-normal text-stone-500">
-                      / month
+                      {dict.plans.perMonth}
                     </span>
                   </p>
                   <ul className="mt-3 flex-1 space-y-1 text-sm text-stone-700">
                     <li>
-                      {entry.contactLimit.toLocaleString("en-IN")} contacts
+                      {entry.contactLimit.toLocaleString("en-IN")}{" "}
+                      {dict.plans.contactsSuffix}
                     </li>
                     <li>
                       {entry.monthlyMessageLimit.toLocaleString("en-IN")}{" "}
-                      messages / month
+                      {dict.plans.messagesPerMonthSuffix}
                     </li>
                   </ul>
                   <button
@@ -458,10 +461,10 @@ export function BillingSettingsClient() {
                     className="mt-5 rounded-lg bg-sky-900 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-300"
                   >
                     {isCurrent
-                      ? "Current plan"
+                      ? dict.plans.currentPlanButton
                       : busy
-                        ? "Opening checkout…"
-                        : `Upgrade to ${entry.label}`}
+                        ? dict.plans.openingCheckout
+                        : dict.plans.upgradeTo(entry.label)}
                   </button>
                 </article>
               );
@@ -471,12 +474,10 @@ export function BillingSettingsClient() {
 
       <section>
         <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-stone-500">
-          Extra messages
+          {dict.creditPacks.heading}
         </h2>
         <p className="mb-3 text-sm text-stone-600">
-          Buy a pack if you hit this month&apos;s send limit. Credits apply
-          immediately and reset at the start of the next month (IST). Payment
-          methods (including UPI QR) appear in the Razorpay checkout popup.
+          {dict.creditPacks.description}
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           {creditPacks.map((pack) => {
@@ -494,7 +495,8 @@ export function BillingSettingsClient() {
                   {formatInrFromPaise(pack.amountPaise)}
                 </p>
                 <p className="mt-2 text-sm text-stone-700">
-                  +{pack.messages.toLocaleString("en-IN")} messages this month
+                  +{pack.messages.toLocaleString("en-IN")}{" "}
+                  {dict.creditPacks.extraMessagesSuffix}
                 </p>
                 <button
                   type="button"
@@ -503,10 +505,10 @@ export function BillingSettingsClient() {
                   className="mt-5 rounded-lg bg-sky-900 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-300"
                 >
                   {busy
-                    ? "Opening checkout…"
+                    ? dict.creditPacks.openingCheckout
                     : pack.checkoutEnabled
-                      ? "Buy pack"
-                      : "Requires ACTIVE paid plan"}
+                      ? dict.creditPacks.buyPack
+                      : dict.creditPacks.requiresActivePlan}
                 </button>
               </article>
             );
@@ -515,8 +517,7 @@ export function BillingSettingsClient() {
       </section>
 
       <p className="text-xs text-stone-500">
-        Plans and credit packs activate after Razorpay verifies payment. Prices
-        come from the server.
+        {dict.footerNote}
       </p>
     </div>
   );

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { InlineAlert } from "@/components/ui/feedback";
 import { secondaryButtonClass } from "@/components/ui/page";
+import { getOccasionsDict } from "@/lib/i18n/dictionaries/occasions";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export type DeleteOccasionDialogProps = {
   open: boolean;
@@ -21,6 +23,7 @@ export function DeleteOccasionDialog({
   onClose,
   onDeleted,
 }: DeleteOccasionDialogProps) {
+  const dict = getOccasionsDict(useLocale()).deleteDialog;
   const [error, setError] = useState<string | null>(null);
   const [reasons, setReasons] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
@@ -53,24 +56,24 @@ export function DeleteOccasionDialog({
 
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        setError(body.error?.message ?? "Could not delete occasion");
+        setError(body.error?.message ?? dict.couldNotDelete);
         setReasons((body.error?.details?.reasons as string[] | undefined) ?? []);
         return;
       }
 
       onDeleted();
     } catch {
-      setError("Could not delete occasion. Check your connection and try again.");
+      setError(dict.couldNotDeleteConnection);
     } finally {
       setDeleting(false);
     }
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Delete this occasion?">
+    <Modal open={open} onClose={handleClose} title={dict.title}>
       <div className="flex flex-col gap-4">
         <p className="text-sm text-stone-700">
-          {`"${occasionName}" will be permanently removed. This cannot be undone.`}
+          {dict.confirmText(occasionName)}
         </p>
 
         {error ? (
@@ -93,7 +96,7 @@ export function DeleteOccasionDialog({
             onClick={handleClose}
             disabled={deleting}
           >
-            Cancel
+            {dict.cancel}
           </button>
           <button
             type="button"
@@ -101,7 +104,7 @@ export function DeleteOccasionDialog({
             disabled={deleting}
             onClick={() => void handleConfirm()}
           >
-            {deleting ? "Deleting…" : "Delete"}
+            {deleting ? dict.deleting : dict.deleteAction}
           </button>
         </div>
       </div>

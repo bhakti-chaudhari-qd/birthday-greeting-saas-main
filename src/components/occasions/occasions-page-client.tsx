@@ -12,6 +12,8 @@ import {
   compactSecondaryButtonClass,
   primaryButtonClass,
 } from "@/components/ui/page";
+import { getOccasionsDict } from "@/lib/i18n/dictionaries/occasions";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type OccasionRow = {
   id: string;
@@ -23,6 +25,7 @@ type OccasionRow = {
 };
 
 export function OccasionsPageClient() {
+  const dict = getOccasionsDict(useLocale()).manage;
   const [occasions, setOccasions] = useState<OccasionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,31 +44,32 @@ export function OccasionsPageClient() {
         const response = await fetch("/api/v1/occasions");
         const body = await response.json();
         if (!response.ok) {
-          setError(body.error?.message ?? "Could not load occasions");
+          setError(body.error?.message ?? dict.couldNotLoad);
           return;
         }
         setOccasions(body.data as OccasionRow[]);
       } catch {
-        setError("Could not load occasions. Check your connection and try again.");
+        setError(dict.couldNotLoadConnection);
       } finally {
         setLoading(false);
       }
     }
     void loadOccasions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reloadToken]);
 
   return (
     <PageShell>
       <PageHeader
-        title="Occasion Management"
-        description="Manage occasions available for greetings and automations."
+        title={dict.title}
+        description={dict.description}
         actions={
           <button
             type="button"
             className={primaryButtonClass}
             onClick={() => setFormModal({ open: true, mode: "create" })}
           >
-            + Add Occasion
+            {dict.addOccasion}
           </button>
         }
       />
@@ -74,23 +78,23 @@ export function OccasionsPageClient() {
 
       <Panel>
         {loading ? (
-          <p className="p-6 text-sm text-stone-600">Loading occasions…</p>
+          <p className="p-6 text-sm text-stone-600">{dict.loading}</p>
         ) : occasions.length === 0 ? (
           <EmptyState
-            title="No occasions yet"
-            description="Add an occasion to start creating templates and automations for it."
+            title={dict.emptyTitle}
+            description={dict.emptyDescription}
           />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-stone-200 bg-stone-50 text-stone-600">
                 <tr>
-                  <th className="px-4 py-2.5 font-medium">Occasion</th>
-                  <th className="px-4 py-2.5 font-medium">Status</th>
-                  <th className="px-4 py-2.5 font-medium">Contacts Using</th>
-                  <th className="px-4 py-2.5 font-medium">Automations Using</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.colOccasion}</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.colStatus}</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.colContactsUsing}</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.colAutomationsUsing}</th>
                   <th className="px-4 py-2.5 font-medium">
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">{dict.actionsSr}</span>
                   </th>
                 </tr>
               </thead>
@@ -105,7 +109,7 @@ export function OccasionsPageClient() {
                     </td>
                     <td className="px-4 py-2.5">
                       <StatusBadge
-                        label={occasion.isSystem ? "System" : "Active"}
+                        label={occasion.isSystem ? dict.statusSystem : dict.statusActive}
                         tone={occasion.isSystem ? "info" : "success"}
                       />
                     </td>
@@ -124,7 +128,7 @@ export function OccasionsPageClient() {
                             setFormModal({ open: true, mode: "edit", occasion })
                           }
                         >
-                          Edit
+                          {dict.edit}
                         </button>
                         <button
                           type="button"
@@ -132,12 +136,12 @@ export function OccasionsPageClient() {
                           disabled={occasion.isSystem}
                           title={
                             occasion.isSystem
-                              ? "Birthday cannot be deleted"
+                              ? dict.birthdayCannotBeDeleted
                               : undefined
                           }
                           onClick={() => setPendingDelete(occasion)}
                         >
-                          Delete
+                          {dict.delete}
                         </button>
                       </div>
                     </td>

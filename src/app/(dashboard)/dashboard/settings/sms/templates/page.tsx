@@ -8,6 +8,8 @@ import {
   SecondaryButtonLink,
   compactSecondaryButtonClass,
 } from "@/components/ui/page";
+import { getSmsSettingsDict } from "@/lib/i18n/dictionaries/sms-settings";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type SmsTemplateSetupSummary = {
   id: string;
@@ -54,6 +56,7 @@ function buildLocalTemplateFromDlt(form: ApprovedTemplateForm) {
 }
 
 export default function AdvancedSmsTemplatesPage() {
+  const dict = getSmsSettingsDict(useLocale()).list;
   const { occasions } = useOccasions();
   const [templates, setTemplates] = useState<SmsTemplateSetupSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +97,7 @@ export default function AdvancedSmsTemplatesPage() {
         const body = (await response.json()) as TemplatesResponse;
 
         if (!response.ok) {
-          setError("Failed to load SMS templates");
+          setError(dict.failedToLoad);
           return;
         }
 
@@ -107,7 +110,7 @@ export default function AdvancedSmsTemplatesPage() {
           })),
         );
       } catch {
-        setError("Failed to load SMS templates");
+        setError(dict.failedToLoad);
       } finally {
         setLoading(false);
       }
@@ -142,7 +145,7 @@ export default function AdvancedSmsTemplatesPage() {
 
       if (!createResponse.ok) {
         setFormError(
-          createBody.error?.message ?? "Failed to add approved DLT template",
+          createBody.error?.message ?? dict.failedToAdd,
         );
         return;
       }
@@ -163,7 +166,7 @@ export default function AdvancedSmsTemplatesPage() {
 
       if (!setupResponse.ok) {
         setFormError(
-          setupBody.error?.message ?? "Failed to save approved DLT settings",
+          setupBody.error?.message ?? dict.failedToSaveDlt,
         );
         return;
       }
@@ -180,7 +183,7 @@ export default function AdvancedSmsTemplatesPage() {
       setForm(emptyApprovedTemplateForm);
       setShowAddForm(false);
     } catch {
-      setFormError("Failed to add approved DLT template");
+      setFormError(dict.failedToAdd);
     } finally {
       setCreatingTemplate(false);
     }
@@ -190,7 +193,7 @@ export default function AdvancedSmsTemplatesPage() {
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">
-          Advanced SMS Template Setup
+          {dict.heading}
         </h1>
       </div>
 
@@ -201,18 +204,18 @@ export default function AdvancedSmsTemplatesPage() {
             className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-hover"
             onClick={() => setShowAddForm(true)}
           >
-            Add approved DLT template
+            {dict.addApprovedTemplate}
           </button>
         </div>
       ) : (
         <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">
-            Add approved DLT template
+            {dict.addApprovedTemplateHeading}
           </h2>
           <form className="mt-4 space-y-4" onSubmit={handleAddApprovedTemplate}>
             <label className="block text-sm">
               <span className="font-medium text-zinc-800">
-                DLT template name
+                {dict.dltTemplateName}
               </span>
               <input
                 className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
@@ -228,7 +231,7 @@ export default function AdvancedSmsTemplatesPage() {
             </label>
 
             <label className="block text-sm">
-              <span className="font-medium text-zinc-800">Occasion</span>
+              <span className="font-medium text-zinc-800">{dict.occasion}</span>
               <select
                 className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
                 value={form.occasionId}
@@ -248,7 +251,7 @@ export default function AdvancedSmsTemplatesPage() {
             </label>
 
             <label className="block text-sm">
-              <span className="font-medium text-zinc-800">DLT Template ID</span>
+              <span className="font-medium text-zinc-800">{dict.dltTemplateId}</span>
               <input
                 className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
                 value={form.dltTemplateId}
@@ -264,7 +267,7 @@ export default function AdvancedSmsTemplatesPage() {
 
             <label className="block text-sm">
               <span className="font-medium text-zinc-800">
-                Approved DLT content
+                {dict.approvedDltContent}
               </span>
               <textarea
                 className="mt-1 min-h-32 w-full rounded-lg border border-zinc-300 px-3 py-2"
@@ -289,7 +292,7 @@ export default function AdvancedSmsTemplatesPage() {
                 className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-60"
                 disabled={creatingTemplate}
               >
-                {creatingTemplate ? "Adding..." : "Add approved template"}
+                {creatingTemplate ? dict.adding : dict.addApprovedTemplateAction}
               </button>
               <button
                 type="button"
@@ -300,7 +303,7 @@ export default function AdvancedSmsTemplatesPage() {
                   setFormError(null);
                 }}
               >
-                Cancel
+                {dict.cancel}
               </button>
             </div>
           </form>
@@ -309,14 +312,13 @@ export default function AdvancedSmsTemplatesPage() {
 
       <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
         {loading ? (
-          <p className="p-6 text-sm text-zinc-600">Loading SMS templates...</p>
+          <p className="p-6 text-sm text-zinc-600">{dict.loading}</p>
         ) : error ? (
           <p className="p-6 text-sm text-red-600">{error}</p>
         ) : templates.length === 0 ? (
           <div className="space-y-4 p-6">
             <p className="text-sm text-zinc-600">
-              No SMS templates found. Add an approved DLT template to configure
-              real SMS.
+              {dict.noTemplates}
             </p>
           </div>
         ) : (
@@ -324,9 +326,9 @@ export default function AdvancedSmsTemplatesPage() {
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Template</th>
-                  <th className="px-4 py-3 font-medium">Real SMS status</th>
-                  <th className="px-4 py-3 font-medium">Action</th>
+                  <th className="px-4 py-3 font-medium">{dict.colTemplate}</th>
+                  <th className="px-4 py-3 font-medium">{dict.colStatus}</th>
+                  <th className="px-4 py-3 font-medium">{dict.colAction}</th>
                 </tr>
               </thead>
               <tbody>
@@ -334,14 +336,14 @@ export default function AdvancedSmsTemplatesPage() {
                   <tr key={template.id} className="border-b border-zinc-100">
                     <td className="px-4 py-3">{template.name}</td>
                     <td className="px-4 py-3">
-                      {template.realSmsReady ? "Ready" : "Setup Required"}
+                      {template.realSmsReady ? dict.ready : dict.setupRequired}
                     </td>
                     <td className="px-4 py-3">
                       <Link
                         href={`/dashboard/settings/sms/templates/${template.id}`}
                         className={compactSecondaryButtonClass}
                       >
-                        {template.realSmsReady ? "Review Setup" : "Configure"}
+                        {template.realSmsReady ? dict.reviewSetup : dict.configure}
                       </Link>
                     </td>
                   </tr>
@@ -354,9 +356,9 @@ export default function AdvancedSmsTemplatesPage() {
 
       <div className="flex flex-wrap gap-2">
         <SecondaryButtonLink href="/dashboard/settings/channels">
-          Channels
+          {dict.channelsLink}
         </SecondaryButtonLink>
-        <SecondaryButtonLink href="/dashboard">Dashboard</SecondaryButtonLink>
+        <SecondaryButtonLink href="/dashboard">{dict.dashboardLink}</SecondaryButtonLink>
       </div>
     </main>
   );
