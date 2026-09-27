@@ -3,6 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { getTemplatesDict } from "@/lib/i18n/dictionaries/templates";
+import { useLocale } from "@/lib/i18n/use-locale";
+
 type DeleteTemplateButtonProps = {
   templateId: string;
   templateName: string;
@@ -12,14 +15,13 @@ export function DeleteTemplateButton({
   templateId,
   templateName,
 }: DeleteTemplateButtonProps) {
+  const dict = getTemplatesDict(useLocale()).deleteButton;
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleDelete() {
-    const confirmed = window.confirm(
-      `Delete "${templateName}"? This cannot be undone.`,
-    );
+    const confirmed = window.confirm(dict.confirmPrompt(templateName));
     if (!confirmed) {
       return;
     }
@@ -34,14 +36,14 @@ export function DeleteTemplateButton({
 
       if (!response.ok) {
         const body = await response.json();
-        setError(body.error?.message ?? "Failed to delete template");
+        setError(body.error?.message ?? dict.failedToDelete);
         return;
       }
 
       router.push("/dashboard/templates");
       router.refresh();
     } catch {
-      setError("Failed to delete template");
+      setError(dict.failedToDelete);
     } finally {
       setDeleting(false);
     }
@@ -49,10 +51,8 @@ export function DeleteTemplateButton({
 
   return (
     <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-      <h2 className="text-sm font-semibold text-red-900">Delete template</h2>
-      <p className="mt-1 text-sm leading-relaxed text-red-800">
-        Permanent. Templates with message history can&apos;t be deleted.
-      </p>
+      <h2 className="text-sm font-semibold text-red-900">{dict.title}</h2>
+      <p className="mt-1 text-sm leading-relaxed text-red-800">{dict.description}</p>
       {error ? (
         <p role="alert" className="mt-3 text-sm font-medium text-red-800">
           {error}
@@ -64,7 +64,7 @@ export function DeleteTemplateButton({
         disabled={deleting}
         onClick={() => void handleDelete()}
       >
-        {deleting ? "Deleting..." : "Delete template"}
+        {deleting ? dict.deleting : dict.deleteTemplate}
       </button>
     </div>
   );

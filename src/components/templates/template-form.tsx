@@ -17,6 +17,8 @@ import { WHATSAPP_TEMPLATE_LANGUAGES } from "@/lib/templates/whatsapp-metadata";
 import {
   TEMPLATE_PREVIEW_VALUES,
 } from "@/lib/templates/variables";
+import { getTemplatesDict, type TemplatesDict } from "@/lib/i18n/dictionaries/templates";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 const WHATSAPP_LANGUAGE_OPTIONS = WHATSAPP_TEMPLATE_LANGUAGES.map((language) => ({
   value: language.code,
@@ -85,10 +87,10 @@ function deriveSmsBodyFromDlt(approvedContent: string) {
   return approvedContent.trim().replace(APPROVED_DLT_SLOT_PATTERN, "{{name}}");
 }
 
-function channelLabel(channel: TemplateFormChannel) {
-  if (channel === "WHATSAPP") return "WhatsApp";
-  if (channel === "EMAIL") return "Email";
-  return "SMS";
+function channelLabel(channel: TemplateFormChannel, dict: TemplatesDict["form"]) {
+  if (channel === "WHATSAPP") return dict.channelWhatsapp;
+  if (channel === "EMAIL") return dict.channelEmail;
+  return dict.channelSms;
 }
 
 export type ApiErrorBody = {
@@ -153,6 +155,7 @@ export function TemplateForm({
   templateId,
   initialValues,
 }: TemplateFormProps) {
+  const dict = getTemplatesDict(useLocale()).form;
   const router = useRouter();
   const { occasions } = useOccasions();
   const [values, setValues] = useState<TemplateFormValues>({
@@ -306,13 +309,11 @@ export function TemplateForm({
     setMediaError(null);
 
     if (!ALLOWED_MEDIA_CONTENT_TYPES.includes(file.type)) {
-      setMediaError("Media must be a JPEG image or an MP4/WebM video.");
+      setMediaError(dict.mediaTypeError);
       return;
     }
     if (file.size > WHATSAPP_MEDIA_MAX_BYTES) {
-      setMediaError(
-        `Media must be at most ${Math.floor(WHATSAPP_MEDIA_MAX_BYTES / 1_000_000)} MB.`,
-      );
+      setMediaError(dict.mediaSizeError(Math.floor(WHATSAPP_MEDIA_MAX_BYTES / 1_000_000)));
       return;
     }
 
@@ -327,7 +328,7 @@ export function TemplateForm({
       const body = await response.json();
 
       if (!response.ok) {
-        setMediaError(body.error?.message ?? "Failed to upload media");
+        setMediaError(body.error?.message ?? dict.failedToUploadMedia);
         return;
       }
 
@@ -339,7 +340,7 @@ export function TemplateForm({
         whatsappMediaPreviewUrl: body.data.previewUrl as string,
       }));
     } catch {
-      setMediaError("Failed to upload media");
+      setMediaError(dict.failedToUploadMedia);
     } finally {
       setMediaUploading(false);
     }
@@ -413,7 +414,7 @@ export function TemplateForm({
     const body = await response.json();
 
     if (!response.ok) {
-      throw new Error(describeSaveError(body, "Failed to save template"));
+      throw new Error(describeSaveError(body, dict.failedToSaveTemplate));
     }
   }
 
@@ -441,7 +442,7 @@ export function TemplateForm({
       });
       const createBody = await createResponse.json();
       if (!createResponse.ok) {
-        throw new Error(describeSaveError(createBody, "Failed to save template"));
+        throw new Error(describeSaveError(createBody, dict.failedToSaveTemplate));
       }
       currentTemplateId = createBody.data.id as string;
     } else if (currentTemplateId) {
@@ -462,12 +463,12 @@ export function TemplateForm({
       });
       const patchBody = await patchResponse.json();
       if (!patchResponse.ok) {
-        throw new Error(describeSaveError(patchBody, "Failed to save template"));
+        throw new Error(describeSaveError(patchBody, dict.failedToSaveTemplate));
       }
     }
 
     if (!currentTemplateId) {
-      throw new Error("Failed to save template");
+      throw new Error(dict.failedToSaveTemplate);
     }
 
     const setupPayload: Record<string, unknown> = {
@@ -488,9 +489,7 @@ export function TemplateForm({
     );
     const setupBody = await setupResponse.json();
     if (!setupResponse.ok) {
-      throw new Error(
-        setupBody.error?.message ?? "Failed to save approved DLT details",
-      );
+      throw new Error(setupBody.error?.message ?? dict.failedToSaveDltDetails);
     }
   }
 
@@ -511,7 +510,7 @@ export function TemplateForm({
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Failed to save template",
+          : dict.failedToSaveTemplate,
       );
     } finally {
       setIsSubmitting(false);
@@ -526,7 +525,7 @@ export function TemplateForm({
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Template Name</span>
+        <span className="font-medium text-stone-800">{dict.templateName}</span>
         <input
           className={`${inputClass} mt-1`}
           value={values.name}
@@ -538,7 +537,7 @@ export function TemplateForm({
       </label>
 
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Occasion</span>
+        <span className="font-medium text-stone-800">{dict.occasion}</span>
         <select
           className={`${inputClass} mt-1`}
           value={values.occasionId}
@@ -558,7 +557,7 @@ export function TemplateForm({
       </label>
 
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Group</span>
+        <span className="font-medium text-stone-800">{dict.group}</span>
         <select
           className={`${inputClass} mt-1`}
           value={values.categoryId}
@@ -566,29 +565,26 @@ export function TemplateForm({
             setValues((current) => ({ ...current, categoryId: event.target.value }))
           }
         >
-          <option value="">All groups</option>
+          <option value="">{dict.allGroups}</option>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}
             </option>
           ))}
         </select>
-        <p className="mt-1 text-xs text-stone-500">
-          Used by automations and manual sends for the selected group, plus
-          All-groups templates.
-        </p>
+        <p className="mt-1 text-xs text-stone-500">{dict.groupHint}</p>
       </label>
 
       {channel === "EMAIL" ? (
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Subject</span>
+          <span className="font-medium text-stone-800">{dict.subject}</span>
           <input
             className={`${inputClass} mt-1`}
             value={values.emailSubject}
             onChange={(event) =>
               setValues((current) => ({ ...current, emailSubject: event.target.value }))
             }
-            placeholder="Happy Birthday {{name}}!"
+            placeholder={dict.subjectPlaceholder}
             required
           />
           <div className="mt-2 flex flex-wrap gap-2">
@@ -604,7 +600,7 @@ export function TemplateForm({
         <>
           <label className="block text-sm">
             <span className="font-medium text-stone-800">
-              Approved WhatsApp Template Name
+              {dict.approvedWhatsappTemplateName}
             </span>
             <input
               className={`${inputClass} mt-1`}
@@ -617,19 +613,16 @@ export function TemplateForm({
               }
               placeholder="birthday"
               pattern="[A-Za-z0-9_]+"
-              title="Letters, numbers, and underscores only"
+              title={dict.whatsappTemplateNamePattern}
               required
             />
             <span className="mt-1 block text-xs text-stone-500">
-              The exact name registered with your WhatsApp provider (letters,
-              numbers, and underscores only) - this is separate from the
-              &quot;Template Name&quot; field above, which is only this
-              app&apos;s internal label for the template.
+              {dict.approvedWhatsappTemplateNameHint}
             </span>
           </label>
 
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Template ID</span>
+            <span className="font-medium text-stone-800">{dict.whatsappTemplateId}</span>
             <input
               className={`${inputClass} mt-1`}
               value={values.whatsappProviderTemplateId}
@@ -644,7 +637,7 @@ export function TemplateForm({
           </label>
 
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Language</span>
+            <span className="font-medium text-stone-800">{dict.language}</span>
             <div className="mt-1">
               <SearchableSelect
                 options={WHATSAPP_LANGUAGE_OPTIONS}
@@ -652,9 +645,9 @@ export function TemplateForm({
                 onChange={(whatsappLanguage) =>
                   setValues((current) => ({ ...current, whatsappLanguage }))
                 }
-                placeholder="Search language..."
-                emptyMessage="No matching language"
-                aria-label="Language"
+                placeholder={dict.languageSearchPlaceholder}
+                emptyMessage={dict.languageEmptyMessage}
+                aria-label={dict.language}
                 required
               />
             </div>
@@ -665,7 +658,7 @@ export function TemplateForm({
       {channel === "SMS" ? (
         <>
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">DLT Template ID</span>
+            <span className="font-medium text-stone-800">{dict.dltTemplateId}</span>
             <input
               className={`${inputClass} mt-1`}
               value={values.dltTemplateId}
@@ -677,7 +670,7 @@ export function TemplateForm({
           </label>
 
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Approved DLT Content</span>
+            <span className="font-medium text-stone-800">{dict.approvedDltContent}</span>
             <textarea
               className={`${inputClass} mt-1 min-h-32`}
               value={values.dltApprovedContent}
@@ -687,7 +680,7 @@ export function TemplateForm({
                   dltApprovedContent: event.target.value,
                 }))
               }
-              placeholder="Happy Birthday {#var#}! Wishing you a wonderful year ahead."
+              placeholder={dict.approvedDltPlaceholder}
               required
             />
           </label>
@@ -695,7 +688,7 @@ export function TemplateForm({
       ) : (
         <label className="block text-sm">
           <span className="font-medium text-stone-800">
-            {channel === "WHATSAPP" ? "Approved Text" : "Email Body"}
+            {channel === "WHATSAPP" ? dict.approvedText : dict.emailBody}
           </span>
           <textarea
             className={`${inputClass} mt-1 min-h-32`}
@@ -703,7 +696,7 @@ export function TemplateForm({
             onChange={(event) =>
               setValues((current) => ({ ...current, body: event.target.value }))
             }
-            placeholder="Happy Birthday {{name}}! Wishing you a wonderful year ahead."
+            placeholder={dict.bodyPlaceholder}
             required
           />
           <div className="mt-2 flex flex-wrap gap-2">
@@ -717,7 +710,7 @@ export function TemplateForm({
 
       {channel === "WHATSAPP" ? (
         <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
-          <p className="text-sm font-medium text-stone-800">Attachment (optional)</p>
+          <p className="text-sm font-medium text-stone-800">{dict.attachmentOptional}</p>
           {values.whatsappMediaAssetId && values.whatsappMediaPreviewUrl ? (
             <div className="mt-2 flex items-center justify-between gap-3 text-sm">
               <a
@@ -726,19 +719,20 @@ export function TemplateForm({
                 rel="noreferrer"
                 className="text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
-                {values.whatsappMediaKind === "VIDEO" ? "Video" : "Image"} attached ·
-                View
+                {values.whatsappMediaKind === "VIDEO"
+                  ? dict.videoAttached
+                  : dict.imageAttached}
               </a>
               <button
                 type="button"
                 className="shrink-0 text-xs font-medium text-stone-500 outline-none hover:text-stone-800 hover:underline"
                 onClick={handleRemoveMedia}
               >
-                Remove
+                {dict.remove}
               </button>
             </div>
           ) : (
-            <p className="mt-1 text-sm text-stone-500">No media attached.</p>
+            <p className="mt-1 text-sm text-stone-500">{dict.noMediaAttached}</p>
           )}
           <div className="mt-2">
             <input
@@ -749,7 +743,7 @@ export function TemplateForm({
               className="text-sm text-stone-700"
             />
             {mediaUploading ? (
-              <p className="mt-1 text-xs text-stone-500">Uploading…</p>
+              <p className="mt-1 text-xs text-stone-500">{dict.uploading}</p>
             ) : null}
           </div>
           {mediaError ? (
@@ -761,19 +755,19 @@ export function TemplateForm({
       ) : null}
 
       <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
-        <p className="text-sm font-medium text-stone-800">Personalized Document</p>
+        <p className="text-sm font-medium text-stone-800">{dict.personalizedDocument}</p>
         <label className="mt-2 flex items-center gap-2 text-sm">
           <input
             type="checkbox"
             checked={values.includePersonalizedPdf}
             onChange={(event) => handleTogglePersonalizedPdf(event.target.checked)}
           />
-          <span>Include personalized PDF</span>
+          <span>{dict.includePersonalizedPdf}</span>
         </label>
 
         {values.includePersonalizedPdf ? (
           <label className="mt-3 block text-sm">
-            <span className="font-medium text-stone-800">PDF Template</span>
+            <span className="font-medium text-stone-800">{dict.pdfTemplate}</span>
             <select
               className={`${inputClass} mt-1`}
               value={values.documentTemplateId ?? ""}
@@ -785,7 +779,7 @@ export function TemplateForm({
               }
               required
             >
-              <option value="">Select a document template</option>
+              <option value="">{dict.selectDocumentTemplate}</option>
               {documentTemplates.map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.occasionName
@@ -796,8 +790,7 @@ export function TemplateForm({
             </select>
             {documentTemplates.length === 0 ? (
               <p className="mt-1 text-xs text-stone-500">
-                No document templates yet. Create one under Document Templates
-                first.
+                {dict.noDocumentTemplates}
               </p>
             ) : null}
           </label>
@@ -805,9 +798,9 @@ export function TemplateForm({
       </div>
 
       <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
-        <p className="font-medium text-stone-800">Preview</p>
+        <p className="font-medium text-stone-800">{dict.preview}</p>
         <p className="mt-1 whitespace-pre-wrap text-stone-900">
-          {previewBody || "Enter content above to preview personalization."}
+          {previewBody || dict.previewPlaceholder}
         </p>
       </div>
 
@@ -820,7 +813,7 @@ export function TemplateForm({
               setValues((current) => ({ ...current, isActive: event.target.checked }))
             }
           />
-          <span className="font-medium text-stone-800">Active</span>
+          <span className="font-medium text-stone-800">{dict.active}</span>
         </label>
       ) : null}
 
@@ -832,10 +825,7 @@ export function TemplateForm({
             checked={confirmDltPairReviewed}
             onChange={(event) => setConfirmDltPairReviewed(event.target.checked)}
           />
-          <span>
-            I have reviewed the DLT Template ID and approved content pair. I
-            understand this is not proof of DLT approval.
-          </span>
+          <span>{dict.dltAcknowledgement}</span>
         </label>
       ) : null}
 
@@ -843,10 +833,10 @@ export function TemplateForm({
 
       <button type="submit" disabled={submitDisabled} className={primaryButtonClass}>
         {isSubmitting
-          ? "Saving…"
+          ? dict.saving
           : mode === "create"
-            ? `Add ${channelLabel(channel)} Template`
-            : "Save changes"}
+            ? dict.addTemplateAction(channelLabel(channel, dict))
+            : dict.saveChanges}
       </button>
     </form>
   );

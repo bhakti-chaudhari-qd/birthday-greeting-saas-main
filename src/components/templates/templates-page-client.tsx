@@ -17,13 +17,10 @@ import {
   inputClass,
   secondaryButtonClass,
 } from "@/components/ui/page";
+import { getTemplatesDict } from "@/lib/i18n/dictionaries/templates";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type TemplateTab = "MESSAGE" | "DOCUMENT";
-
-const TEMPLATE_TABS: Array<{ value: TemplateTab; label: string }> = [
-  { value: "MESSAGE", label: "Message Templates" },
-  { value: "DOCUMENT", label: "Document Templates" },
-];
 
 type TemplateChannel = "SMS" | "WHATSAPP" | "EMAIL";
 
@@ -45,12 +42,6 @@ type TemplatesResponse = {
   data: Template[];
 };
 
-const CHANNEL_TABS: Array<{ value: TemplateChannel; label: string }> = [
-  { value: "SMS", label: "SMS" },
-  { value: "WHATSAPP", label: "WhatsApp" },
-  { value: "EMAIL", label: "Email" },
-];
-
 function channelFromSearchParam(value: string | null): TemplateChannel {
   if (value === "WHATSAPP" || value === "EMAIL") {
     return value;
@@ -59,6 +50,7 @@ function channelFromSearchParam(value: string | null): TemplateChannel {
 }
 
 export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
+  const dict = getTemplatesDict(useLocale()).page;
   const router = useRouter();
   const searchParams = useSearchParams();
   const [topTab, setTopTab] = useState<TemplateTab>("MESSAGE");
@@ -72,6 +64,17 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
   const [pendingDelete, setPendingDelete] = useState<Template | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const templateTabs: Array<{ value: TemplateTab; label: string }> = [
+    { value: "MESSAGE", label: dict.tabMessageTemplates },
+    { value: "DOCUMENT", label: dict.tabDocumentTemplates },
+  ];
+
+  const channelTabs: Array<{ value: TemplateChannel; label: string }> = [
+    { value: "SMS", label: dict.channelSms },
+    { value: "WHATSAPP", label: dict.channelWhatsapp },
+    { value: "EMAIL", label: dict.channelEmail },
+  ];
 
   useEffect(() => {
     const query = channel === "SMS" ? "" : `?channel=${channel}`;
@@ -101,7 +104,7 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
 
         if (!response.ok) {
           if (!cancelled) {
-            setError(body.error?.message ?? "Failed to load templates");
+            setError(body.error?.message ?? dict.failedToLoad);
             setTemplates([]);
           }
           return;
@@ -112,7 +115,7 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
         }
       } catch {
         if (!cancelled) {
-          setError("Failed to load templates");
+          setError(dict.failedToLoad);
           setTemplates([]);
         }
       } finally {
@@ -126,6 +129,7 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channel]);
 
   const filteredTemplates = useMemo(() => {
@@ -154,7 +158,7 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
 
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        setDeleteError(body.error?.message ?? "Failed to delete template");
+        setDeleteError(body.error?.message ?? dict.failedToDelete);
         return;
       }
 
@@ -163,7 +167,7 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
       );
       setPendingDelete(null);
     } catch {
-      setDeleteError("Failed to delete template");
+      setDeleteError(dict.failedToDelete);
     } finally {
       setDeleting(false);
     }
@@ -174,25 +178,29 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
   return (
     <PageShell>
       <PageHeader
-        title="Manage Templates"
-        description="Manage message and document templates used by automations and personalized sends."
+        title={dict.title}
+        description={dict.description}
         actions={
           topTab === "MESSAGE" ? (
             canManage ? (
               <PrimaryButtonLink href={addTemplateHref}>
-                + Add Approved Template
+                {dict.addApprovedTemplate}
               </PrimaryButtonLink>
             ) : undefined
           ) : (
             <SecondaryButtonLink href="/dashboard/generated-documents">
-              Generated Documents
+              {dict.generatedDocuments}
             </SecondaryButtonLink>
           )
         }
       />
 
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Template type">
-        {TEMPLATE_TABS.map((tab) => (
+      <div
+        className="flex flex-wrap gap-2"
+        role="tablist"
+        aria-label={dict.templateTypeAriaLabel}
+      >
+        {templateTabs.map((tab) => (
           <button
             key={tab.value}
             type="button"
@@ -215,8 +223,12 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
         <DocumentTemplatesManager />
       ) : (
         <>
-          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Channel">
-            {CHANNEL_TABS.map((tab) => (
+          <div
+            className="flex flex-wrap gap-2"
+            role="tablist"
+            aria-label={dict.channelAriaLabel}
+          >
+            {channelTabs.map((tab) => (
               <button
                 key={tab.value}
                 type="button"
@@ -236,12 +248,12 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
           </div>
 
           <label className="block max-w-sm text-sm">
-            <span className="sr-only">Search templates</span>
+            <span className="sr-only">{dict.searchLabel}</span>
             <input
               className={inputClass}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by template name or occasion"
+              placeholder={dict.searchPlaceholder}
             />
           </label>
 
@@ -249,41 +261,47 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
 
           <Panel>
             {loading ? (
-              <p className="p-6 text-sm text-stone-600">Loading templates…</p>
+              <p className="p-6 text-sm text-stone-600">{dict.loading}</p>
             ) : filteredTemplates.length === 0 ? (
               templates.length === 0 ? (
                 <EmptyState
-                  title="No templates added yet."
-                  description="Approved templates added here will be available in Automations."
+                  title={dict.emptyTitle}
+                  description={dict.emptyDescription}
                   actionHref={canManage ? addTemplateHref : undefined}
-                  actionLabel={canManage ? "Add Template" : undefined}
+                  actionLabel={canManage ? dict.addTemplateAction : undefined}
                 />
               ) : (
-                <p className="p-6 text-sm text-stone-600">
-                  No templates match “{search}”.
-                </p>
+                <p className="p-6 text-sm text-stone-600">{dict.noMatch(search)}</p>
               )
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
                   <thead className="border-b border-stone-200 bg-stone-50 text-stone-600">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Template Name</th>
+                      <th className="px-4 py-3 font-medium">
+                        {dict.columnTemplateName}
+                      </th>
                       {channel === "WHATSAPP" ? (
-                        <th className="px-4 py-3 font-medium">Template ID</th>
+                        <th className="px-4 py-3 font-medium">
+                          {dict.columnTemplateId}
+                        </th>
                       ) : null}
                       {channel === "WHATSAPP" ? (
-                        <th className="px-4 py-3 font-medium">Language</th>
+                        <th className="px-4 py-3 font-medium">
+                          {dict.columnLanguage}
+                        </th>
                       ) : null}
-                      <th className="px-4 py-3 font-medium">Occasion</th>
+                      <th className="px-4 py-3 font-medium">{dict.columnOccasion}</th>
                       {channel === "SMS" ? (
-                        <th className="px-4 py-3 font-medium">Template ID</th>
+                        <th className="px-4 py-3 font-medium">
+                          {dict.columnTemplateId}
+                        </th>
                       ) : null}
                       {channel === "EMAIL" ? (
-                        <th className="px-4 py-3 font-medium">Subject</th>
+                        <th className="px-4 py-3 font-medium">{dict.columnSubject}</th>
                       ) : null}
-                      <th className="px-4 py-3 font-medium">Preview</th>
-                      <th className="px-4 py-3 font-medium">Actions</th>
+                      <th className="px-4 py-3 font-medium">{dict.columnPreview}</th>
+                      <th className="px-4 py-3 font-medium">{dict.columnActions}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -322,7 +340,7 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
                           {template.contentPreview}
                           {!template.isActive ? (
                             <span className="ml-2 text-xs text-amber-700">
-                              (Inactive)
+                              {dict.inactiveTag}
                             </span>
                           ) : null}
                         </td>
@@ -333,7 +351,7 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
                                 href={`/dashboard/templates/${template.id}/edit`}
                                 className={compactSecondaryButtonClass}
                               >
-                                Edit
+                                {dict.edit}
                               </Link>
                               <button
                                 type="button"
@@ -343,7 +361,7 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
                                   setPendingDelete(template);
                                 }}
                               >
-                                Delete
+                                {dict.delete}
                               </button>
                             </div>
                           ) : (
@@ -367,12 +385,10 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
           setPendingDelete(null);
           setDeleteError(null);
         }}
-        title="Delete this template?"
+        title={dict.deleteModalTitle}
       >
         <p className="text-sm text-stone-700">
-          {pendingDelete
-            ? `"${pendingDelete.name}" will be permanently removed. This cannot be undone.`
-            : ""}
+          {pendingDelete ? dict.deleteConfirmText(pendingDelete.name) : ""}
         </p>
         {deleteError ? (
           <div className="mt-3">
@@ -389,7 +405,7 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
               setDeleteError(null);
             }}
           >
-            Cancel
+            {dict.cancel}
           </button>
           <button
             type="button"
@@ -397,7 +413,7 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
             disabled={deleting}
             onClick={() => void handleConfirmDelete()}
           >
-            {deleting ? "Deleting…" : "Delete"}
+            {deleting ? dict.deleting : dict.delete}
           </button>
         </div>
       </Modal>
