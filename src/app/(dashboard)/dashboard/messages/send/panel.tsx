@@ -10,6 +10,8 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/ui/page";
+import { getMessagesDict } from "@/lib/i18n/dictionaries/messages";
+import { useLocale } from "@/lib/i18n/use-locale";
 import {
   MANUAL_SEND_API_BATCH_SIZE,
   MANUAL_SEND_PRESELECT_STORAGE_KEY,
@@ -102,6 +104,7 @@ function buildSelectionKey(templateId: string, contactIds: string[]) {
 }
 
 export function ManualSendPanel() {
+  const dict = getMessagesDict(useLocale()).manualSend;
   const [audienceMeta, setAudienceMeta] = useState<AudienceMeta | null>(null);
   const [categories, setCategories] = useState<ContactCategoryOption[]>([]);
   const [templates, setTemplates] = useState<TemplateOption[]>([]);
@@ -209,9 +212,7 @@ export function ManualSendPanel() {
       // Existing selection is external session state restored on mount.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedContactIds(ids);
-      setPreselectNotice(
-        `${ids.length} contact${ids.length === 1 ? "" : "s"} preselected from Contacts.`,
-      );
+      setPreselectNotice(dict.preselectedContacts(ids.length));
     } catch {
       // Ignore invalid stored selection.
     }
@@ -262,9 +263,7 @@ export function ManualSendPanel() {
 
         if (body.data?.categoryName) {
           setPreselectNotice(
-            (current) =>
-              current ??
-              `Suggested template from category \u201c${body.data.categoryName}\u201d. You can change it.`,
+            (current) => current ?? dict.suggestedTemplate(body.data.categoryName),
           );
         }
       } catch {
@@ -319,7 +318,7 @@ export function ManualSendPanel() {
           }
         }
       } catch {
-        setError("Failed to load templates");
+        setError(dict.errors.failedToLoadTemplates);
       } finally {
         setLoadingSetup(false);
       }
@@ -373,7 +372,7 @@ export function ManualSendPanel() {
         const body = await response.json();
 
         if (!response.ok) {
-          setError(body.error?.message ?? "Failed to load audience");
+          setError(body.error?.message ?? dict.errors.failedToLoadAudience);
           return;
         }
 
@@ -381,7 +380,7 @@ export function ManualSendPanel() {
           total: body.meta?.total ?? 0,
         });
       } catch {
-        setError("Failed to load audience");
+        setError(dict.errors.failedToLoadAudience);
       } finally {
         setLoadingAudience(false);
       }
@@ -424,7 +423,7 @@ export function ManualSendPanel() {
         const body = await response.json();
 
         if (!response.ok) {
-          setError(body.error?.message ?? "Failed to select matching contacts");
+          setError(body.error?.message ?? dict.errors.failedToSelectMatching);
           return;
         }
 
@@ -445,7 +444,7 @@ export function ManualSendPanel() {
       setConfirmedSelectionKey(null);
       setStep("select");
     } catch {
-      setError("Failed to select matching contacts");
+      setError(dict.errors.failedToSelectMatching);
     } finally {
       setSelectingAll(false);
     }
@@ -483,7 +482,7 @@ export function ManualSendPanel() {
       const result = await response.json();
 
       if (!response.ok) {
-        setEmailError(result.error?.message ?? "Failed to save email");
+        setEmailError(result.error?.message ?? dict.errors.failedToSaveEmail);
         return;
       }
 
@@ -502,7 +501,7 @@ export function ManualSendPanel() {
       setEmailBody("");
       invalidatePreview();
     } catch {
-      setEmailError("Failed to save email");
+      setEmailError(dict.errors.failedToSaveEmail);
     } finally {
       setEmailSaving(false);
     }
@@ -510,7 +509,7 @@ export function ManualSendPanel() {
 
   const handlePreview = useCallback(async (templateId = selectedTemplateId) => {
     if (!templateId) {
-      setError("Select a template first");
+      setError(dict.errors.selectTemplateFirst);
       return;
     }
 
@@ -536,7 +535,7 @@ export function ManualSendPanel() {
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Failed to preview messages");
+        setError(body.error?.message ?? dict.errors.failedToPreview);
         return;
       }
 
@@ -558,7 +557,7 @@ export function ManualSendPanel() {
       );
       setStep("confirm");
     } catch {
-      setError("Failed to preview messages");
+      setError(dict.errors.failedToPreview);
     } finally {
       setPreviewing(false);
     }
@@ -578,7 +577,7 @@ export function ManualSendPanel() {
       !confirmedSelectionKey ||
       currentSelectionKey !== confirmedSelectionKey
     ) {
-      setError("Selection changed since preview. Preview again before sending.");
+      setError(dict.errors.selectionChanged);
       invalidatePreview();
       return;
     }
@@ -610,9 +609,7 @@ export function ManualSendPanel() {
 
       for (let index = 0; index < batches.length; index += 1) {
         const batch = batches[index]!;
-        setSendProgress(
-          `Sending batch ${index + 1} of ${batches.length} (${batch.length} recipients)\u2026`,
-        );
+        setSendProgress(dict.sendingBatch(index + 1, batches.length, batch.length));
 
         const response = await fetch("/api/v1/manual-send", {
           method: "POST",
@@ -628,7 +625,7 @@ export function ManualSendPanel() {
         if (!response.ok) {
           setError(
             body.error?.message ??
-              `Failed on batch ${index + 1} of ${batches.length}. ${aggregate.creation.created} message(s) were already queued.`,
+              dict.failedOnBatch(index + 1, batches.length, aggregate.creation.created),
           );
           if (aggregate.creation.created > 0) {
             setSendResult(aggregate);
@@ -669,8 +666,8 @@ export function ManualSendPanel() {
     } catch {
       setError(
         aggregate.creation.created > 0
-          ? `Network error while batching. ${aggregate.creation.created} message(s) were already queued.`
-          : "Failed to send messages",
+          ? dict.networkErrorBatching(aggregate.creation.created)
+          : dict.errors.failedToSend,
       );
       if (aggregate.creation.created > 0) {
         setSendResult(aggregate);
@@ -695,7 +692,7 @@ export function ManualSendPanel() {
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Send Messages</h1>
+        <h1 className="text-2xl font-semibold text-zinc-900">{dict.pageTitle}</h1>
       </div>
 
       {error ? (
@@ -712,32 +709,30 @@ export function ManualSendPanel() {
 
       {step === "results" && sendResult ? (
         <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-medium text-zinc-900">Greeting ready</h2>
+          <h2 className="text-lg font-medium text-zinc-900">{dict.results.heading}</h2>
           <dl className="mt-4 grid gap-2 text-sm text-zinc-700">
             <div>
-              <dt className="inline font-medium">Batches:</dt>{" "}
+              <dt className="inline font-medium">{dict.results.batches}</dt>{" "}
               <dd className="inline">
                 {sendResult.batchesSucceeded} of {sendResult.batchesTotal}
               </dd>
             </div>
             <div>
-              <dt className="inline font-medium">Queued:</dt>{" "}
+              <dt className="inline font-medium">{dict.results.queued}</dt>{" "}
               <dd className="inline">{sendResult.queued.created}</dd>
             </div>
             <div>
-              <dt className="inline font-medium">Requested:</dt>{" "}
+              <dt className="inline font-medium">{dict.results.requested}</dt>{" "}
               <dd className="inline">{sendResult.queued.requested}</dd>
             </div>
             <div>
-              <dt className="inline font-medium">Skipped (limit):</dt>{" "}
+              <dt className="inline font-medium">{dict.results.skippedLimit}</dt>{" "}
               <dd className="inline">{sendResult.queued.skippedLimit}</dd>
             </div>
           </dl>
           {sendResult.creation.skippedLimit > 0 ? (
             <p className="mt-4 text-sm text-amber-700">
-              {sendResult.creation.skippedLimit} recipient
-              {sendResult.creation.skippedLimit === 1 ? "" : "s"} skipped
-              (monthly limit reached).
+              {dict.results.skippedRecipients(sendResult.creation.skippedLimit)}
             </p>
           ) : null}
           {sendResult.batchesSucceeded < sendResult.batchesTotal ? (
@@ -746,16 +741,15 @@ export function ManualSendPanel() {
                 action={
                   <>
                     <SecondaryButtonLink href="/dashboard/activity?tab=upcoming">
-                      Open Activity
+                      {dict.results.openActivity}
                     </SecondaryButtonLink>
                     <SecondaryButtonLink href="/dashboard/activity?tab=sent">
-                      View submitted
+                      {dict.results.viewSubmitted}
                     </SecondaryButtonLink>
                   </>
                 }
               >
-                Some batches did not complete. Check Scheduled and Submitted
-                in Activity.
+                {dict.results.someBatchesIncomplete}
               </PageHint>
             </div>
           ) : null}
@@ -764,18 +758,17 @@ export function ManualSendPanel() {
               action={
                 <>
                   <SecondaryButtonLink href="/dashboard/activity?tab=upcoming">
-                    View activity
+                    {dict.results.viewActivity}
                   </SecondaryButtonLink>
                   <SecondaryButtonLink
                     href="#automatic-greetings"
                   >
-                    Set up automatic sending
+                    {dict.results.setupAutomatic}
                   </SecondaryButtonLink>
                 </>
               }
             >
-              Your greeting is being sent in the background. Open Activity to
-              check the result.
+              {dict.results.backgroundSendingNote}
             </PageHint>
           </div>
           <div className="mt-6">
@@ -784,7 +777,7 @@ export function ManualSendPanel() {
               className={secondaryButtonClass}
               onClick={resetFlow}
             >
-              Send another greeting
+              {dict.results.sendAnother}
             </button>
           </div>
         </section>
@@ -797,7 +790,7 @@ export function ManualSendPanel() {
             <div className="grid gap-3 sm:grid-cols-2 sm:items-start">
               <div>
                 <label className="block text-sm font-medium text-zinc-700">
-                  Channel
+                  {dict.setup.channelLabel}
                 </label>
                 <select
                   className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
@@ -814,20 +807,17 @@ export function ManualSendPanel() {
                   <option value="EMAIL">Email</option>
                 </select>
                 {sendChannel === "EMAIL" ? (
-                  <p className="mt-2 text-sm text-zinc-600">
-                    Emails send via platform Resend. Contacts need an email
-                    address.
-                  </p>
+                  <p className="mt-2 text-sm text-zinc-600">{dict.setup.emailHint}</p>
                 ) : null}
                 {sendChannel === "WHATSAPP" &&
                 (!channelConfig?.configured || !channelConfig.isActive) ? (
                   <div className="mt-2">
                     <p className="text-sm text-amber-800">
-                      WhatsApp channel must be configured before sending.
+                      {dict.setup.whatsappNotConfigured}
                     </p>
                     <div className="mt-2">
                       <SecondaryButtonLink href="/dashboard/settings/channels?tab=whatsapp">
-                        Configure WhatsApp channel
+                        {dict.setup.configureWhatsapp}
                       </SecondaryButtonLink>
                     </div>
                   </div>
@@ -837,15 +827,14 @@ export function ManualSendPanel() {
                 channelConfig.isActive ? (
                   <div className="mt-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
                     <p>
-                      <span className="font-medium">Send mode:</span>{" "}
+                      <span className="font-medium">{dict.setup.sendModeLabel}</span>{" "}
                       {channelConfig.provider === "CUSTOM_HTTP"
-                        ? "Custom HTTP (live gateway)"
-                        : "Test (simulated - nothing is delivered to a real phone)"}
+                        ? dict.setup.customHttpMode
+                        : dict.setup.testMode}
                     </p>
                     {channelConfig.provider !== "CUSTOM_HTTP" ? (
                       <p className="mt-1 text-xs text-amber-800">
-                        Switch to Custom HTTP under WhatsApp settings to
-                        deliver to real numbers.
+                        {dict.setup.switchToCustomHttp}
                       </p>
                     ) : null}
                   </div>
@@ -854,31 +843,29 @@ export function ManualSendPanel() {
 
               <div>
                 <label className="block text-sm font-medium text-zinc-700">
-                  Saved Messages
+                  {dict.setup.savedMessagesLabel}
                 </label>
                 {loadingSetup ? (
                   <p className="mt-2 text-sm text-zinc-600">
-                    Loading templates...
+                    {dict.setup.loadingTemplates}
                   </p>
                 ) : eligibleTemplates.length === 0 ? (
                   <div className="mt-2 text-sm text-zinc-600">
                     <p>
                       {sendChannel === "SMS"
-                        ? "No SMS messages ready to send. Configure live SMS under Settings \u2192 Channels, then use Advanced SMS Setup for provider-approved templates."
-                        : sendChannel === "EMAIL"
-                          ? `No saved ${channelLabel} messages yet. Create one below.`
-                          : `No saved ${channelLabel} messages yet. Create one below.`}
+                        ? dict.setup.noSmsReady
+                        : dict.setup.noSavedMessages(channelLabel)}
                     </p>
                     {isCustomHttp ? (
                       <div className="mt-2">
                         <SecondaryButtonLink href="/dashboard/settings/sms/templates">
-                          Configure Advanced SMS Setup
+                          {dict.setup.configureAdvancedSms}
                         </SecondaryButtonLink>
                       </div>
                     ) : sendChannel === "SMS" ? (
                       <div className="mt-2">
                         <SecondaryButtonLink href="/dashboard/settings/channels">
-                          Open Channels
+                          {dict.setup.openChannels}
                         </SecondaryButtonLink>
                       </div>
                     ) : null}
@@ -902,7 +889,7 @@ export function ManualSendPanel() {
                         }
                       }}
                     >
-                      <option value="">Select a saved message</option>
+                      <option value="">{dict.setup.selectSavedMessage}</option>
                       {eligibleTemplates.map((template) => (
                         <option key={template.id} value={template.id}>
                           {template.name}
@@ -917,18 +904,18 @@ export function ManualSendPanel() {
             <div className="mt-6 border-t border-zinc-200 pt-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-zinc-900">Audience</p>
+                  <p className="text-sm font-semibold text-zinc-900">{dict.audience.heading}</p>
                   <p className="mt-1 text-sm text-zinc-600">
                     {loadingAudience
-                      ? "Counting active contacts\u2026"
+                      ? dict.audience.countingContacts
                       : audienceMeta?.total != null
-                        ? `${audienceMeta.total} active contact${audienceMeta.total === 1 ? "" : "s"}.`
-                        : "No audience data available."}
+                        ? dict.audience.activeContacts(audienceMeta.total)
+                        : dict.audience.noAudienceData}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700">
-                    Selected {selectedContactIds.length} contact{selectedContactIds.length === 1 ? "" : "s"}
+                    {dict.audience.selectedContacts(selectedContactIds.length)}
                   </span>
                 </div>
               </div>
@@ -937,14 +924,14 @@ export function ManualSendPanel() {
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="block text-sm">
                       <span className="mb-1 block font-medium text-zinc-700">
-                        Category
+                        {dict.audience.categoryLabel}
                       </span>
                       <select
                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                         value={categoryId}
                         onChange={(event) => setCategoryId(event.target.value)}
                       >
-                        <option value="all">All categories</option>
+                        <option value="all">{dict.audience.allCategories}</option>
                         {categories.map((item) => (
                           <option key={item.id} value={item.id}>
                             {item.name}
@@ -955,14 +942,14 @@ export function ManualSendPanel() {
 
                     <label className="block text-sm">
                       <span className="mb-1 block font-medium text-zinc-700">
-                        Search
+                        {dict.audience.searchLabel}
                       </span>
                       <input
                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                         placeholder={
                           sendChannel === "EMAIL"
-                            ? "Name, mobile, or email"
-                            : "Name or mobile"
+                            ? dict.audience.searchPlaceholderEmail
+                            : dict.audience.searchPlaceholderDefault
                         }
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
@@ -981,7 +968,7 @@ export function ManualSendPanel() {
                       }
                       onClick={() => void handleSelectAllMatching()}
                     >
-                      {selectingAll ? "Selecting\u2026" : "Select matching audience"}
+                      {selectingAll ? dict.audience.selecting : dict.audience.selectMatchingAudience}
                     </button>
                     <button
                       type="button"
@@ -995,7 +982,7 @@ export function ManualSendPanel() {
                         invalidatePreview();
                       }}
                     >
-                      Clear selection
+                      {dict.audience.clearSelection}
                     </button>
                   </div>
                 </div>
@@ -1020,63 +1007,70 @@ export function ManualSendPanel() {
                 ) : (
                   <>
                     <h2 className="text-lg font-medium text-zinc-900">
-                      {preview.recipientCount === 0 ? "Message preview" : "Confirm send"}
+                      {preview.recipientCount === 0
+                        ? dict.preview.messagePreviewHeading
+                        : dict.preview.confirmSendHeading}
                     </h2>
                     <dl className="mt-4 grid gap-2 text-sm text-zinc-700">
                       <div>
-                        <dt className="inline font-medium">Message:</dt>{" "}
+                        <dt className="inline font-medium">{dict.preview.messageLabel}</dt>{" "}
                         <dd className="inline">{preview.template.name}</dd>
                       </div>
                       {preview.recipientCount > 0 ? (
                         <div>
-                          <dt className="inline font-medium">Recipients:</dt>{" "}
+                          <dt className="inline font-medium">{dict.preview.recipientsLabel}</dt>{" "}
                           <dd className="inline">{preview.recipientCount}</dd>
                         </div>
                       ) : (
                         <div>
-                          <dt className="inline font-medium">Recipients:</dt>{" "}
-                          <dd className="inline">None selected (sample preview)</dd>
+                          <dt className="inline font-medium">{dict.preview.recipientsLabel}</dt>{" "}
+                          <dd className="inline">{dict.preview.noneSelected}</dd>
                         </div>
                       )}
                       {preview.recipientCount > MANUAL_SEND_API_BATCH_SIZE ? (
                         <div>
-                          <dt className="inline font-medium">Batches:</dt>{" "}
+                          <dt className="inline font-medium">{dict.preview.batchesLabel}</dt>{" "}
                           <dd className="inline">
-                            {getManualSendBatchCount(preview.recipientCount)} sends of up to {MANUAL_SEND_API_BATCH_SIZE}
+                            {dict.preview.batchesOfUpTo(
+                              getManualSendBatchCount(preview.recipientCount),
+                              MANUAL_SEND_API_BATCH_SIZE,
+                            )}
                           </dd>
                         </div>
                       ) : null}
                       <div>
-                        <dt className="inline font-medium">Mode:</dt>{" "}
+                        <dt className="inline font-medium">{dict.preview.modeLabel}</dt>{" "}
                         <dd className="inline">{preview.providerModeLabel}</dd>
                       </div>
                     </dl>
                     {preview.recipientCount === 0 ? (
                       <p className="mt-3 text-sm text-amber-800">
-                        This is a sample preview with placeholder name &ldquo;Alex&rdquo;. Select recipients below, then preview again to confirm send.
+                        {dict.preview.samplePreviewNote}
                       </p>
                     ) : null}
                     {preview.recipientCount > 0 && preview.providerModeLabel === "Test mode" ? (
                       <p className="mt-3 text-sm text-amber-800">
                         {sendChannel === "EMAIL"
-                          ? "Test mode queues a simulated email only. It will not be delivered."
-                          : "Test mode queues a simulated send only. It will not arrive on a real phone."}
+                          ? dict.preview.testModeEmailNote
+                          : dict.preview.testModeGenericNote}
                       </p>
                     ) : null}
                     {preview.recipientCount > 0 && (preview.providerModeLabel === "Custom HTTP" || preview.providerModeLabel === "Resend") ? (
                       <p className="mt-3 text-sm text-zinc-600">
-                        Queued messages are sent in the background. Check Scheduled while pending, then Submitted in Activity for the outcome.
+                        {dict.preview.backgroundNote}
                       </p>
                     ) : null}
                     {preview.recipientCount > MANUAL_SEND_API_BATCH_SIZE ? (
                       <p className="mt-3 text-sm text-zinc-600">
-                        Previews show the first batch. All {preview.recipientCount} recipients will be queued.
+                        {dict.preview.firstBatchNote(preview.recipientCount)}
                       </p>
                     ) : null}
                     {previewSamples.length > 0 ? (
                       <div className="mt-4">
                         <p className="text-sm font-medium text-zinc-700">
-                          {preview.recipientCount === 0 ? "Sample message" : "Sample previews"}
+                          {preview.recipientCount === 0
+                            ? dict.preview.sampleMessageLabel
+                            : dict.preview.samplePreviewsLabel}
                         </p>
                         <ul className="mt-3 space-y-2 text-sm text-zinc-600">
                           {previewSamples.map((item) => (
@@ -1088,20 +1082,22 @@ export function ManualSendPanel() {
                       </div>
                     ) : null}
                     {preview.recipientCount > 0 ? (
-                      <p className="mt-4 text-sm text-zinc-600">Counts toward your monthly limit.</p>
+                      <p className="mt-4 text-sm text-zinc-600">{dict.preview.monthlyLimitNote}</p>
                     ) : null}
                     <div className="mt-6 flex flex-wrap gap-3">
                       {preview.recipientCount > 0 ? (
                         <button type="button" className={primaryButtonClass} disabled={sending} onClick={() => void handleSend()}>
                           {sending
-                            ? sendProgress ?? "Confirming\u2026"
+                            ? sendProgress ?? dict.preview.confirming
                             : preview.recipientCount > MANUAL_SEND_API_BATCH_SIZE
-                              ? `Confirm Send (${getManualSendBatchCount(preview.recipientCount)} batches)`
-                              : "Confirm Send"}
+                              ? dict.preview.confirmSendBatches(
+                                  getManualSendBatchCount(preview.recipientCount),
+                                )
+                              : dict.preview.confirmSend}
                         </button>
                       ) : null}
                       <button type="button" className={secondaryButtonClass} disabled={sending} onClick={() => setStep("select")}>
-                        Back
+                        {dict.preview.back}
                       </button>
                     </div>
                   </>
@@ -1111,51 +1107,51 @@ export function ManualSendPanel() {
               <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                 <div className="flex flex-col gap-4">
                   <div>
-                    <h2 className="text-lg font-medium text-zinc-900">Create email message</h2>
+                    <h2 className="text-lg font-medium text-zinc-900">{dict.emailComposer.heading}</h2>
                     <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                      Write your email and save it as a template. No recipients needed to preview.
+                      {dict.emailComposer.description}
                     </p>
                   </div>
 
                   <label className="block text-sm">
-                    <span className="font-medium text-zinc-800">Subject</span>
+                    <span className="font-medium text-zinc-800">{dict.emailComposer.subjectLabel}</span>
                     <input
                       className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
                       value={emailSubject}
                       onChange={(event) => setEmailSubject(event.target.value)}
-                      placeholder="Happy Birthday {{name}}!"
+                      placeholder={dict.emailComposer.subjectPlaceholder}
                     />
                   </label>
 
                   <label className="block text-sm">
-                    <span className="font-medium text-zinc-800">Message</span>
+                    <span className="font-medium text-zinc-800">{dict.emailComposer.messageLabel}</span>
                     <textarea
                       className="mt-1 min-h-32 w-full rounded-lg border border-zinc-300 px-3 py-2"
                       value={emailBody}
                       onChange={(event) => setEmailBody(event.target.value)}
-                      placeholder="Happy Birthday {{name}}! Wishing you a wonderful day."
+                      placeholder={dict.emailComposer.messagePlaceholder}
                     />
                   </label>
 
                   <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
-                    <p className="font-medium text-zinc-800">Preview</p>
+                    <p className="font-medium text-zinc-800">{dict.emailComposer.previewLabel}</p>
                     {emailSubject.trim() || emailBody.trim() ? (
                       <div className="mt-2 space-y-1">
                         <p className="text-xs text-zinc-500">
-                          <span className="font-medium">Subject:</span>{" "}
-                          {emailSubject.replace(/\{\{name\}\}/g, "Alex") || "(no subject)"}
+                          <span className="font-medium">{dict.emailComposer.subjectPrefix}</span>{" "}
+                          {emailSubject.replace(/\{\{name\}\}/g, "Alex") || dict.emailComposer.noSubject}
                         </p>
                         <p className="whitespace-pre-wrap rounded bg-white p-2 text-zinc-900">
-                          {emailBody.replace(/\{\{name\}\}/g, "Alex") || "(empty message)"}
+                          {emailBody.replace(/\{\{name\}\}/g, "Alex") || dict.emailComposer.noMessage}
                         </p>
                       </div>
                     ) : (
-                      <p className="mt-1 text-zinc-500">Enter a subject and message to preview.</p>
+                      <p className="mt-1 text-zinc-500">{dict.emailComposer.enterToPreview}</p>
                     )}
                   </div>
 
                   {emailSaving ? (
-                    <p className="text-sm text-zinc-600">Saving...</p>
+                    <p className="text-sm text-zinc-600">{dict.emailComposer.saving}</p>
                   ) : (
                     <button
                       type="button"
@@ -1163,7 +1159,7 @@ export function ManualSendPanel() {
                       disabled={!emailSubject.trim() || !emailBody.trim()}
                       onClick={() => void handleSaveEmail()}
                     >
-                      Save message
+                      {dict.emailComposer.saveMessage}
                     </button>
                   )}
 
@@ -1176,18 +1172,18 @@ export function ManualSendPanel() {
               <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                 <div className="flex flex-col gap-4">
                   <div>
-                    <h2 className="text-lg font-medium text-zinc-900">Message preview</h2>
+                    <h2 className="text-lg font-medium text-zinc-900">{dict.emptyState.heading}</h2>
                     <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                      Select a saved message and audience, then generate a preview.
+                      {dict.emptyState.description}
                     </p>
                   </div>
 
                   <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 text-sm text-zinc-700">
-                    <p className="font-medium text-zinc-900">Next step</p>
+                    <p className="font-medium text-zinc-900">{dict.emptyState.nextStepHeading}</p>
                     <ul className="mt-3 space-y-2">
-                      <li>1. Pick a saved message.</li>
-                      <li>2. Choose recipients or refine your audience.</li>
-                      <li>3. Click Preview to verify before sending.</li>
+                      <li>{dict.emptyState.step1}</li>
+                      <li>{dict.emptyState.step2}</li>
+                      <li>{dict.emptyState.step3}</li>
                     </ul>
                   </div>
 
@@ -1198,12 +1194,12 @@ export function ManualSendPanel() {
                       disabled={previewing || sending || !selectedTemplateId}
                       onClick={() => void handlePreview()}
                     >
-                      {previewing ? "Previewing..." : "Preview messages"}
+                      {previewing ? dict.emptyState.previewing : dict.emptyState.previewMessages}
                     </button>
                     <p className="text-sm text-zinc-600">
                       {selectedTemplateId
-                        ? "Preview shows a sample message. Select recipients to confirm send."
-                        : "Choose a saved message first."}
+                        ? dict.emptyState.previewHintSelected
+                        : dict.emptyState.previewHintNone}
                     </p>
                   </div>
                 </div>

@@ -42,6 +42,11 @@ describe("messages i18n", () => {
 
     expect(hi.composer.title).toMatch(DEVANAGARI_PATTERN);
     expect(mr.composer.title).toMatch(DEVANAGARI_PATTERN);
+
+    expect(hi.manualSend.pageTitle).toMatch(DEVANAGARI_PATTERN);
+    expect(mr.manualSend.pageTitle).toMatch(DEVANAGARI_PATTERN);
+    expect(hi.manualSend.results.heading).toMatch(DEVANAGARI_PATTERN);
+    expect(mr.manualSend.results.heading).toMatch(DEVANAGARI_PATTERN);
   });
 
   it("hi and mr are genuinely distinct translations", () => {
@@ -62,6 +67,33 @@ describe("messages i18n", () => {
     }
   });
 
+  it("manualSend interpolated values appear in generated strings", () => {
+    for (const locale of LOCALES) {
+      const dict = getMessagesDict(locale);
+      expect(dict.manualSend.preselectedContacts(5)).toContain("5");
+      expect(dict.manualSend.suggestedTemplate("VIP")).toContain("VIP");
+      expect(dict.manualSend.sendingBatch(1, 3, 100)).toContain("1");
+      expect(dict.manualSend.sendingBatch(1, 3, 100)).toContain("3");
+      expect(dict.manualSend.sendingBatch(1, 3, 100)).toContain("100");
+      expect(dict.manualSend.failedOnBatch(2, 4, 50)).toContain("2");
+      expect(dict.manualSend.networkErrorBatching(10)).toContain("10");
+      expect(dict.manualSend.audience.activeContacts(42)).toContain("42");
+      expect(dict.manualSend.setup.noSavedMessages("SMS")).toContain("SMS");
+      expect(dict.manualSend.preview.batchesOfUpTo(3, 200)).toContain("3");
+      expect(dict.manualSend.preview.batchesOfUpTo(3, 200)).toContain("200");
+      expect(dict.manualSend.preview.confirmSendBatches(4)).toContain("4");
+    }
+  });
+
+  it("manualSend hi and mr are genuinely distinct translations", () => {
+    const hi = getMessagesDict("hi");
+    const mr = getMessagesDict("mr");
+
+    expect(hi.manualSend.pageTitle).not.toBe(mr.manualSend.pageTitle);
+    expect(hi.manualSend.results.heading).not.toBe(mr.manualSend.results.heading);
+    expect(hi.manualSend.emailComposer.heading).not.toBe(mr.manualSend.emailComposer.heading);
+  });
+
   it("English defaults match the original hardcoded strings", () => {
     const dict = getMessagesDict("en");
     expect(dict.whatsappPreview.label).toBe("WhatsApp preview");
@@ -78,5 +110,10 @@ describe("messages i18n", () => {
     expect(dict.composer.writeWithAi).toBe("Write with AI");
     expect(dict.composer.useThisMessage).toBe("Use this message");
     expect(dict.composer.occasionNames.birthday).toBe("Birthday");
+    expect(dict.manualSend.pageTitle).toBe("Send Messages");
+    expect(dict.manualSend.results.heading).toBe("Greeting ready");
+    expect(dict.manualSend.audience.heading).toBe("Audience");
+    expect(dict.manualSend.preview.confirmSend).toBe("Confirm Send");
+    expect(dict.manualSend.emailComposer.saveMessage).toBe("Save message");
   });
 });
