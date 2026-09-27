@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { secondaryButtonClass } from "@/components/ui/page";
 import { WHATSAPP_MEDIA_MAX_BYTES } from "@/lib/channel-config/whatsapp-types";
+import { getMessagesDict } from "@/lib/i18n/dictionaries/messages";
+import { useLocale } from "@/lib/i18n/use-locale";
 import {
   findFooterContentBounds,
   overlayFooterLayout,
@@ -134,14 +136,16 @@ export function WhatsAppImageOverlayControls({
   disabled,
   requirePhotoHint = false,
 }: Props) {
+  const dict = getMessagesDict(useLocale()).imageOverlay;
+
   async function setFooter(file: File | undefined) {
     if (!file) return;
     if (requirePhotoHint) {
-      onError("Upload the main photo (JPEG) first, then add a footer image");
+      onError(dict.requirePhotoError);
       return;
     }
     if (!isOverlayImageFile(file) || file.size > WHATSAPP_MEDIA_MAX_BYTES) {
-      onError("Choose a JPEG or PNG image within the size limit");
+      onError(dict.invalidFileError);
       return;
     }
     onError(null);
@@ -167,11 +171,9 @@ export function WhatsAppImageOverlayControls({
   return (
     <div className="space-y-3 rounded-lg border border-dashed border-stone-300 bg-stone-50 p-3">
       <div>
-        <p className="text-sm font-medium text-stone-800">Footer image</p>
+        <p className="text-sm font-medium text-stone-800">{dict.footerLabel}</p>
         <p className="mt-1 text-xs text-stone-600">
-          {requirePhotoHint
-            ? "Upload a JPEG photo above first. Then you can add a footer that sits on that photo."
-            : "Optional. Placed on your photo at the bottom and scaled to the photo width. Empty transparent/black padding above the artwork is removed automatically. Prefer a PNG with a transparent top for wavy edges."}
+          {requirePhotoHint ? dict.footerHintRequirePhoto : dict.footerHintDefault}
         </p>
       </div>
 
@@ -184,7 +186,7 @@ export function WhatsAppImageOverlayControls({
             .filter(Boolean)
             .join(" ")}
         >
-          Upload footer image
+          {dict.uploadFooterImage}
           <input
             type="file"
             accept="image/jpeg,image/png,.jpg,.jpeg,.png"
@@ -204,13 +206,15 @@ export function WhatsAppImageOverlayControls({
             disabled={disabled}
             onClick={() => clearFooter()}
           >
-            Remove footer
+            {dict.removeFooter}
           </button>
         ) : null}
       </div>
 
       {overlay.footerFilename ? (
-        <p className="text-xs text-stone-600">Footer: {overlay.footerFilename}</p>
+        <p className="text-xs text-stone-600">
+          {dict.footerFilePrefix} {overlay.footerFilename}
+        </p>
       ) : null}
     </div>
   );
@@ -226,6 +230,7 @@ export function WhatsAppImageOverlayPreview({
   overlay: ImageOverlayState;
   className?: string;
 }) {
+  const dict = getMessagesDict(useLocale()).imageOverlay;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
   const footerSrc = overlay.footerImageUrl || overlay.footerImageBase64;
@@ -302,7 +307,7 @@ export function WhatsAppImageOverlayPreview({
       />
       {failed ? (
         <div className="flex min-h-[180px] w-full items-center justify-center bg-stone-200 text-xs text-stone-600">
-          Could not build footer preview
+          {dict.previewFailed}
         </div>
       ) : null}
     </div>

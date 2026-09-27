@@ -2,6 +2,9 @@
 
 import type { ReactNode } from "react";
 
+import { getMessagesDict } from "@/lib/i18n/dictionaries/messages";
+import { useLocale } from "@/lib/i18n/use-locale";
+
 type WhatsAppPreviewProps = {
   contactName: string;
   messageText: string;
@@ -25,6 +28,7 @@ export function WhatsAppPreview({
   imageSlot,
   layout = "video",
 }: WhatsAppPreviewProps) {
+  const dict = getMessagesDict(useLocale()).whatsappPreview;
   const rendered = renderMessageText(messageText, contactName);
   const hasVideo = Boolean(videoUrl);
   const hasImage = Boolean(imageUrl) || Boolean(imageSlot);
@@ -37,7 +41,7 @@ export function WhatsAppPreview({
   return (
     <div className="mx-auto w-full max-w-sm">
       <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">
-        WhatsApp preview
+        {dict.label}
       </p>
       <div className="overflow-hidden rounded-2xl border border-stone-300 shadow-md">
         <div className="flex items-center gap-3 bg-[#075e54] px-4 py-3 text-white">
@@ -46,7 +50,7 @@ export function WhatsAppPreview({
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{contactName}</p>
-            <p className="text-xs text-white/80">online</p>
+            <p className="text-xs text-white/80">{dict.online}</p>
           </div>
         </div>
 
@@ -77,7 +81,7 @@ export function WhatsAppPreview({
                     />
                   ) : (
                     <div className="flex aspect-video w-full items-center justify-center bg-stone-300/60 text-xs text-stone-600">
-                      Video will appear here
+                      {dict.videoPlaceholder}
                     </div>
                   )
                 ) : null}
@@ -88,12 +92,12 @@ export function WhatsAppPreview({
                     // eslint-disable-next-line @next/next/no-img-element -- blob/data preview URL
                     <img
                       src={imageUrl ?? undefined}
-                      alt="WhatsApp image preview"
+                      alt={dict.imageAlt}
                       className="mx-auto block h-auto max-h-[420px] w-auto max-w-full bg-stone-200"
                     />
                   ) : (
                     <div className="flex min-h-[180px] w-full items-center justify-center bg-stone-300/60 text-xs text-stone-600">
-                      Image will appear here
+                      {dict.imagePlaceholder}
                     </div>
                   )
                 ) : null}
@@ -123,18 +127,15 @@ export function WhatsAppPreview({
           ) : (
             <p className="text-center text-xs text-stone-500">
               {layout === "video"
-                ? "Add a message and video to see how the greeting looks on WhatsApp."
+                ? dict.emptyVideo
                 : layout === "image"
-                  ? "Add a message and image to see how the greeting looks on WhatsApp."
-                  : "Type or suggest a message to preview it on WhatsApp."}
+                  ? dict.emptyImage
+                  : dict.emptyText}
             </p>
           )}
         </div>
       </div>
-      <p className="mt-2 text-xs text-stone-500">
-        Mock only - live delivery depends on your approved WhatsApp template and
-        provider.
-      </p>
+      <p className="mt-2 text-xs text-stone-500">{dict.disclaimer}</p>
     </div>
   );
 }
