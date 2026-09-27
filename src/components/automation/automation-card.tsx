@@ -2,6 +2,8 @@
 
 import { StatusBadge } from "@/components/ui/feedback";
 import { compactSecondaryButtonClass } from "@/components/ui/page";
+import { getGreetingRoutesDict } from "@/lib/i18n/dictionaries/greeting-routes";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 import type { AutomationCardData } from "./types";
 
@@ -29,6 +31,7 @@ export function AutomationCard({
   onDelete,
   busy = false,
 }: AutomationCardProps) {
+  const dict = getGreetingRoutesDict(useLocale()).card;
   const isActive = automation.status === "active";
   const isDisabled = automation.status === "disabled";
 
@@ -37,19 +40,19 @@ export function AutomationCard({
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-semibold text-stone-900">{automation.title}</p>
         <StatusBadge
-          label={isActive ? "Active" : isDisabled ? "Disabled" : "Paused"}
+          label={isActive ? dict.statusActive : isDisabled ? dict.statusDisabled : dict.statusPaused}
           tone={isActive ? "success" : isDisabled ? "neutral" : "warning"}
         />
       </div>
 
       <dl className="grid grid-cols-2 gap-x-3 gap-y-3">
-        <Field label="Occasion" value={automation.occasionLabel} />
-        <Field label="Category" value={automation.categoryName} />
-        <Field label="Send Time" value={automation.sendTimeLabel} />
+        <Field label={dict.occasion} value={automation.occasionLabel} />
+        <Field label={dict.category} value={automation.categoryName} />
+        <Field label={dict.sendTime} value={automation.sendTimeLabel} />
       </dl>
 
       <div>
-        <p className="text-xs text-stone-500">Channels</p>
+        <p className="text-xs text-stone-500">{dict.channels}</p>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           {automation.channels.length > 0 ? (
             automation.channels.map((channel) => (
@@ -62,7 +65,7 @@ export function AutomationCard({
               </span>
             ))
           ) : (
-            <span className="text-xs text-stone-500">No channel configured</span>
+            <span className="text-xs text-stone-500">{dict.noChannelConfigured}</span>
           )}
         </div>
       </div>
@@ -74,7 +77,7 @@ export function AutomationCard({
           disabled={busy}
           className={compactSecondaryButtonClass}
         >
-          Edit
+          {dict.edit}
         </button>
         <button
           type="button"
@@ -82,7 +85,7 @@ export function AutomationCard({
           disabled={busy || isDisabled}
           className={compactSecondaryButtonClass}
         >
-          {isActive ? "Pause" : "Resume"}
+          {isActive ? dict.pause : dict.resume}
         </button>
         <button
           type="button"
@@ -90,7 +93,7 @@ export function AutomationCard({
           disabled={busy}
           className={`${compactSecondaryButtonClass} border-red-200 text-red-700 hover:bg-red-50`}
         >
-          Delete
+          {dict.delete}
         </button>
       </div>
     </div>

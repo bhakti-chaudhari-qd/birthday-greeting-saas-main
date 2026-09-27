@@ -9,6 +9,8 @@ import { Drawer } from "@/components/ui/drawer";
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/page";
 import type { CategoryAutomationSettingsView } from "@/lib/automation/category-settings";
+import { getGreetingRoutesDict } from "@/lib/i18n/dictionaries/greeting-routes";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 import { CategoryMultiSelect } from "./category-multi-select";
 import { buildRulePayload, toPayloadRule, type ChannelSelection } from "./rule-utils";
@@ -45,10 +47,10 @@ function toHhmm(hour: number, minute: number): string {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
-function formatHhmmLabel(hhmm: string): string {
+function formatHhmmLabel(hhmm: string, notSetLabel: string): string {
   const [h, m] = hhmm.split(":").map(Number);
   if (h === undefined || m === undefined || Number.isNaN(h) || Number.isNaN(m)) {
-    return "Not set";
+    return notSetLabel;
   }
   const period = h >= 12 ? "PM" : "AM";
   const hour12 = h % 12 === 0 ? 12 : h % 12;
@@ -63,6 +65,7 @@ export function AutomationDrawer({
   settingsByOccasion,
   onSaved,
 }: AutomationDrawerProps) {
+  const dict = getGreetingRoutesDict(useLocale()).drawer;
   const isEdit = automation !== null;
 
   const { occasions } = useOccasions();
@@ -142,18 +145,18 @@ export function AutomationDrawer({
       selectedCategories.length === 1
         ? selectedCategories[0]!.name
         : selectedCategories.length > 1
-          ? `${selectedCategories.length} categories`
+          ? dict.categoriesCount(selectedCategories.length)
           : "",
-    [selectedCategories],
+    [selectedCategories, dict],
   );
   const categoryReviewLabel = useMemo(
     () =>
       selectedCategories.length === 1
         ? selectedCategories[0]!.name
         : selectedCategories.length > 1
-          ? `${selectedCategories.length} Categories`
+          ? dict.categoriesCountCaps(selectedCategories.length)
           : "",
-    [selectedCategories],
+    [selectedCategories, dict],
   );
   const automationReviewLabel =
     occasionLabel && categoryReviewLabel
@@ -240,7 +243,7 @@ export function AutomationDrawer({
 
   async function handleSave() {
     if (!canSave) {
-      setError("Choose a category, at least one channel with a template, and a send time.");
+      setError(dict.errorChooseCategory);
       return;
     }
 
@@ -286,31 +289,31 @@ export function AutomationDrawer({
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not save automation.");
+        setError(body.error?.message ?? dict.errorSaveGeneric);
         return;
       }
 
       await onSaved(occasionId);
       onClose();
     } catch {
-      setError("Could not save automation. Check your connection and try again.");
+      setError(dict.errorSaveConnection);
     } finally {
       setSaving(false);
     }
   }
 
-  const title = isEdit ? `${categoryName} ${occasionLabel}` : "Create Automation";
+  const title = isEdit ? `${categoryName} ${occasionLabel}` : dict.createTitle;
 
   return (
     <Drawer
       open={open}
       onClose={onClose}
       title={title}
-      description={isEdit ? "Edit automation" : "New automation"}
+      description={isEdit ? dict.editDescription : dict.createDescription}
       footer={
         <>
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
-            Cancel
+            {dict.cancel}
           </button>
           <button
             type="button"
@@ -318,7 +321,7 @@ export function AutomationDrawer({
             onClick={() => void handleSave()}
             disabled={saving || !canSave}
           >
-            {saving ? "Saving…" : "Save Automation"}
+            {saving ? dict.saving : dict.save}
           </button>
         </>
       }
@@ -327,10 +330,10 @@ export function AutomationDrawer({
         {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
 
         <div className="flex flex-col gap-3">
-          <h3 className="text-sm font-semibold text-stone-900">Basic Information</h3>
+          <h3 className="text-sm font-semibold text-stone-900">{dict.basicInformation}</h3>
 
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Occasion</span>
+            <span className="font-medium text-stone-800">{dict.occasion}</span>
             {isEdit ? (
               <p className="mt-1 text-sm text-stone-700">{occasionLabel}</p>
             ) : (
@@ -349,7 +352,7 @@ export function AutomationDrawer({
           </label>
 
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Category</span>
+            <span className="font-medium text-stone-800">{dict.category}</span>
             {isEdit ? (
               <p className="mt-1 text-sm text-stone-700">{categoryName}</p>
             ) : (
@@ -362,7 +365,7 @@ export function AutomationDrawer({
                     setChannelForm(emptyChannelForm());
                     setPreviews({});
                   }}
-                  label="Selected Categories"
+                  label={dict.selectedCategoriesLabel}
                 />
               </div>
             )}
@@ -370,14 +373,13 @@ export function AutomationDrawer({
 
           {alreadyConfigured ? (
             <InlineAlert tone="warning">
-              One or more selected categories already has a {occasionLabel} automation.
-              Edit the existing automation instead of creating a new one.
+              {dict.alreadyConfiguredWarning(occasionLabel)}
             </InlineAlert>
           ) : null}
         </div>
 
         <div className="flex flex-col gap-3 border-t border-stone-200 pt-4">
-          <h3 className="text-sm font-semibold text-stone-900">Delivery Channels</h3>
+          <h3 className="text-sm font-semibold text-stone-900">{dict.deliveryChannels}</h3>
 
           {CHANNELS.map((channel) => {
             const state = channelForm[channel];
@@ -406,24 +408,23 @@ export function AutomationDrawer({
                   <div className="mt-3 flex flex-col gap-3 pl-6">
                     {channel === "EMAIL" ? (
                       <p className="text-xs text-stone-500">
-                        Email Service: sent automatically through the platform&apos;s email
-                        provider - no setup needed.
+                        {dict.emailServiceNote}
                       </p>
                     ) : (
                       <p className="text-xs text-stone-500">
-                        {channel === "WHATSAPP" ? "Business Account" : "SMS Provider"}:{" "}
+                        {channel === "WHATSAPP" ? dict.businessAccount : dict.smsProvider}:{" "}
                         {providerConnected === null ? (
-                          "Checking…"
+                          dict.checking
                         ) : providerConnected ? (
-                          <span className="font-medium text-emerald-700">Connected</span>
+                          <span className="font-medium text-emerald-700">{dict.connected}</span>
                         ) : (
                           <>
-                            <span className="font-medium text-amber-700">Not connected</span> -{" "}
+                            <span className="font-medium text-amber-700">{dict.notConnected}</span> -{" "}
                             <Link
                               href="/dashboard/settings/channels"
                               className="font-medium text-primary hover:underline"
                             >
-                              set up in Settings
+                              {dict.setUpInSettings}
                             </Link>
                           </>
                         )}
@@ -431,13 +432,13 @@ export function AutomationDrawer({
                     )}
 
                     <label className="block text-sm">
-                      <span className="text-xs font-medium text-stone-700">Approved Template</span>
+                      <span className="text-xs font-medium text-stone-700">{dict.approvedTemplate}</span>
                       <select
                         className={`${inputClass} mt-1`}
                         value={state.templateId}
                         onChange={(event) => setChannelTemplate(channel, event.target.value)}
                       >
-                        <option value="">Choose a template</option>
+                        <option value="">{dict.chooseTemplate}</option>
                         {templates.map((template) => (
                           <option key={template.id} value={template.id}>
                             {template.name}
@@ -446,13 +447,13 @@ export function AutomationDrawer({
                       </select>
                       {templates.length === 0 ? (
                         <span className="mt-1 block text-xs text-stone-500">
-                          No approved {CHANNEL_LABEL[channel]} templates for the selected categories yet.
+                          {dict.noApprovedTemplates(CHANNEL_LABEL[channel])}
                         </span>
                       ) : null}
                     </label>
 
                     {previewLoading === channel ? (
-                      <p className="text-xs text-stone-500">Loading preview…</p>
+                      <p className="text-xs text-stone-500">{dict.loadingPreview}</p>
                     ) : preview ? (
                       <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
                         {preview.emailSubject ? (
@@ -473,15 +474,15 @@ export function AutomationDrawer({
             href="/dashboard/templates"
             className="text-xs font-medium text-primary hover:underline"
           >
-            Manage Templates
+            {dict.manageTemplates}
           </Link>
         </div>
 
         <div className="flex flex-col gap-3 border-t border-stone-200 pt-4">
-          <h3 className="text-sm font-semibold text-stone-900">Schedule</h3>
+          <h3 className="text-sm font-semibold text-stone-900">{dict.schedule}</h3>
 
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Send Time</span>
+            <span className="font-medium text-stone-800">{dict.sendTimeLabel}</span>
             <input
               type="time"
               className={`${inputClass} mt-1`}
@@ -491,32 +492,32 @@ export function AutomationDrawer({
           </label>
 
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Timezone</span>
-            <p className="mt-1 text-sm text-stone-700">India Standard Time (IST)</p>
+            <span className="font-medium text-stone-800">{dict.timezone}</span>
+            <p className="mt-1 text-sm text-stone-700">{dict.timezoneValue}</p>
           </label>
         </div>
 
         <div className="flex flex-col gap-2 border-t border-stone-200 pt-4">
-          <h3 className="text-sm font-semibold text-stone-900">Review</h3>
+          <h3 className="text-sm font-semibold text-stone-900">{dict.review}</h3>
           <dl className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-lg border border-stone-200 bg-stone-50 p-3">
-            <dt className="text-xs text-stone-500">Automation</dt>
+            <dt className="text-xs text-stone-500">{dict.automation}</dt>
             <dd className="text-right text-sm font-medium text-stone-800">
-              {automationReviewLabel || "—"}
+              {automationReviewLabel || dict.dash}
             </dd>
-            <dt className="text-xs text-stone-500">Category</dt>
-            <dd className="text-right text-sm font-medium text-stone-800">{categoryReviewLabel || "—"}</dd>
-            <dt className="text-xs text-stone-500">Occasion</dt>
+            <dt className="text-xs text-stone-500">{dict.category}</dt>
+            <dd className="text-right text-sm font-medium text-stone-800">{categoryReviewLabel || dict.dash}</dd>
+            <dt className="text-xs text-stone-500">{dict.occasion}</dt>
             <dd className="text-right text-sm font-medium text-stone-800">
               {occasionLabel}
             </dd>
-            <dt className="text-xs text-stone-500">Send Time</dt>
+            <dt className="text-xs text-stone-500">{dict.sendTimeLabel}</dt>
             <dd className="text-right text-sm font-medium text-stone-800">
-              {formatHhmmLabel(sendTime)}
+              {formatHhmmLabel(sendTime, dict.notSet)}
             </dd>
-            <dt className="col-span-2 text-xs text-stone-500">Channels</dt>
+            <dt className="col-span-2 text-xs text-stone-500">{dict.channelsLabel}</dt>
             <dd className="col-span-2 text-sm text-stone-800">
               {selectedChannels.length === 0 ? (
-                "—"
+                dict.dash
               ) : (
                 <ul className="flex flex-col gap-1">
                   {selectedChannels.map((channel) => (
@@ -524,7 +525,7 @@ export function AutomationDrawer({
                       <span className="font-medium">{CHANNEL_LABEL[channel]}</span>
                       <span className="text-stone-600">
                         {eligibleTemplatesFor(channel).find((t) => t.id === channelForm[channel].templateId)
-                          ?.name ?? "—"}
+                          ?.name ?? dict.dash}
                       </span>
                     </li>
                   ))}

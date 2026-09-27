@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass } from "@/components/ui/page";
+import { getGreetingRoutesDict } from "@/lib/i18n/dictionaries/greeting-routes";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export type AutomationTemplateType = "BIRTHDAY" | "ANNIVERSARY" | "CUSTOM";
 export type AutomationTemplateChannel = "SMS" | "WHATSAPP";
@@ -46,6 +48,7 @@ export function QuickCreateTemplate({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const dict = getGreetingRoutesDict(useLocale()).quickCreateTemplate;
 
   async function handleSuggestAi() {
     setAiLoading(true);
@@ -63,14 +66,14 @@ export function QuickCreateTemplate({
       });
       const body = await response.json();
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not suggest a message");
+        setError(body.error?.message ?? dict.errorSuggest);
         return;
       }
       if (typeof body.data?.body === "string" && body.data.body.trim()) {
         setMessage(body.data.body);
       }
     } catch {
-      setError("Could not suggest a message");
+      setError(dict.errorSuggest);
     } finally {
       setAiLoading(false);
     }
@@ -78,11 +81,11 @@ export function QuickCreateTemplate({
 
   async function handleCreate() {
     if (!name.trim() || !message.trim()) {
-      setError("Name and message are required");
+      setError(dict.errorNameMessageRequired);
       return;
     }
     if (channel === "WHATSAPP" && (!providerTemplateName.trim() || !language.trim())) {
-      setError("Provider template name and language are required");
+      setError(dict.errorProviderTemplateRequired);
       return;
     }
 
@@ -111,7 +114,7 @@ export function QuickCreateTemplate({
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not create this message");
+        setError(body.error?.message ?? dict.errorCreateFailed);
         return;
       }
 
@@ -125,7 +128,7 @@ export function QuickCreateTemplate({
       });
       setOpen(false);
     } catch {
-      setError("Could not create this message");
+      setError(dict.errorCreateFailed);
     } finally {
       setSaving(false);
     }
@@ -138,7 +141,7 @@ export function QuickCreateTemplate({
         className="text-sm font-medium text-primary underline"
         onClick={() => setOpen(true)}
       >
-        Create a {channel === "SMS" ? "text message" : "WhatsApp message"}
+        {dict.createLink(channel)}
       </button>
     );
   }
@@ -158,10 +161,10 @@ export function QuickCreateTemplate({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-stone-900">
-            New {occasionLabel} {channel} message
+            {dict.newMessageTitle(occasionLabel, channel)}
           </p>
           <p className="mt-1 text-xs text-stone-600">
-            Type, channel, and Active are set automatically.
+            {dict.autoSetNote}
           </p>
         </div>
         <button
@@ -172,12 +175,12 @@ export function QuickCreateTemplate({
             setError(null);
           }}
         >
-          Cancel
+          {dict.cancel}
         </button>
       </div>
 
       <label className="block text-sm">
-        <span className="font-medium text-stone-800">Name</span>
+        <span className="font-medium text-stone-800">{dict.name}</span>
         <input
           className={`${inputClass} mt-1`}
           value={name}
@@ -190,18 +193,18 @@ export function QuickCreateTemplate({
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm">
             <span className="font-medium text-stone-800">
-              Provider template name
+              {dict.providerTemplateName}
             </span>
             <input
               className={`${inputClass} mt-1`}
               value={providerTemplateName}
               onChange={(event) => setProviderTemplateName(event.target.value)}
-              placeholder="Exact name from your provider"
+              placeholder={dict.providerTemplatePlaceholder}
               required
             />
           </label>
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Language</span>
+            <span className="font-medium text-stone-800">{dict.language}</span>
             <input
               className={`${inputClass} mt-1`}
               value={language}
@@ -216,8 +219,8 @@ export function QuickCreateTemplate({
       <label className="block text-sm">
         <span className="font-medium text-stone-800">
           {channel === "WHATSAPP"
-            ? "Preview text (not sent in Live mode)"
-            : "Message"}
+            ? dict.previewTextLabel
+            : dict.messageLabel}
         </span>
         <textarea
           className={`${inputClass} mt-1 min-h-24`}
@@ -231,18 +234,17 @@ export function QuickCreateTemplate({
           onClick={() => void handleSuggestAi()}
           className="mt-2 text-xs font-medium text-primary underline disabled:opacity-60"
         >
-          {aiLoading ? "Generating…" : "Suggest with AI"}
+          {aiLoading ? dict.generating : dict.suggestWithAi}
         </button>
       </label>
 
       {channel === "WHATSAPP" ? (
         <p className="text-xs text-stone-600">
-          Live WhatsApp sends the provider-approved message attached to the
-          template name above.
+          {dict.whatsappLiveNote}
         </p>
       ) : (
         <p className="text-xs text-stone-600">
-          Ready for Practice mode. Live SMS may also require DLT setup.
+          {dict.smsPracticeNote}
         </p>
       )}
 
@@ -254,7 +256,7 @@ export function QuickCreateTemplate({
         className={primaryButtonClass}
         onClick={() => void handleCreate()}
       >
-        {saving ? "Creating…" : "Create and select"}
+        {saving ? dict.creating : dict.createAndSelect}
       </button>
     </div>
   );

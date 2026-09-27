@@ -9,6 +9,11 @@ import { fetchOrganizationCategories } from "@/lib/client/organization-reference
 import { inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
 import { normalizeMobile } from "@/lib/contacts/mobile";
+import {
+  getGreetingRoutesDict,
+  type GreetingRoutesDict,
+} from "@/lib/i18n/dictionaries/greeting-routes";
+import { useLocale } from "@/lib/i18n/use-locale";
 import { chunkIds, MANUAL_SEND_API_BATCH_SIZE } from "@/lib/queue/manual-send-batches";
 
 import { CategoryMultiSelect } from "./category-multi-select";
@@ -51,16 +56,6 @@ type CategoryAudienceSummary = {
 const CHANNELS: Channel[] = ["WHATSAPP", "EMAIL", "SMS"];
 const SEARCH_DEBOUNCE_MS = 250;
 const FORM_SECTION_CLASS = "rounded-xl border border-stone-200/90 bg-white p-4 shadow-sm sm:p-5";
-const QUICK_LIST_PLACEHOLDER = `Paste recipients here...
-
-Name, Phone Number
-Name Phone Number
-Phone Number
-
-Supports:
-- Name + Number
-- Number only
-- Excel/Google Sheets paste`;
 
 function emptyChannelForm(): Record<Channel, ChannelFormState> {
   return {
@@ -70,7 +65,10 @@ function emptyChannelForm(): Record<Channel, ChannelFormState> {
   };
 }
 
-async function collectCategoryContactIds(categoryIds: string[]): Promise<CategoryAudienceSummary> {
+async function collectCategoryContactIds(
+  categoryIds: string[],
+  dict: GreetingRoutesDict["manualQuickSend"],
+): Promise<CategoryAudienceSummary> {
   const contactIds = new Set<string>();
   const categoryCounts: Record<string, number> = {};
 
@@ -87,7 +85,7 @@ async function collectCategoryContactIds(categoryIds: string[]): Promise<Categor
       const response = await fetch(`/api/v1/contacts?${params.toString()}`);
       const body = await response.json();
       if (!response.ok) {
-        throw new Error(body.error?.message ?? "Could not load recipients.");
+        throw new Error(body.error?.message ?? dict.failedToLoadRecipients);
       }
       categoryCounts[selectedCategoryId] = body.meta?.total ?? 0;
       for (const contact of body.data as Array<{ id: string }>) {
@@ -101,7 +99,10 @@ async function collectCategoryContactIds(categoryIds: string[]): Promise<Categor
   return { categoryCounts, contactIds: Array.from(contactIds) };
 }
 
-function parseQuickListInput(input: string): ParsedQuickList {
+function parseQuickListInput(
+  input: string,
+  dict: GreetingRoutesDict["manualQuickSend"],
+): ParsedQuickList {
   const valid: QuickListRecipient[] = [];
   const invalid: InvalidQuickListEntry[] = [];
   const duplicates: QuickListRecipient[] = [];
@@ -121,13 +122,13 @@ function parseQuickListInput(input: string): ParsedQuickList {
           : "";
 
     if (!mobileText) {
-      invalid.push({ line, reason: "Invalid phone number" });
+      invalid.push({ line, reason: dict.invalidPhoneNumber });
       continue;
     }
 
     try {
       const mobile = normalizeMobile(mobileText);
-      const name = nameText || "Unnamed Recipient";
+      const name = nameText || dict.unnamedRecipient;
       if (seenMobiles.has(mobile)) {
         duplicates.push({ name, mobile });
         continue;
@@ -137,7 +138,7 @@ function parseQuickListInput(input: string): ParsedQuickList {
     } catch (error) {
       invalid.push({
         line,
-        reason: error instanceof Error ? error.message : "Invalid phone number",
+        reason: error instanceof Error ? error.message : dict.invalidPhoneNumber,
       });
     }
   }
@@ -146,6 +147,7 @@ function parseQuickListInput(input: string): ParsedQuickList {
 }
 
 export function ManualQuickSend() {
+  const dict = getGreetingRoutesDict(useLocale()).manualQuickSend;
   const { showToast } = useToast();
   const { occasions } = useOccasions();
 
@@ -215,7 +217,10 @@ export function ManualQuickSend() {
       }
       setLoadingCategoryAudience(true);
       try {
-        const summary = await collectCategoryContactIds(selectedCategories.map((category) => category.id));
+        const summary = await collectCategoryContactIds(
+          selectedCategories.map((category) => category.id),
+          dict,
+        );
         if (!cancelled) {
           setCategoryAudienceSummary(summary);
         }
@@ -338,8 +343,8 @@ export function ManualQuickSend() {
   );
   const selectedRecipientCount = selectedRecipients.length;
   const parsedQuickList = useMemo(
-    () => parseQuickListInput(debouncedQuickListInput),
-    [debouncedQuickListInput],
+    () => parseQuickListInput(debouncedQuickListInput, dict),
+    [debouncedQuickListInput, dict],
   );
   const quickListRecipientCount = parsedQuickList.valid.length;
   const recipientReady =
@@ -356,15 +361,15 @@ export function ManualQuickSend() {
 
   async function handlePreview() {
     if (recipientMode === "category" && selectedCategoryCount === 0) {
-      setError("Please select at least one category.");
+      setError(dict.errorSelectCategory);
       return;
     }
     if (recipientMode === "individual" && selectedRecipientCount === 0) {
-      setError("Please select at least one contact.");
+      setError(dict.errorSelectContact);
       return;
     }
     if (recipientMode === "quickList" && quickListRecipientCount === 0) {
-      setError("Please enter at least one valid recipient.");
+      setError(dict.errorEnterRecipient);
       return;
     }
     if (!canAct) return;
@@ -394,7 +399,7 @@ export function ManualQuickSend() {
       }
       setPreviews(next);
     } catch {
-      setError("Could not load a preview. Check your connection and try again.");
+      setError(dict.errorPreviewLoad);
     } finally {
       setPreviewing(false);
     }
@@ -402,15 +407,15 @@ export function ManualQuickSend() {
 
   async function handleSend() {
     if (recipientMode === "category" && selectedCategoryCount === 0) {
-      setError("Please select at least one category.");
+      setError(dict.errorSelectCategory);
       return;
     }
     if (recipientMode === "individual" && selectedRecipientCount === 0) {
-      setError("Please select at least one contact.");
+      setError(dict.errorSelectContact);
       return;
     }
     if (recipientMode === "quickList" && quickListRecipientCount === 0) {
-      setError("Please enter at least one valid recipient.");
+      setError(dict.errorEnterRecipient);
       return;
     }
     if (!canAct) return;
@@ -428,7 +433,7 @@ export function ManualQuickSend() {
       const quickRecipients = recipientMode === "quickList" ? parsedQuickList.valid : [];
       const recipientCount = contactIds.length + quickRecipients.length;
       if (recipientCount === 0) {
-        setError("No matching contacts to send to.");
+        setError(dict.errorNoMatchingContacts);
         return;
       }
 
@@ -456,7 +461,7 @@ export function ManualQuickSend() {
           const body = await response.json();
           if (!response.ok) {
             throw new Error(
-              body.error?.message ?? `Could not send ${CHANNEL_LABEL[channel]} messages.`,
+              body.error?.message ?? dict.errorSendChannel(CHANNEL_LABEL[channel]),
             );
           }
           created += body.data?.creation?.created ?? 0;
@@ -465,13 +470,13 @@ export function ManualQuickSend() {
       }
 
       const summary = selectedChannels
-        .map((channel) => `${perChannelCreated[channel] ?? 0} via ${CHANNEL_LABEL[channel]}`)
+        .map((channel) => dict.summaryPart(perChannelCreated[channel] ?? 0, CHANNEL_LABEL[channel]))
         .join(", ");
-      setSendSummary(`Sent to ${recipientCount} recipient${recipientCount === 1 ? "" : "s"}: ${summary}.`);
-      showToast("Messages sent.");
+      setSendSummary(dict.sentSummary(recipientCount, summary));
+      showToast(dict.messagesSentToast);
       setPreviews({});
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send these messages.");
+      setError(err instanceof Error ? err.message : dict.errorSendGeneric);
     } finally {
       setSending(false);
     }
@@ -480,9 +485,9 @@ export function ManualQuickSend() {
   return (
     <div className="flex w-full max-w-5xl flex-col gap-5">
       <div>
-        <h2 className="text-base font-semibold text-stone-900">Send Now</h2>
+        <h2 className="text-base font-semibold text-stone-900">{dict.heading}</h2>
         <p className="mt-1 text-sm text-stone-500">
-          Send a one-time greeting now, no scheduling involved.
+          {dict.subtitle}
         </p>
       </div>
 
@@ -492,7 +497,7 @@ export function ManualQuickSend() {
       <section className={FORM_SECTION_CLASS}>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-sm font-medium text-stone-800">Recipients</span>
+          <span className="text-sm font-medium text-stone-800">{dict.recipients}</span>
           <div className="flex gap-4 text-sm text-stone-700">
           <label className="flex items-center gap-1.5">
             <input
@@ -501,7 +506,7 @@ export function ManualQuickSend() {
               checked={recipientMode === "category"}
               onChange={() => setRecipientMode("category")}
             />
-            Categories
+            {dict.modeCategories}
           </label>
           <label className="flex items-center gap-1.5">
             <input
@@ -510,7 +515,7 @@ export function ManualQuickSend() {
               checked={recipientMode === "individual"}
               onChange={() => setRecipientMode("individual")}
             />
-            Saved Contacts
+            {dict.modeIndividual}
           </label>
           <label className="flex items-center gap-1.5">
             <input
@@ -519,7 +524,7 @@ export function ManualQuickSend() {
               checked={recipientMode === "quickList"}
               onChange={() => setRecipientMode("quickList")}
             />
-            Quick List
+            {dict.modeQuickList}
           </label>
           </div>
         </div>
@@ -538,16 +543,14 @@ export function ManualQuickSend() {
 
             <p className="text-xs leading-relaxed text-stone-500">
               {selectedCategoryCount === 0
-                ? "No categories selected"
+                ? dict.noCategoriesSelected
                 : (
                   <>
-                    {selectedCategoryCount} Categor{selectedCategoryCount === 1 ? "y" : "ies"} Selected
+                    {dict.categoriesSelectedCount(selectedCategoryCount)}
                     <br />
                     {loadingCategoryAudience
-                      ? "Counting unique recipients..."
-                      : `${categoryAudienceSummary.contactIds.length} Unique Recipient${
-                          categoryAudienceSummary.contactIds.length === 1 ? "" : "s"
-                        }`}
+                      ? dict.countingUniqueRecipients
+                      : dict.uniqueRecipients(categoryAudienceSummary.contactIds.length)}
                   </>
                 )}
             </p>
@@ -555,12 +558,12 @@ export function ManualQuickSend() {
 
           <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-700">
             {selectedCategoryCount === 0 ? (
-              "No categories selected"
+              dict.noCategoriesSelected
             ) : loadingCategoryAudience ? (
-              "Counting recipients..."
+              dict.countingRecipients
             ) : (
               <>
-                <span className="font-medium text-stone-900">Categories Selected</span>
+                <span className="font-medium text-stone-900">{dict.categoriesSelectedHeading}</span>
                 <div className="mt-2 flex flex-col gap-1 text-xs text-stone-600">
                   {selectedCategories.map((category) => {
                     const count = categoryAudienceSummary.categoryCounts[category.id] ?? 0;
@@ -569,17 +572,16 @@ export function ManualQuickSend() {
                       <div key={category.id} className="flex items-center justify-between gap-3">
                         <span className="min-w-0 truncate">{category.name}</span>
                         <span className="shrink-0">
-                          {count} Contact{count === 1 ? "" : "s"}
+                          {dict.contactsCount(count)}
                         </span>
                       </div>
                     );
                   })}
                 </div>
                 <div className="mt-2 border-t border-stone-200 pt-2">
-                  <span className="font-medium text-stone-900">Total Unique Recipients</span>
+                  <span className="font-medium text-stone-900">{dict.totalUniqueRecipients}</span>
                   <br />
-                  {categoryAudienceSummary.contactIds.length} Contact
-                  {categoryAudienceSummary.contactIds.length === 1 ? "" : "s"}
+                  {dict.contactsCount(categoryAudienceSummary.contactIds.length)}
                 </div>
               </>
             )}
@@ -588,7 +590,7 @@ export function ManualQuickSend() {
         ) : recipientMode === "individual" ? (
           <div className="flex flex-col gap-3">
             <div>
-              <span className="text-xs font-medium text-stone-700">Selected Contacts</span>
+              <span className="text-xs font-medium text-stone-700">{dict.selectedContacts}</span>
               {selectedRecipients.length > 0 ? (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {selectedRecipients.map((recipient) => (
@@ -601,7 +603,7 @@ export function ManualQuickSend() {
                         type="button"
                         className="rounded-full px-1 text-stone-500 outline-none hover:bg-stone-200 hover:text-stone-800 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
                         onClick={() => removeRecipient(recipient.id)}
-                        aria-label={`Remove ${recipient.name}`}
+                        aria-label={dict.removeContactAria(recipient.name)}
                       >
                         x
                       </button>
@@ -609,14 +611,14 @@ export function ManualQuickSend() {
                   ))}
                 </div>
               ) : (
-                <p className="mt-1 text-xs text-stone-500">No contacts selected</p>
+                <p className="mt-1 text-xs text-stone-500">{dict.noContactsSelected}</p>
               )}
             </div>
 
             <div className="relative">
               <input
                 className={inputClass}
-                placeholder="Search contacts..."
+                placeholder={dict.searchContactsPlaceholder}
                 value={recipientQuery}
                 onChange={(event) => setRecipientQuery(event.target.value)}
               />
@@ -635,7 +637,7 @@ export function ManualQuickSend() {
                             className="mt-1"
                             checked={selected}
                             onChange={() => toggleRecipientSelection(option)}
-                            aria-label={`Select ${option.name}`}
+                            aria-label={dict.selectContactAria(option.name)}
                           />
                           <span className="flex min-w-0 flex-col">
                             <span className="font-medium text-stone-900">{option.name}</span>
@@ -651,15 +653,15 @@ export function ManualQuickSend() {
 
             <p className="text-xs text-stone-500">
               {selectedRecipientCount === 0
-                ? "No contacts selected"
-                : `${selectedRecipientCount} Contact${selectedRecipientCount === 1 ? "" : "s"} Selected`}
+                ? dict.noContactsSelected
+                : dict.contactsSelectedCount(selectedRecipientCount)}
             </p>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
             <label className="block text-sm">
               <span className="flex items-center justify-between gap-3">
-                <span className="text-xs font-medium text-stone-700">Quick List</span>
+                <span className="text-xs font-medium text-stone-700">{dict.quickListLabel}</span>
                 {quickListInput ? (
                   <button
                     type="button"
@@ -670,13 +672,13 @@ export function ManualQuickSend() {
                       setPreviews({});
                     }}
                   >
-                    Clear List
+                    {dict.clearList}
                   </button>
                 ) : null}
               </span>
               <textarea
                 className={`${inputClass} mt-2 min-h-56 resize-y`}
-                placeholder={QUICK_LIST_PLACEHOLDER}
+                placeholder={dict.quickListPlaceholder}
                 value={quickListInput}
                 onChange={(event) => setQuickListInput(event.target.value)}
               />
@@ -684,7 +686,7 @@ export function ManualQuickSend() {
 
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
               <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5">
-                <div className="text-xs font-medium text-stone-700">Recipients</div>
+                <div className="text-xs font-medium text-stone-700">{dict.recipientsHeading}</div>
                 {parsedQuickList.valid.length > 0 ? (
                   <div className="mt-2 max-h-64 overflow-y-auto rounded-lg border border-stone-200 bg-white">
                     {parsedQuickList.valid.slice(0, 100).map((recipient, index) => (
@@ -700,33 +702,33 @@ export function ManualQuickSend() {
                     ))}
                     {parsedQuickList.valid.length > 100 ? (
                       <div className="px-3 py-2 text-xs text-stone-500">
-                        +{parsedQuickList.valid.length - 100} more valid recipients
+                        {dict.moreValidRecipients(parsedQuickList.valid.length - 100)}
                       </div>
                     ) : null}
                   </div>
                 ) : (
-                  <p className="mt-1 text-xs text-stone-500">No valid recipients yet</p>
+                  <p className="mt-1 text-xs text-stone-500">{dict.noValidRecipientsYet}</p>
                 )}
               </div>
 
               <div className="flex flex-col gap-3">
                 <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-700">
                   <span className="font-medium text-stone-900">
-                    Recipients Ready: {quickListRecipientCount}
+                    {dict.recipientsReady(quickListRecipientCount)}
                   </span>
                   <br />
-                  Invalid Entries: {parsedQuickList.invalid.length}
+                  {dict.invalidEntriesCount(parsedQuickList.invalid.length)}
                   {parsedQuickList.duplicates.length > 0 ? (
                     <>
                       <br />
-                      Duplicate Entries Ignored: {parsedQuickList.duplicates.length}
+                      {dict.duplicatesIgnored(parsedQuickList.duplicates.length)}
                     </>
                   ) : null}
                 </div>
 
                 {parsedQuickList.invalid.length > 0 ? (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
-                    <div className="text-xs font-medium text-amber-950">Invalid Entries</div>
+                    <div className="text-xs font-medium text-amber-950">{dict.invalidEntriesHeading}</div>
                     <div className="mt-2 flex max-h-44 flex-col gap-2 overflow-y-auto">
                       {parsedQuickList.invalid.slice(0, 25).map((entry, index) => (
                         <div key={`${entry.line}-${index}`} className="text-xs text-amber-950">
@@ -736,7 +738,7 @@ export function ManualQuickSend() {
                       ))}
                       {parsedQuickList.invalid.length > 25 ? (
                         <div className="text-xs text-amber-900">
-                          +{parsedQuickList.invalid.length - 25} more invalid entries
+                          {dict.moreInvalidEntries(parsedQuickList.invalid.length - 25)}
                         </div>
                       ) : null}
                     </div>
@@ -752,7 +754,7 @@ export function ManualQuickSend() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
       <section className={FORM_SECTION_CLASS}>
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Occasion</span>
+          <span className="font-medium text-stone-800">{dict.occasion}</span>
           <select
             className={`${inputClass} mt-2`}
             value={occasionId}
@@ -769,7 +771,7 @@ export function ManualQuickSend() {
 
       <section className={FORM_SECTION_CLASS}>
       <div className="flex flex-col gap-3">
-        <span className="text-sm font-medium text-stone-800">Delivery Channels</span>
+        <span className="text-sm font-medium text-stone-800">{dict.deliveryChannels}</span>
         <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
         {CHANNELS.map((channel) => {
           const state = channelForm[channel];
@@ -795,9 +797,9 @@ export function ManualQuickSend() {
 
       <section className={FORM_SECTION_CLASS}>
         <div className="flex flex-col gap-3">
-          <span className="text-sm font-medium text-stone-800">Templates</span>
+          <span className="text-sm font-medium text-stone-800">{dict.templatesHeading}</span>
           {selectedChannels.length === 0 ? (
-            <p className="text-sm text-stone-500">Choose at least one delivery channel.</p>
+            <p className="text-sm text-stone-500">{dict.chooseAtLeastOneChannel}</p>
           ) : (
             <div className="grid gap-3 lg:grid-cols-2">
               {selectedChannels.map((channel) => {
@@ -809,14 +811,14 @@ export function ManualQuickSend() {
                   <div key={channel} className="rounded-lg border border-stone-200 p-3">
                     <label className="block text-sm">
                       <span className="text-xs font-medium text-stone-700">
-                        {CHANNEL_LABEL[channel]} Template
+                        {dict.templateLabel(CHANNEL_LABEL[channel])}
                       </span>
                       <select
                         className={`${inputClass} mt-1`}
                         value={state.templateId}
                         onChange={(event) => setChannelTemplate(channel, event.target.value)}
                       >
-                        <option value="">Choose a template</option>
+                        <option value="">{dict.chooseTemplate}</option>
                         {templates.map((template) => (
                           <option key={template.id} value={template.id}>
                             {template.name}
@@ -825,7 +827,7 @@ export function ManualQuickSend() {
                       </select>
                       {templates.length === 0 ? (
                         <span className="mt-1 block text-xs text-stone-500">
-                          No approved {CHANNEL_LABEL[channel]} templates yet.
+                          {dict.noApprovedTemplatesYet(CHANNEL_LABEL[channel])}
                         </span>
                       ) : null}
                     </label>
@@ -850,7 +852,7 @@ export function ManualQuickSend() {
           onClick={() => void handlePreview()}
           disabled={actionControlsDisabled || previewing}
         >
-          {previewing ? "Loading preview..." : "Preview"}
+          {previewing ? dict.loadingPreview : dict.preview}
         </button>
         <button
           type="button"
@@ -858,7 +860,7 @@ export function ManualQuickSend() {
           onClick={() => void handleSend()}
           disabled={actionControlsDisabled || sending}
         >
-          {sending ? "Sending..." : "Send Now"}
+          {sending ? dict.sending : dict.sendNow}
         </button>
       </div>
     </div>

@@ -3,6 +3,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { inputClass } from "@/components/ui/page";
+import { getGreetingRoutesDict } from "@/lib/i18n/dictionaries/greeting-routes";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 import type { OrgCategory } from "./types";
 
@@ -20,11 +22,15 @@ export function CategoryMultiSelect({
   categories,
   selectedCategories,
   onChange,
-  label = "Selected Categories",
-  emptyLabel = "No categories selected",
-  placeholder = "Search categories...",
+  label,
+  emptyLabel,
+  placeholder,
   maxVisibleChips = 3,
 }: CategoryMultiSelectProps) {
+  const dict = getGreetingRoutesDict(useLocale()).categoryMultiSelect;
+  const resolvedLabel = label ?? dict.defaultLabel;
+  const resolvedEmptyLabel = emptyLabel ?? dict.emptyLabel;
+  const resolvedPlaceholder = placeholder ?? dict.placeholder;
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const listboxId = useId();
@@ -106,7 +112,7 @@ export function CategoryMultiSelect({
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <div>
-        <span className="text-xs font-medium text-stone-700">{label}</span>
+        <span className="text-xs font-medium text-stone-700">{resolvedLabel}</span>
         {selectedCategories.length > 0 ? (
           <div className="mt-2 flex flex-wrap gap-2">
             {selectedChips.map((category) => (
@@ -119,7 +125,7 @@ export function CategoryMultiSelect({
                   type="button"
                   className="rounded-full px-1 text-stone-500 outline-none hover:bg-stone-200 hover:text-stone-800 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
                   onClick={() => removeCategory(category.id)}
-                  aria-label={`Remove ${category.name}`}
+                  aria-label={dict.removeAria(category.name)}
                 >
                   x
                 </button>
@@ -127,19 +133,19 @@ export function CategoryMultiSelect({
             ))}
             {hiddenSelectedCount > 0 ? (
               <span className="inline-flex items-center rounded-full px-1 py-1 text-xs font-medium text-stone-500">
-                +{hiddenSelectedCount} more
+                {dict.moreCount(hiddenSelectedCount)}
               </span>
             ) : null}
           </div>
         ) : (
-          <p className="mt-1 text-xs text-stone-500">{emptyLabel}</p>
+          <p className="mt-1 text-xs text-stone-500">{resolvedEmptyLabel}</p>
         )}
       </div>
 
       <div ref={rootRef} className="relative">
         <input
           className={`${inputClass} pr-9`}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           value={query}
           onClick={() => setOpen((current) => !current)}
           onChange={(event) => setQuery(event.target.value)}
@@ -152,7 +158,7 @@ export function CategoryMultiSelect({
           type="button"
           className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-xs text-stone-500 outline-none hover:bg-stone-100 hover:text-stone-800 focus-visible:ring-2 focus-visible:ring-primary"
           onClick={() => setOpen((current) => !current)}
-          aria-label={open ? "Close categories" : "Open categories"}
+          aria-label={open ? dict.closeCategories : dict.openCategories}
         >
           v
         </button>
@@ -168,10 +174,10 @@ export function CategoryMultiSelect({
                 type="checkbox"
                 checked={allSelected}
                 onChange={toggleAllCategories}
-                aria-label="Select all categories"
+                aria-label={dict.selectAllAria}
               />
               <span className="min-w-0 truncate font-medium text-stone-900">
-                Select All
+                {dict.selectAll}
               </span>
             </label>
             <div className="border-t border-stone-200" />
@@ -187,7 +193,7 @@ export function CategoryMultiSelect({
                           type="checkbox"
                           checked={selected}
                           onChange={() => toggleCategory(category)}
-                          aria-label={`Select ${category.name}`}
+                          aria-label={dict.selectAria(category.name)}
                         />
                         <span className="min-w-0 truncate font-medium text-stone-900">
                           {category.name}
@@ -199,7 +205,7 @@ export function CategoryMultiSelect({
               </ul>
             ) : (
               <p className="px-3 py-2 text-xs text-stone-500">
-                No matching categories
+                {dict.noMatching}
               </p>
             )}
           </div>

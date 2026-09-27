@@ -19,6 +19,8 @@ import { fetchOrganizationCategories } from "@/lib/client/organization-reference
 import { PageHeader, Panel, inputClass, primaryButtonClass } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
 import type { CategoryAutomationSettingsView } from "@/lib/automation/category-settings";
+import { getGreetingRoutesDict } from "@/lib/i18n/dictionaries/greeting-routes";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type SettingsByOccasion = Partial<Record<string, CategoryAutomationSettingsView>>;
 
@@ -32,6 +34,7 @@ const AUTOMATION_STATUS_ORDER: Record<AutomationStatus, number> = {
 };
 
 export function SendMessagesPageClient() {
+  const dict = getGreetingRoutesDict(useLocale()).sendMessagesPage;
   const { showToast } = useToast();
   const { occasions } = useOccasions();
 
@@ -78,7 +81,7 @@ export function SendMessagesPageClient() {
         }
         setSettingsByOccasion(nextSettings);
       } catch {
-        setError("Could not load automations. Check your connection and try again.");
+        setError(dict.failedToLoad);
       } finally {
         setLoading(false);
       }
@@ -145,7 +148,7 @@ export function SendMessagesPageClient() {
     });
     const body = await response.json();
     if (!response.ok) {
-      throw new Error(body.error?.message ?? "Could not update automation.");
+      throw new Error(body.error?.message ?? dict.errorUpdate);
     }
     await refreshOccasion(occasionId);
   }
@@ -161,16 +164,16 @@ export function SendMessagesPageClient() {
           : withAllChannelsToggled(rule, !isActive),
       );
       await putRules(card.occasionId, nextRules);
-      showToast(isActive ? "Automation paused." : "Automation resumed.");
+      showToast(isActive ? dict.toastPaused : dict.toastResumed);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Could not update automation.", "error");
+      showToast(err instanceof Error ? err.message : dict.errorUpdate, "error");
     } finally {
       setBusyKey(null);
     }
   }
 
   async function handleDelete(card: AutomationCardData) {
-    if (!window.confirm(`Delete the ${card.title} automation?`)) {
+    if (!window.confirm(dict.confirmDelete(card.title))) {
       return;
     }
     setBusyKey(card.key);
@@ -180,9 +183,9 @@ export function SendMessagesPageClient() {
         rule.categoryId !== card.categoryId ? toPayloadRule(rule) : withAllChannelsCleared(rule),
       );
       await putRules(card.occasionId, nextRules);
-      showToast("Automation deleted.");
+      showToast(dict.toastDeleted);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Could not delete automation.", "error");
+      showToast(err instanceof Error ? err.message : dict.errorDelete, "error");
     } finally {
       setBusyKey(null);
     }
@@ -201,11 +204,11 @@ export function SendMessagesPageClient() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Send Messages"
-        description="Create and manage automated birthday and anniversary greetings."
+        title={dict.title}
+        description={dict.description}
         actions={
           <button type="button" className={primaryButtonClass} onClick={openCreateDrawer}>
-            + Create Automation
+            {dict.createAutomation}
           </button>
         }
       />
@@ -218,7 +221,7 @@ export function SendMessagesPageClient() {
           }`}
           onClick={() => setTab("scheduled")}
         >
-          Scheduled
+          {dict.tabScheduled}
         </button>
         <button
           type="button"
@@ -227,7 +230,7 @@ export function SendMessagesPageClient() {
           }`}
           onClick={() => setTab("manual")}
         >
-          Send Now
+          {dict.tabManual}
         </button>
       </div>
 
@@ -238,22 +241,22 @@ export function SendMessagesPageClient() {
           <Panel className="p-4">
             <div className="flex flex-col gap-3 sm:flex-row">
               <label className="block min-w-0 flex-1 text-sm">
-                <span className="sr-only">Search automations</span>
+                <span className="sr-only">{dict.searchAria}</span>
                 <input
                   className={inputClass}
-                  placeholder="Search by name or category"
+                  placeholder={dict.searchPlaceholder}
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                 />
               </label>
               <label className="block text-sm sm:w-44">
-                <span className="sr-only">Category filter</span>
+                <span className="sr-only">{dict.categoryFilterAria}</span>
                 <select
                   className={inputClass}
                   value={categoryFilter}
                   onChange={(event) => setCategoryFilter(event.target.value)}
                 >
-                  <option value="all">All categories</option>
+                  <option value="all">{dict.allCategories}</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -262,13 +265,13 @@ export function SendMessagesPageClient() {
                 </select>
               </label>
               <label className="block text-sm sm:w-44">
-                <span className="sr-only">Occasion filter</span>
+                <span className="sr-only">{dict.occasionFilterAria}</span>
                 <select
                   className={inputClass}
                   value={occasionFilter}
                   onChange={(event) => setOccasionFilter(event.target.value)}
                 >
-                  <option value="all">All occasions</option>
+                  <option value="all">{dict.allOccasions}</option>
                   {occasions.map((occasion) => (
                     <option key={occasion.id} value={occasion.id}>
                       {occasion.name}
@@ -277,7 +280,7 @@ export function SendMessagesPageClient() {
                 </select>
               </label>
               <label className="block text-sm sm:w-44">
-                <span className="sr-only">Status filter</span>
+                <span className="sr-only">{dict.statusFilterAria}</span>
                 <select
                   className={inputClass}
                   value={statusFilter}
@@ -285,33 +288,33 @@ export function SendMessagesPageClient() {
                     setStatusFilter(event.target.value as "all" | AutomationStatus)
                   }
                 >
-                  <option value="all">All statuses</option>
-                  <option value="active">Active</option>
-                  <option value="paused">Paused</option>
-                  <option value="disabled">Disabled</option>
+                  <option value="all">{dict.allStatuses}</option>
+                  <option value="active">{dict.statusActive}</option>
+                  <option value="paused">{dict.statusPaused}</option>
+                  <option value="disabled">{dict.statusDisabled}</option>
                 </select>
               </label>
             </div>
           </Panel>
 
           {loading ? (
-            <p className="p-6 text-sm text-stone-600">Loading automations…</p>
+            <p className="p-6 text-sm text-stone-600">{dict.loading}</p>
           ) : filteredCards.length === 0 ? (
             <Panel>
               <div className="flex flex-col items-start gap-4 px-5 py-10 sm:px-8">
                 <div className="max-w-md">
                   <h2 className="text-base font-semibold text-stone-900">
-                    {hasFilters ? "No matching automations" : "No automations created yet."}
+                    {hasFilters ? dict.noMatchingAutomations : dict.noAutomationsYet}
                   </h2>
                   <p className="mt-1.5 text-sm leading-relaxed text-stone-600">
                     {hasFilters
-                      ? "Try a different search or clear the filters."
-                      : "Create your first birthday or anniversary automation."}
+                      ? dict.tryDifferentSearch
+                      : dict.createFirstAutomation}
                   </p>
                 </div>
                 {!hasFilters ? (
                   <button type="button" className={primaryButtonClass} onClick={openCreateDrawer}>
-                    Create Automation
+                    {dict.createAutomation}
                   </button>
                 ) : null}
               </div>
@@ -343,7 +346,7 @@ export function SendMessagesPageClient() {
         settingsByOccasion={settingsByOccasion}
         onSaved={async (occasionId) => {
           await refreshOccasion(occasionId);
-          showToast(editingAutomation ? "Automation updated." : "Automation created.");
+          showToast(editingAutomation ? dict.toastUpdated : dict.toastCreated);
         }}
       />
     </div>
