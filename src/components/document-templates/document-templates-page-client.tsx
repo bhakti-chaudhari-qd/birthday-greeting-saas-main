@@ -12,6 +12,8 @@ import {
   inputClass,
   primaryButtonClass,
 } from "@/components/ui/page";
+import { getDocumentTemplatesDict } from "@/lib/i18n/dictionaries/document-templates";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 type DocumentTemplate = {
   id: string;
@@ -46,6 +48,7 @@ function formatBytes(byteLength: number): string {
  * implementation of this behavior.
  */
 export function DocumentTemplatesManager() {
+  const dict = getDocumentTemplatesDict(useLocale()).pageList;
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [occasions, setOccasions] = useState<OccasionOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,14 +66,12 @@ export function DocumentTemplatesManager() {
       const response = await fetch("/api/v1/document-templates");
       const body = await response.json();
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not load document templates.");
+        setError(body.error?.message ?? dict.couldNotLoad);
         return;
       }
       setTemplates(body.data as DocumentTemplate[]);
     } catch {
-      setError(
-        "Could not load document templates. Check your connection and try again.",
-      );
+      setError(dict.couldNotLoadConn);
     } finally {
       setLoading(false);
     }
@@ -99,7 +100,7 @@ export function DocumentTemplatesManager() {
     event.preventDefault();
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
-      setError("Choose a PDF file to upload.");
+      setError(dict.chooseFile);
       return;
     }
 
@@ -119,7 +120,7 @@ export function DocumentTemplatesManager() {
       });
       const body = await response.json();
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not upload PDF template.");
+        setError(body.error?.message ?? dict.couldNotUpload);
         return;
       }
 
@@ -129,7 +130,7 @@ export function DocumentTemplatesManager() {
       }
       await loadTemplates();
     } catch {
-      setError("Could not upload PDF template. Check your connection and try again.");
+      setError(dict.couldNotUploadConn);
     } finally {
       setUploading(false);
     }
@@ -155,20 +156,18 @@ export function DocumentTemplatesManager() {
       });
       const body = await response.json();
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not rename template.");
+        setError(body.error?.message ?? dict.couldNotRename);
         return;
       }
       cancelEdit();
       await loadTemplates();
     } catch {
-      setError("Could not rename template. Check your connection and try again.");
+      setError(dict.couldNotRenameConn);
     }
   }
 
   async function handleDelete(template: DocumentTemplate) {
-    const confirmed = window.confirm(
-      `Delete "${template.name}"? This cannot be undone.`,
-    );
+    const confirmed = window.confirm(dict.confirmDelete(template.name));
     if (!confirmed) {
       return;
     }
@@ -180,12 +179,12 @@ export function DocumentTemplatesManager() {
       });
       if (!response.ok) {
         const body = await response.json();
-        setError(body.error?.message ?? "Could not delete template.");
+        setError(body.error?.message ?? dict.couldNotDelete);
         return;
       }
       await loadTemplates();
     } catch {
-      setError("Could not delete template. Check your connection and try again.");
+      setError(dict.couldNotDeleteConn);
     }
   }
 
@@ -199,7 +198,7 @@ export function DocumentTemplatesManager() {
           onSubmit={handleUpload}
         >
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Name</span>
+            <span className="font-medium text-stone-800">{dict.nameLabel}</span>
             <input
               className={`${inputClass} mt-1`}
               value={uploadForm.name}
@@ -209,12 +208,12 @@ export function DocumentTemplatesManager() {
                   name: event.target.value,
                 }))
               }
-              placeholder="Birthday Card"
+              placeholder={dict.namePlaceholder}
               required
             />
           </label>
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">Occasion (optional)</span>
+            <span className="font-medium text-stone-800">{dict.occasionLabel}</span>
             <select
               className={`${inputClass} mt-1`}
               value={uploadForm.occasionId}
@@ -225,7 +224,7 @@ export function DocumentTemplatesManager() {
                 }))
               }
             >
-              <option value="">None</option>
+              <option value="">{dict.noneOption}</option>
               {occasions.map((occasion) => (
                 <option key={occasion.id} value={occasion.id}>
                   {occasion.name}
@@ -234,7 +233,7 @@ export function DocumentTemplatesManager() {
             </select>
           </label>
           <label className="block text-sm">
-            <span className="font-medium text-stone-800">PDF file</span>
+            <span className="font-medium text-stone-800">{dict.pdfFileLabel}</span>
             <input
               ref={fileInputRef}
               type="file"
@@ -245,7 +244,7 @@ export function DocumentTemplatesManager() {
           </label>
           <div className="flex items-end">
             <button type="submit" className={primaryButtonClass} disabled={uploading}>
-              {uploading ? "Uploading..." : "Upload"}
+              {uploading ? dict.uploading : dict.upload}
             </button>
           </div>
         </form>
@@ -253,22 +252,20 @@ export function DocumentTemplatesManager() {
 
       <Panel>
         {loading ? (
-          <p className="p-6 text-sm text-stone-600">Loading document templates...</p>
+          <p className="p-6 text-sm text-stone-600">{dict.loading}</p>
         ) : templates.length === 0 ? (
-          <p className="p-6 text-sm text-stone-600">
-            No document templates yet. Upload a PDF above to get started.
-          </p>
+          <p className="p-6 text-sm text-stone-600">{dict.empty}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-stone-200 bg-stone-50 text-stone-600">
                 <tr>
-                  <th className="px-4 py-2.5 font-medium">Name</th>
-                  <th className="px-4 py-2.5 font-medium">Occasion</th>
-                  <th className="px-4 py-2.5 font-medium">File</th>
-                  <th className="px-4 py-2.5 font-medium">Status</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.colName}</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.colOccasion}</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.colFile}</th>
+                  <th className="px-4 py-2.5 font-medium">{dict.colStatus}</th>
                   <th className="px-4 py-2.5 font-medium">
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">{dict.colActionsSr}</span>
                   </th>
                 </tr>
               </thead>
@@ -288,14 +285,14 @@ export function DocumentTemplatesManager() {
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-stone-600">
-                      {template.occasionName ?? "—"}
+                      {template.occasionName ?? dict.emptyDash}
                     </td>
                     <td className="px-4 py-2.5 text-stone-600">
                       {template.fileName} ({formatBytes(template.byteLength)})
                     </td>
                     <td className="px-4 py-2.5">
                       <StatusBadge
-                        label={template.isActive ? "Active" : "Inactive"}
+                        label={template.isActive ? dict.active : dict.inactive}
                         tone={template.isActive ? "success" : "neutral"}
                       />
                     </td>
@@ -308,14 +305,14 @@ export function DocumentTemplatesManager() {
                               className={compactSecondaryButtonClass}
                               onClick={() => void saveEdit(template.id)}
                             >
-                              Save
+                              {dict.save}
                             </button>
                             <button
                               type="button"
                               className={compactSecondaryButtonClass}
                               onClick={cancelEdit}
                             >
-                              Cancel
+                              {dict.cancel}
                             </button>
                           </>
                         ) : (
@@ -326,27 +323,27 @@ export function DocumentTemplatesManager() {
                               rel="noreferrer"
                               className={compactSecondaryButtonClass}
                             >
-                              Preview
+                              {dict.preview}
                             </a>
                             <a
                               href={`/dashboard/document-templates/${template.id}/edit`}
                               className={compactSecondaryButtonClass}
                             >
-                              Edit Layout
+                              {dict.editLayout}
                             </a>
                             <button
                               type="button"
                               className={compactSecondaryButtonClass}
                               onClick={() => startEdit(template)}
                             >
-                              Rename
+                              {dict.rename}
                             </button>
                             <button
                               type="button"
                               className={compactSecondaryButtonClass}
                               onClick={() => void handleDelete(template)}
                             >
-                              Delete
+                              {dict.delete}
                             </button>
                           </>
                         )}
@@ -365,14 +362,15 @@ export function DocumentTemplatesManager() {
 
 /** Standalone /document-templates route - kept for backward compatibility. */
 export function DocumentTemplatesPageClient() {
+  const dict = getDocumentTemplatesDict(useLocale()).pageList;
   return (
     <PageShell>
       <PageHeader
-        title="Document Templates"
-        description="Upload a base PDF design, lay out text and variables in the editor, then generate personalized PDFs."
+        title={dict.title}
+        description={dict.description}
         actions={
           <SecondaryButtonLink href="/dashboard/generated-documents">
-            Generated Documents
+            {dict.generatedDocuments}
           </SecondaryButtonLink>
         }
       />

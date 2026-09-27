@@ -1,6 +1,8 @@
 "use client";
 
 import { inputClass } from "@/components/ui/page";
+import { getDocumentTemplatesDict } from "@/lib/i18n/dictionaries/document-templates";
+import { useLocale } from "@/lib/i18n/use-locale";
 import {
   MAX_FONT_SIZE,
   MIN_FONT_SIZE,
@@ -19,12 +21,6 @@ export type TypographyPanelProps = {
 
 const FONT_SIZE_STEP = 2;
 
-const ALIGN_OPTIONS: Array<{ value: TextAlign; label: string }> = [
-  { value: "left", label: "Left" },
-  { value: "center", label: "Center" },
-  { value: "right", label: "Right" },
-];
-
 const toggleButtonClass = (active: boolean) =>
   `inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
     active
@@ -42,6 +38,12 @@ function preventFocusSteal(event: React.MouseEvent) {
 }
 
 export function TypographyPanel({ element, onChange }: TypographyPanelProps) {
+  const dict = getDocumentTemplatesDict(useLocale()).typographyPanel;
+  const alignOptions: Array<{ value: TextAlign; label: string }> = [
+    { value: "left", label: dict.alignLeft },
+    { value: "center", label: dict.alignCenter },
+    { value: "right", label: dict.alignRight },
+  ];
   const disabled = !element;
   const typography = element
     ? resolveTypography(element)
@@ -61,13 +63,13 @@ export function TypographyPanel({ element, onChange }: TypographyPanelProps) {
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
       <span className="text-xs font-medium text-stone-600">
-        {disabled ? "Select a text box to format it:" : "Format:"}
+        {disabled ? dict.selectPrompt : dict.formatLabel}
       </span>
 
       <div className="flex items-center gap-1">
         <input
           type="number"
-          aria-label="Font size"
+          aria-label={dict.fontSizeAria}
           className={`${inputClass} w-16 px-2 py-1`}
           min={MIN_FONT_SIZE}
           max={MAX_FONT_SIZE}
@@ -82,7 +84,7 @@ export function TypographyPanel({ element, onChange }: TypographyPanelProps) {
         />
         <button
           type="button"
-          aria-label="Decrease font size"
+          aria-label={dict.decreaseFontSizeAria}
           className={toggleButtonClass(false)}
           disabled={disabled}
           onMouseDown={preventFocusSteal}
@@ -92,7 +94,7 @@ export function TypographyPanel({ element, onChange }: TypographyPanelProps) {
         </button>
         <button
           type="button"
-          aria-label="Increase font size"
+          aria-label={dict.increaseFontSizeAria}
           className={toggleButtonClass(false)}
           disabled={disabled}
           onMouseDown={preventFocusSteal}
@@ -105,7 +107,7 @@ export function TypographyPanel({ element, onChange }: TypographyPanelProps) {
       <div className="flex items-center gap-1">
         <button
           type="button"
-          aria-label="Bold"
+          aria-label={dict.boldAria}
           aria-pressed={typography.fontWeight === "bold"}
           className={`${toggleButtonClass(typography.fontWeight === "bold")} font-bold`}
           disabled={disabled}
@@ -120,7 +122,7 @@ export function TypographyPanel({ element, onChange }: TypographyPanelProps) {
         </button>
         <button
           type="button"
-          aria-label="Italic"
+          aria-label={dict.italicAria}
           aria-pressed={typography.fontStyle === "italic"}
           className={`${toggleButtonClass(typography.fontStyle === "italic")} italic`}
           disabled={disabled}
@@ -135,7 +137,7 @@ export function TypographyPanel({ element, onChange }: TypographyPanelProps) {
         </button>
         <button
           type="button"
-          aria-label="Underline"
+          aria-label={dict.underlineAria}
           aria-pressed={typography.textDecoration === "underline"}
           className={`${toggleButtonClass(typography.textDecoration === "underline")} underline`}
           disabled={disabled}
@@ -152,11 +154,11 @@ export function TypographyPanel({ element, onChange }: TypographyPanelProps) {
       </div>
 
       <div className="flex items-center gap-1">
-        {ALIGN_OPTIONS.map((option) => (
+        {alignOptions.map((option) => (
           <button
             key={option.value}
             type="button"
-            aria-label={`Align ${option.label.toLowerCase()}`}
+            aria-label={dict.alignAria(option.label)}
             aria-pressed={typography.textAlign === option.value}
             className={toggleButtonClass(typography.textAlign === option.value)}
             disabled={disabled}
@@ -169,10 +171,10 @@ export function TypographyPanel({ element, onChange }: TypographyPanelProps) {
       </div>
 
       <label className="flex items-center gap-1.5 text-xs font-medium text-stone-600">
-        Color
+        {dict.colorLabel}
         <input
           type="color"
-          aria-label="Text color"
+          aria-label={dict.colorAria}
           className="h-8 w-8 cursor-pointer rounded-md border border-stone-300 bg-white p-0.5 disabled:cursor-not-allowed disabled:opacity-50"
           value={color}
           disabled={disabled}

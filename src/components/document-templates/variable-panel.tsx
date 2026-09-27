@@ -1,5 +1,7 @@
 "use client";
 
+import { getDocumentTemplatesDict } from "@/lib/i18n/dictionaries/document-templates";
+import { useLocale } from "@/lib/i18n/use-locale";
 import {
   BUILTIN_TEMPLATE_VARIABLES,
   TEMPLATE_VARIABLE_LABELS,
@@ -12,10 +14,11 @@ export type VariablePanelProps = {
 
 /** Just text insertion at the cursor - no mapping, no config, no preview data. */
 export function VariablePanel({ disabled, onInsert }: VariablePanelProps) {
+  const dict = getDocumentTemplatesDict(useLocale()).variablePanel;
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
       <span className="text-xs font-medium text-stone-600">
-        {disabled ? "Click into a text box to insert a variable:" : "Insert variable:"}
+        {disabled ? dict.selectPrompt : dict.insertPrompt}
       </span>
       {BUILTIN_TEMPLATE_VARIABLES.map((variable) => (
         <button

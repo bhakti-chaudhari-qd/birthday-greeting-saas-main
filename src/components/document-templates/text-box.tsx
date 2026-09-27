@@ -3,6 +3,8 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 
 import { VariableHighlightedText } from "@/lib/document-templates/variable-highlight";
+import { getDocumentTemplatesDict } from "@/lib/i18n/dictionaries/document-templates";
+import { useLocale } from "@/lib/i18n/use-locale";
 import {
   resolveTypography,
   type LayoutTextElement,
@@ -58,6 +60,7 @@ export function TextBox({
   onFocus,
   onRegisterTextarea,
 }: TextBoxProps) {
+  const dict = getDocumentTemplatesDict(useLocale()).textBox;
   const { height } = element;
   const hasFixedHeight = height !== undefined;
 
@@ -87,7 +90,7 @@ export function TextBox({
           className="px-1 font-semibold text-stone-500 hover:text-red-600"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={() => onDelete(element.id)}
-          aria-label="Delete text box"
+          aria-label={dict.deleteAria}
         >
           ×
         </button>

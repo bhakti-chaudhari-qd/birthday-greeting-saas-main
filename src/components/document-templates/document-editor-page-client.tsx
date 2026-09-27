@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { InlineAlert } from "@/components/ui/feedback";
 import { PageShell, Panel } from "@/components/ui/page";
 import { extractVariableNames } from "@/lib/document-templates/variables";
+import { getDocumentTemplatesDict } from "@/lib/i18n/dictionaries/document-templates";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 import { EditorToolbar } from "./editor-toolbar";
 import { GeneratePanel } from "./generate-panel";
@@ -21,14 +23,14 @@ const PDFViewer = dynamic(
 
 const DEFAULT_RENDER_WIDTH = 700;
 
-function createTextElement(): LayoutTextElement {
+function createTextElement(defaultText: string): LayoutTextElement {
   return {
     id: crypto.randomUUID(),
     type: "text",
     x: 0.5,
     y: 0.5,
     width: 0.2,
-    text: "New Text",
+    text: defaultText,
     fontSize: 16,
     color: "#000000",
     fontWeight: "normal",
@@ -56,6 +58,7 @@ export function DocumentEditorPageClient({
 }: {
   templateId: string;
 }) {
+  const dict = getDocumentTemplatesDict(useLocale()).editor;
   const [templateName, setTemplateName] = useState("");
   const [elements, setElements] = useState<LayoutTextElement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +99,7 @@ export function DocumentEditorPageClient({
 
         if (!templateResponse.ok) {
           setError(
-            templateBody.error?.message ?? "Could not load document template.",
+            templateBody.error?.message ?? dict.couldNotLoadTemplate,
           );
           return;
         }
@@ -106,7 +109,7 @@ export function DocumentEditorPageClient({
           setElements(layoutBody.data.layoutJson?.elements ?? []);
         }
       } catch {
-        setError("Could not load the editor. Check your connection and try again.");
+        setError(dict.couldNotLoadEditorConn);
       } finally {
         setLoading(false);
       }
@@ -144,7 +147,7 @@ export function DocumentEditorPageClient({
 
   function handleAddText() {
     setSaved(false);
-    setElements((current) => [...current, createTextElement()]);
+    setElements((current) => [...current, createTextElement(dict.newTextDefault)]);
   }
 
   function registerTextarea(elementId: string, node: HTMLTextAreaElement | null) {
@@ -193,12 +196,12 @@ export function DocumentEditorPageClient({
       );
       const body = await response.json();
       if (!response.ok) {
-        setError(body.error?.message ?? "Could not save layout.");
+        setError(body.error?.message ?? dict.couldNotSaveLayout);
         return;
       }
       setSaved(true);
     } catch {
-      setError("Could not save layout. Check your connection and try again.");
+      setError(dict.couldNotSaveLayoutConn);
     } finally {
       setSaving(false);
     }
@@ -221,7 +224,7 @@ export function DocumentEditorPageClient({
       const body = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        setGenerateError(body.error?.message ?? "Could not generate PDF.");
+        setGenerateError(body.error?.message ?? dict.couldNotGenerate);
         return;
       }
 
@@ -235,9 +238,7 @@ export function DocumentEditorPageClient({
       link.remove();
       setGenerateSuccess(true);
     } catch {
-      setGenerateError(
-        "Could not generate PDF. Check your connection and try again.",
-      );
+      setGenerateError(dict.couldNotGenerateConn);
     } finally {
       setGenerating(false);
     }
@@ -246,7 +247,7 @@ export function DocumentEditorPageClient({
   return (
     <PageShell wide>
       <EditorToolbar
-        templateName={templateName || "Document Template"}
+        templateName={templateName || dict.defaultTemplateName}
         saving={saving}
         saved={saved}
         onAddText={handleAddText}
@@ -271,7 +272,7 @@ export function DocumentEditorPageClient({
 
       <Panel className="overflow-auto p-6">
         {loading ? (
-          <p className="text-sm text-stone-600">Loading editor...</p>
+          <p className="text-sm text-stone-600">{dict.loadingEditor}</p>
         ) : (
           <div ref={wrapperRef} className="w-full">
             <div ref={containerRef} className="relative inline-block">

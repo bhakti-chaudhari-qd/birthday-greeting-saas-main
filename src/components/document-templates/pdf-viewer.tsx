@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 
+import { getDocumentTemplatesDict } from "@/lib/i18n/dictionaries/document-templates";
+import { useLocale } from "@/lib/i18n/use-locale";
+
 // Must be configured in the same module that renders <Document>/<Page> -
 // see react-pdf's Next.js App Router guidance (setting it elsewhere can be
 // overwritten by module execution order).
@@ -19,13 +22,14 @@ export type PDFViewerProps = {
 
 /** Renders page 1 only - multi-page templates are out of scope for now. */
 export function PDFViewer({ fileUrl, width, onLoadError }: PDFViewerProps) {
+  const dict = getDocumentTemplatesDict(useLocale()).pdfViewer;
   const [loadError, setLoadError] = useState<string | null>(null);
 
   return (
     <Document
       file={fileUrl}
       onLoadError={(error) => {
-        setLoadError("Could not load this PDF.");
+        setLoadError(dict.couldNotLoad);
         onLoadError?.(error.message);
       }}
       loading={
@@ -33,7 +37,7 @@ export function PDFViewer({ fileUrl, width, onLoadError }: PDFViewerProps) {
           style={{ width }}
           className="flex h-64 items-center justify-center text-sm text-stone-500"
         >
-          Loading PDF...
+          {dict.loading}
         </div>
       }
       error={
@@ -41,7 +45,7 @@ export function PDFViewer({ fileUrl, width, onLoadError }: PDFViewerProps) {
           style={{ width }}
           className="flex h-64 items-center justify-center text-sm text-red-600"
         >
-          {loadError ?? "Could not load this PDF."}
+          {loadError ?? dict.couldNotLoad}
         </div>
       }
     >

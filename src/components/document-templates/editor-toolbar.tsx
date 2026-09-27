@@ -3,6 +3,8 @@
 import Link from "next/link";
 
 import { primaryButtonClass, secondaryButtonClass } from "@/components/ui/page";
+import { getDocumentTemplatesDict } from "@/lib/i18n/dictionaries/document-templates";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export type EditorToolbarProps = {
   templateName: string;
@@ -19,21 +21,20 @@ export function EditorToolbar({
   onAddText,
   onSave,
 }: EditorToolbarProps) {
+  const dict = getDocumentTemplatesDict(useLocale()).toolbar;
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h1 className="text-lg font-semibold text-stone-900">{templateName}</h1>
-        <p className="text-xs text-stone-500">
-          Drag text boxes onto the PDF, then save the layout.
-        </p>
+        <p className="text-xs text-stone-500">{dict.hint}</p>
       </div>
       <div className="flex items-center gap-2">
-        {saved ? <span className="text-xs text-emerald-700">Saved</span> : null}
+        {saved ? <span className="text-xs text-emerald-700">{dict.saved}</span> : null}
         <Link href="/dashboard/document-templates" className={secondaryButtonClass}>
-          Back
+          {dict.back}
         </Link>
         <button type="button" className={secondaryButtonClass} onClick={onAddText}>
-          Add Text
+          {dict.addText}
         </button>
         <button
           type="button"
@@ -41,7 +42,7 @@ export function EditorToolbar({
           onClick={onSave}
           disabled={saving}
         >
-          {saving ? "Saving..." : "Save Layout"}
+          {saving ? dict.saving : dict.saveLayout}
         </button>
       </div>
     </div>

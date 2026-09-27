@@ -4,6 +4,8 @@ import Link from "next/link";
 
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass } from "@/components/ui/page";
+import { getDocumentTemplatesDict } from "@/lib/i18n/dictionaries/document-templates";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export type GeneratePanelProps = {
   variableNames: string[];
@@ -24,20 +26,16 @@ export function GeneratePanel({
   error,
   success,
 }: GeneratePanelProps) {
+  const dict = getDocumentTemplatesDict(useLocale()).generatePanel;
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-stone-200 bg-white p-4">
       <div>
-        <h2 className="text-sm font-semibold text-stone-900">Generate PDF</h2>
-        <p className="text-xs text-stone-500">
-          Fill in the values below, then generate a personalized PDF. It&apos;s
-          saved for 7 days in Generated Documents.
-        </p>
+        <h2 className="text-sm font-semibold text-stone-900">{dict.title}</h2>
+        <p className="text-xs text-stone-500">{dict.hint}</p>
       </div>
 
       {variableNames.length === 0 ? (
-        <p className="text-xs text-stone-500">
-          This layout has no variables - generating will use the text as written.
-        </p>
+        <p className="text-xs text-stone-500">{dict.noVariables}</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {variableNames.map((name) => (
@@ -56,9 +54,9 @@ export function GeneratePanel({
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
       {success ? (
         <InlineAlert tone="success">
-          Generated and saved.{" "}
+          {dict.generatedSaved}{" "}
           <Link href="/dashboard/generated-documents" className="underline">
-            View in Generated Documents
+            {dict.viewInGenerated}
           </Link>
           .
         </InlineAlert>
@@ -71,7 +69,7 @@ export function GeneratePanel({
           onClick={onGenerate}
           disabled={generating}
         >
-          {generating ? "Generating..." : "Generate PDF"}
+          {generating ? dict.generating : dict.generate}
         </button>
       </div>
     </div>
