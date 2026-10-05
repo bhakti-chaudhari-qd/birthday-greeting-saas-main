@@ -60,17 +60,26 @@ describe("readPlatformDefaultSms", () => {
     }
   });
 
-  it("rejects a send path without a leading slash and plain http in production", () => {
+  it("rejects a send path without a leading slash and a non-http base URL", () => {
     expect(
       readPlatformDefaultSms({ ...DEFAULT_SMS_ENV, DEFAULT_SMS_SEND_PATH: "send" } as NodeJS.ProcessEnv),
     ).toBeNull();
     expect(
       readPlatformDefaultSms({
         ...DEFAULT_SMS_ENV,
+        DEFAULT_SMS_BASE_URL: "ftp://sms.platform.example",
+      } as NodeJS.ProcessEnv),
+    ).toBeNull();
+  });
+
+  it("accepts a plain http gateway in production", () => {
+    expect(
+      readPlatformDefaultSms({
+        ...DEFAULT_SMS_ENV,
         DEFAULT_SMS_BASE_URL: "http://sms.platform.example",
         NODE_ENV: "production",
       } as NodeJS.ProcessEnv),
-    ).toBeNull();
+    ).toMatchObject({ baseUrl: "http://sms.platform.example" });
   });
 });
 

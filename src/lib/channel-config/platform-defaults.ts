@@ -46,9 +46,12 @@ export function readPlatformDefaultSms(
 
   try {
     const url = new URL(baseUrl);
-    const allowed =
-      env.NODE_ENV === "production" ? ["https:"] : ["http:", "https:"];
-    if (!allowed.includes(url.protocol) || !sendPath.startsWith("/")) {
+    // Plain http is accepted, as it is for a client's own SMS gateway: many
+    // SMS providers offer no https endpoint.
+    if (
+      !["http:", "https:"].includes(url.protocol) ||
+      !sendPath.startsWith("/")
+    ) {
       return null;
     }
     // Reuse the same validation a client's own SMS settings go through.
