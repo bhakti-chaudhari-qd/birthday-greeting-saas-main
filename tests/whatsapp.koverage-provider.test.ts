@@ -6,7 +6,7 @@ import { createKoverageWhatsAppProvider } from "@/lib/messaging/providers/whatsa
 const baseConfig = {
   apiFormat: "KOVERAGE" as const,
   baseUrl: "https://waba.koverage.example",
-  sendPath: "/api/vendor-uid-1/contact/send-message",
+  sendPath: "/api/vendor-uid-1/contact/send-template-message",
   apiKey: "koverage-token",
   password: "",
   requestTimeoutMs: 5_000,
@@ -46,7 +46,7 @@ describe("createKoverageWhatsAppProvider", () => {
     expect(fetchFn).toHaveBeenCalledTimes(1);
     const [url, init] = fetchFn.mock.calls[0];
     expect(url).toBe(
-      "https://waba.koverage.example/api/vendor-uid-1/contact/send-message",
+      "https://waba.koverage.example/api/vendor-uid-1/contact/send-template-message",
     );
     expect(init?.method).toBe("POST");
     expect((init?.headers as Record<string, string>).Authorization).toBe(
@@ -111,7 +111,7 @@ describe("buildWhatsAppHttpSettings apiFormat", () => {
     expect(
       buildWhatsAppHttpSettings(
         "https://waba.koverage.example",
-        "/api/vendor-uid-1/contact/send-message",
+        "/api/vendor-uid-1/contact/send-template-message",
         null,
         false,
         "KOVERAGE",

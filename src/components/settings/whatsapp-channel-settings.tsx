@@ -76,11 +76,11 @@ const emptyForm: FormState = {
 const KOVERAGE_BASE_URL = "https://waba.koverage.in";
 
 function koverageSendPath(vendorUid: string): string {
-  return `/api/${encodeURIComponent(vendorUid.trim())}/contact/send-message`;
+  return `/api/${encodeURIComponent(vendorUid.trim())}/contact/send-template-message`;
 }
 
 function koverageVendorUidFromSendPath(sendPath: string | undefined): string {
-  const match = /^\/api\/([^/]+)\/contact\/send-message$/.exec(sendPath ?? "");
+  const match = /^\/api\/([^/]+)\/contact\/send-(?:template-)?message$/.exec(sendPath ?? "");
   return match ? decodeURIComponent(match[1]) : "";
 }
 
