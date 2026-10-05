@@ -62,6 +62,21 @@ describe("createKoverageWhatsAppProvider", () => {
     expect(result).toEqual({ providerMessageId: "wamid.KOV123", status: "SENT" });
   });
 
+  it("corrects a config saved with the plain-text send path", async () => {
+    const fetchFn = mockFetch({ result: "success" });
+    const provider = createKoverageWhatsAppProvider({
+      ...baseConfig,
+      sendPath: "/api/vendor-uid-1/contact/send-message",
+      fetchFn,
+    });
+
+    await provider.send(baseRequest);
+
+    expect(fetchFn.mock.calls[0][0]).toBe(
+      "https://waba.koverage.example/api/vendor-uid-1/contact/send-template-message",
+    );
+  });
+
   it("falls back to the idempotency key when no message id is returned", async () => {
     const fetchFn = mockFetch({ result: "success", message: "Message processed" });
     const provider = createKoverageWhatsAppProvider({ ...baseConfig, fetchFn });

@@ -103,7 +103,13 @@ export function createKoverageWhatsAppProvider(
         );
       }
 
-      const url = buildCustomWhatsAppSendUrl(config);
+      // This provider only sends templates. A config saved with Koverage's
+      // plain-text path (/contact/send-message) is corrected here so it does
+      // not have to be re-saved.
+      const url = buildCustomWhatsAppSendUrl(config).replace(
+        /\/contact\/send-message$/,
+        "/contact/send-template-message",
+      );
       await assertPublicHttpTarget(url);
 
       const payload: Record<string, string> = {
