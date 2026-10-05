@@ -166,6 +166,7 @@ export type GreetingRoutesDict = {
     sentSummary: (count: number, summary: string) => string;
     summaryPart: (count: number, label: string) => string;
     messagesSentToast: string;
+    openActivity: string;
   };
   quickCreateTemplate: {
     createLink: (channel: "SMS" | "WHATSAPP") => string;
@@ -406,9 +407,10 @@ Supports:
       errorSendChannel: (label) => `Could not send ${label} messages.`,
       errorSendGeneric: "Could not send these messages.",
       sentSummary: (count, summary) =>
-        `Sent to ${count} recipient${count === 1 ? "" : "s"}: ${summary}.`,
+        `Queued for ${count} recipient${count === 1 ? "" : "s"}: ${summary}. Check Activity for the delivery status.`,
       summaryPart: (count, label) => `${count} via ${label}`,
-      messagesSentToast: "Messages sent.",
+      messagesSentToast: "Messages queued. Check the status in Activity.",
+      openActivity: "Open Activity",
     },
     quickCreateTemplate: {
       createLink: (channel) =>
@@ -647,9 +649,11 @@ Supports:
       errorNoMatchingContacts: "भेजने के लिए कोई मिलता-जुलता कॉन्टैक्ट नहीं है।",
       errorSendChannel: (label) => `${label} मेसेज नहीं भेजे जा सके।`,
       errorSendGeneric: "ये मेसेज नहीं भेजे जा सके।",
-      sentSummary: (count, summary) => `${count} प्राप्तकर्ताओं को भेजा गया: ${summary}।`,
+      sentSummary: (count, summary) =>
+        `${count} प्राप्तकर्ताओं के लिए क्यू में: ${summary}। डिलीवरी की स्थिति Activity में देखें।`,
       summaryPart: (count, label) => `${count} ${label} के ज़रिए`,
-      messagesSentToast: "मेसेज भेज दिए गए।",
+      messagesSentToast: "मेसेज क्यू में हैं। स्थिति Activity में देखें।",
+      openActivity: "Activity खोलें",
     },
     quickCreateTemplate: {
       createLink: (channel) =>
@@ -888,9 +892,11 @@ Supports:
       errorNoMatchingContacts: "पाठवण्यासाठी जुळणारा कोणताही कॉन्टॅक्ट नाही.",
       errorSendChannel: (label) => `${label} मेसेज पाठवले जाऊ शकले नाहीत.`,
       errorSendGeneric: "हे मेसेज पाठवले जाऊ शकले नाहीत.",
-      sentSummary: (count, summary) => `${count} प्राप्तकर्त्यांना पाठवले: ${summary}.`,
+      sentSummary: (count, summary) =>
+        `${count} प्राप्तकर्त्यांसाठी रांगेत: ${summary}. डिलिव्हरीची स्थिती Activity मध्ये पाहा.`,
       summaryPart: (count, label) => `${count} ${label} मार्गे`,
-      messagesSentToast: "मेसेज पाठवले गेले.",
+      messagesSentToast: "मेसेज रांगेत आहेत. स्थिती Activity मध्ये पाहा.",
+      openActivity: "Activity उघडा",
     },
     quickCreateTemplate: {
       createLink: (channel) =>

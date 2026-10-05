@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { Channel } from "@prisma/client";
 
@@ -492,7 +493,14 @@ export function ManualQuickSend() {
       </div>
 
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
-      {sendSummary ? <InlineAlert tone="success">{sendSummary}</InlineAlert> : null}
+      {sendSummary ? (
+        <InlineAlert tone="success">
+          {sendSummary}{" "}
+          <Link href="/dashboard/activity" className="font-medium underline">
+            {dict.openActivity}
+          </Link>
+        </InlineAlert>
+      ) : null}
 
       <section className={FORM_SECTION_CLASS}>
       <div className="flex flex-col gap-4">
