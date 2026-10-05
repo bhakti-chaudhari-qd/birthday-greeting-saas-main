@@ -22,6 +22,7 @@ type WhatsAppChannelConfigView = {
   isActive: boolean;
   credentialsConfigured: boolean;
   username?: string;
+  apiFormat?: "KOVERAGE";
   apiKeyConfigured: boolean;
   accessTokenConfigured: boolean;
   baseUrl?: string;
@@ -35,7 +36,8 @@ type WhatsAppChannelConfigView = {
 };
 
 type AuthMode = "password" | "apiKey";
-type WhatsAppProvider = "CUSTOM_HTTP" | "META";
+/** KOVERAGE is a form-only choice: it is saved as CUSTOM_HTTP with apiFormat KOVERAGE. */
+type WhatsAppProvider = "CUSTOM_HTTP" | "META" | "KOVERAGE";
 
 type FormState = {
   provider: WhatsAppProvider;
@@ -50,6 +52,8 @@ type FormState = {
   accessToken: string;
   phoneNumberId: string;
   apiVersion: string;
+  vendorUid: string;
+  apiToken: string;
 };
 
 const emptyForm: FormState = {
@@ -65,7 +69,20 @@ const emptyForm: FormState = {
   accessToken: "",
   phoneNumberId: "",
   apiVersion: "",
+  vendorUid: "",
+  apiToken: "",
 };
+
+const KOVERAGE_BASE_URL = "https://waba.koverage.in";
+
+function koverageSendPath(vendorUid: string): string {
+  return `/api/${encodeURIComponent(vendorUid.trim())}/contact/send-message`;
+}
+
+function koverageVendorUidFromSendPath(sendPath: string | undefined): string {
+  const match = /^\/api\/([^/]+)\/contact\/send-message$/.exec(sendPath ?? "");
+  return match ? decodeURIComponent(match[1]) : "";
+}
 
 /** Local-only demo Custom HTTP defaults for provider testing. Never prefilled in production. */
 const DEMO_WHATSAPP_CUSTOM_HTTP = {
@@ -117,21 +134,33 @@ export function WhatsAppChannelSettings() {
         }
 
         const data = body.data as WhatsAppChannelConfigView;
+        const savedAsKoverage =
+          data.provider === "CUSTOM_HTTP" && data.apiFormat === "KOVERAGE";
         setConfig(data);
         setForm(
           withDemoCustomHttpDefaults({
-            provider: data.provider === "META" ? "META" : "CUSTOM_HTTP",
+            provider:
+              data.provider === "META"
+                ? "META"
+                : savedAsKoverage
+                  ? "KOVERAGE"
+                  : "CUSTOM_HTTP",
             isActive: data.configured ? data.isActive : true,
-            authMode: data.apiKeyConfigured ? "apiKey" : "password",
+            authMode:
+              data.apiKeyConfigured && !savedAsKoverage ? "apiKey" : "password",
             username: data.username ?? "",
             password: "",
             apiKey: "",
-            baseUrl: data.baseUrl ?? "",
-            sendPath: data.sendPath ?? "",
+            baseUrl: savedAsKoverage ? "" : (data.baseUrl ?? ""),
+            sendPath: savedAsKoverage ? "" : (data.sendPath ?? ""),
             tlsInsecure: data.tlsInsecure === true,
             accessToken: "",
             phoneNumberId: data.phoneNumberId ?? "",
             apiVersion: data.apiVersion ?? "",
+            vendorUid: savedAsKoverage
+              ? koverageVendorUidFromSendPath(data.sendPath)
+              : "",
+            apiToken: "",
           }),
         );
       } catch {
@@ -151,9 +180,18 @@ export function WhatsAppChannelSettings() {
     setSuccess(null);
 
     const payload: Record<string, unknown> = {
-      provider: form.provider,
+      provider: form.provider === "KOVERAGE" ? "CUSTOM_HTTP" : form.provider,
       isActive: form.isActive,
     };
+
+    if (form.provider === "KOVERAGE") {
+      payload.apiFormat = "KOVERAGE";
+      payload.baseUrl = KOVERAGE_BASE_URL;
+      payload.sendPath = koverageSendPath(form.vendorUid);
+      if (form.apiToken.trim()) {
+        payload.apiKey = form.apiToken.trim();
+      }
+    }
 
     if (form.provider === "CUSTOM_HTTP") {
       payload.baseUrl = form.baseUrl.trim();
@@ -206,8 +244,14 @@ export function WhatsAppChannelSettings() {
 
   const isCustomHttp = form.provider === "CUSTOM_HTTP";
   const isMeta = form.provider === "META";
+  const isKoverage = form.provider === "KOVERAGE";
+  const configuredAsKoverage =
+    config?.provider === "CUSTOM_HTTP" && config.apiFormat === "KOVERAGE";
   const isSameConfiguredProvider =
-    isCustomHttp && config?.provider === "CUSTOM_HTTP";
+    isCustomHttp && config?.provider === "CUSTOM_HTTP" && !configuredAsKoverage;
+  const apiTokenConfigured = Boolean(
+    isKoverage && configuredAsKoverage && config?.apiKeyConfigured,
+  );
   const passwordConfigured = Boolean(
     isSameConfiguredProvider &&
       form.authMode === "password" &&
@@ -257,6 +301,9 @@ export function WhatsAppChannelSettings() {
                   </option>
                   <option value="META">
                     {getCustomerWhatsAppProviderLabel("META")}
+                  </option>
+                  <option value="KOVERAGE">
+                    {getCustomerWhatsAppProviderLabel("KOVERAGE")}
                   </option>
                 </select>
               </label>
@@ -313,6 +360,46 @@ export function WhatsAppChannelSettings() {
                       }
                     />
                   </label>
+                </>
+              ) : null}
+
+              {isKoverage ? (
+                <>
+                  <label className="block text-sm">
+                    <span className="font-medium text-stone-800">
+                      {dict.vendorUid}
+                    </span>
+                    <input
+                      className={`${inputClass} mt-1`}
+                      value={form.vendorUid}
+                      autoComplete="off"
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          vendorUid: event.target.value,
+                        }))
+                      }
+                      required
+                    />
+                    <span className="mt-0.5 block text-xs text-stone-500">
+                      {dict.vendorUidHint}
+                    </span>
+                  </label>
+
+                  <MaskedPasswordField
+                    label={dict.apiToken}
+                    configured={apiTokenConfigured}
+                    value={form.apiToken}
+                    onChange={(value) =>
+                      setForm((current) => ({ ...current, apiToken: value }))
+                    }
+                    required={!apiTokenConfigured}
+                    hint={apiTokenConfigured ? undefined : dict.apiTokenHint}
+                  />
+
+                  <p className="text-xs text-stone-500">
+                    {dict.koverageTextOnlyNote}
+                  </p>
                 </>
               ) : null}
 
@@ -436,7 +523,9 @@ export function WhatsAppChannelSettings() {
                 <p className="mt-1">
                   {config?.configured
                     ? dict.currentStatusConfigured(
-                        getCustomerWhatsAppProviderLabel(config.provider),
+                        getCustomerWhatsAppProviderLabel(
+                          configuredAsKoverage ? "KOVERAGE" : config.provider,
+                        ),
                         config.isActive ? common.activeWord : common.inactiveWord,
                       )
                     : dict.currentStatusNotConfigured}

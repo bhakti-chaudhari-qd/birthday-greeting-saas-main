@@ -13,6 +13,7 @@ import {
   primaryButtonClass,
 } from "@/components/ui/page";
 import { getDocumentTemplatesDict } from "@/lib/i18n/dictionaries/document-templates";
+import { translateOccasionName } from "@/lib/i18n/occasion-labels";
 import { useLocale } from "@/lib/i18n/use-locale";
 
 type DocumentTemplate = {
@@ -48,7 +49,8 @@ function formatBytes(byteLength: number): string {
  * implementation of this behavior.
  */
 export function DocumentTemplatesManager() {
-  const dict = getDocumentTemplatesDict(useLocale()).pageList;
+  const locale = useLocale();
+  const dict = getDocumentTemplatesDict(locale).pageList;
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [occasions, setOccasions] = useState<OccasionOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -227,7 +229,7 @@ export function DocumentTemplatesManager() {
               <option value="">{dict.noneOption}</option>
               {occasions.map((occasion) => (
                 <option key={occasion.id} value={occasion.id}>
-                  {occasion.name}
+                  {translateOccasionName(occasion.name, locale)}
                 </option>
               ))}
             </select>
@@ -285,7 +287,9 @@ export function DocumentTemplatesManager() {
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-stone-600">
-                      {template.occasionName ?? dict.emptyDash}
+                      {template.occasionName
+                        ? translateOccasionName(template.occasionName, locale)
+                        : dict.emptyDash}
                     </td>
                     <td className="px-4 py-2.5 text-stone-600">
                       {template.fileName} ({formatBytes(template.byteLength)})

@@ -351,6 +351,7 @@ function resolveSettingsForWrite(
       input.sendPath,
       media,
       tlsInsecure,
+      input.apiFormat,
     );
   } catch (error) {
     throw new ChannelConfigValidationError(
@@ -528,6 +529,7 @@ export async function updateWhatsAppChannelMedia(
       settings.sendPath,
       storedMedia,
       settings.tlsInsecure === true,
+      settings.apiFormat,
     );
   }
 

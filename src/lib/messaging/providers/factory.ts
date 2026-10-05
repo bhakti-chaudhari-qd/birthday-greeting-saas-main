@@ -13,6 +13,7 @@ import { createLegacyHttpSmsProvider } from "./sms/legacy-http-sms-provider";
 import { testProvider } from "./test-provider";
 import { ProviderSendError, type MessageProvider } from "./types";
 import { createCustomHttpWhatsAppProvider } from "./whatsapp/custom-http-whatsapp-provider";
+import { createKoverageWhatsAppProvider } from "./whatsapp/koverage-whatsapp-provider";
 import { createMetaWhatsAppProvider } from "./whatsapp/meta-whatsapp-provider";
 
 /**
@@ -62,9 +63,10 @@ export function resolveMessageProvider(
     }
 
     if (channelConfig.provider === ChannelProvider.CUSTOM_HTTP) {
-      return createCustomHttpWhatsAppProvider(
-        resolveWhatsAppHttpProviderConfig(channelConfig),
-      );
+      const httpConfig = resolveWhatsAppHttpProviderConfig(channelConfig);
+      return httpConfig.apiFormat === "KOVERAGE"
+        ? createKoverageWhatsAppProvider(httpConfig)
+        : createCustomHttpWhatsAppProvider(httpConfig);
     }
 
     if (channelConfig.provider === ChannelProvider.META) {

@@ -37,6 +37,10 @@ export function getCustomerWhatsAppProviderLabel(
     return "Meta Cloud API";
   }
 
+  if (provider === "KOVERAGE") {
+    return "Koverage";
+  }
+
   if (!provider) {
     return "Not configured";
   }

@@ -4,7 +4,6 @@ import {
   type ChannelConfig,
 } from "@prisma/client";
 
-import { assertLiveCustomHttpAllowed } from "@/lib/abuse/live-channels";
 import { encryptCredentials } from "@/lib/crypto/credentials";
 import { prisma } from "@/lib/db";
 
@@ -92,24 +91,15 @@ function toChannelConfig(
 
 /**
  * The platform default SMS gateway for this client, or null when it isn't
- * configured or the client isn't allowed live sending. The client must clear
- * the same live-send gate as configuring its own gateway (an active paid plan
- * or platform approval), so the platform never pays for unapproved free clients.
+ * configured. Every client gets it from registration onward, on any plan,
+ * until it saves a gateway of its own; the plan's monthly message limit is
+ * what bounds how much a free client can send through it.
  */
 export async function getPlatformDefaultSmsConfig(
   organizationId: string,
 ): Promise<ChannelConfig | null> {
   const sms = readPlatformDefaultSms();
   if (!sms) {
-    return null;
-  }
-
-  try {
-    await assertLiveCustomHttpAllowed({
-      organizationId,
-      provider: ChannelProvider.CUSTOM_HTTP,
-    });
-  } catch {
     return null;
   }
 

@@ -15,6 +15,7 @@ import {
   WHATSAPP_META_DEFAULT_API_VERSION,
   type ResolvedWhatsAppHttpProviderConfig,
   type ResolvedWhatsAppMetaProviderConfig,
+  type WhatsAppHttpApiFormat,
   type WhatsAppHttpSettings,
   type WhatsAppMediaContentType,
 } from "./whatsapp-types";
@@ -36,8 +37,10 @@ export function buildWhatsAppHttpSettings(
   sendPath: string,
   media?: WhatsAppHttpMediaInput | null,
   tlsInsecure: boolean = false,
+  apiFormat?: WhatsAppHttpApiFormat,
 ): WhatsAppHttpSettings {
   const settings: WhatsAppHttpSettings = {
+    ...(apiFormat ? { apiFormat } : {}),
     baseUrl: baseUrl.trim().replace(/\/$/, ""),
     sendPath: sendPath.trim(),
     requestTimeoutMs: DEFAULT_WHATSAPP_HTTP_REQUEST_TIMEOUT_MS,
@@ -100,6 +103,7 @@ export function resolveWhatsAppHttpProviderConfig(
   }
 
   const resolved: ResolvedWhatsAppHttpProviderConfig = {
+    apiFormat: settings.apiFormat,
     baseUrl: settings.baseUrl,
     sendPath: settings.sendPath,
     username: credentials.username,

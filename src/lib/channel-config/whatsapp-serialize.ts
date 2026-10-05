@@ -8,6 +8,7 @@ import {
   whatsappMetaCredentialsSchema,
   whatsappMetaSettingsSchema,
   whatsappTestSettingsSchema,
+  type WhatsAppHttpApiFormat,
 } from "./whatsapp-types";
 
 export type SafeWhatsAppChannelConfigView = {
@@ -17,6 +18,8 @@ export type SafeWhatsAppChannelConfigView = {
   isActive: boolean;
   credentialsConfigured: boolean;
   username?: string;
+  /** Custom HTTP request shape; absent for the original CustomAPI contract. */
+  apiFormat?: WhatsAppHttpApiFormat;
   /** True when auth is API-key mode (mutually exclusive with username). Never exposes the key itself. */
   apiKeyConfigured: boolean;
   baseUrl?: string;
@@ -77,6 +80,7 @@ function safeCredentialSummaryFromConfig(config: ChannelConfig): {
 }
 
 function safeSettingsFromConfig(config: ChannelConfig): {
+  apiFormat?: WhatsAppHttpApiFormat;
   baseUrl?: string;
   sendPath?: string;
   tlsInsecure?: boolean;
@@ -132,6 +136,7 @@ function safeSettingsFromConfig(config: ChannelConfig): {
     const settings = whatsappHttpSettingsSchema.parse(config.settings ?? {});
     const mediaConfigured = Boolean(settings.mediaBase64?.trim());
     return {
+      ...(settings.apiFormat ? { apiFormat: settings.apiFormat } : {}),
       baseUrl: settings.baseUrl,
       sendPath: settings.sendPath,
       tlsInsecure: settings.tlsInsecure === true,
@@ -182,6 +187,7 @@ export function serializeWhatsAppChannelConfig(
     accessTokenConfigured,
     mediaConfigured: settings.mediaConfigured,
     ...(username ? { username } : {}),
+    ...(settings.apiFormat ? { apiFormat: settings.apiFormat } : {}),
     ...(settings.baseUrl ? { baseUrl: settings.baseUrl } : {}),
     ...(settings.sendPath ? { sendPath: settings.sendPath } : {}),
     ...(config.provider === ChannelProvider.CUSTOM_HTTP

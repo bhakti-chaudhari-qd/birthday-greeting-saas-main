@@ -93,14 +93,14 @@ const LANDING_DICT: Record<Locale, LandingDict> = {
       howItWorks: "How It Works",
       useCases: "Use Cases",
       contact: "Contact",
-      getStarted: "Get Started",
+      getStarted: "Login / Sign Up",
     },
     hero: {
       brandSignal: "Birthday Greeting",
       heading: "Create Personalized Greetings. Effortlessly.",
       subtitle:
         "Design beautiful greeting templates once, personalize them with dynamic information, and generate professional PDFs for every recipient.",
-      getStarted: "Get Started",
+      getStarted: "Login / Sign Up",
       contactUs: "Contact Us",
       filename: "birthday-greeting.pdf",
       cardEyebrow: "A special note for",
@@ -191,7 +191,7 @@ const LANDING_DICT: Record<Locale, LandingDict> = {
     cta: {
       heading: "Create your first personalized greeting.",
       body: "Build a reusable template and turn it into personalized documents in minutes.",
-      getStarted: "Get Started",
+      getStarted: "Login / Sign Up",
     },
     contact: {
       heading: "Have questions? Let's talk.",
@@ -207,14 +207,14 @@ const LANDING_DICT: Record<Locale, LandingDict> = {
       howItWorks: "यह कैसे काम करता है",
       useCases: "उपयोग के मामले",
       contact: "संपर्क",
-      getStarted: "शुरू करें",
+      getStarted: "लॉगिन / साइन अप",
     },
     hero: {
       brandSignal: "Birthday Greeting",
       heading: "आसानी से पर्सनलाइज़्ड ग्रीटिंग बनाएँ।",
       subtitle:
         "एक बार सुंदर ग्रीटिंग टेम्पलेट डिज़ाइन करें, डायनामिक जानकारी से पर्सनलाइज़ करें, और हर प्राप्तकर्ता के लिए प्रोफ़ेशनल PDF बनाएँ।",
-      getStarted: "शुरू करें",
+      getStarted: "लॉगिन / साइन अप",
       contactUs: "संपर्क करें",
       filename: "birthday-greeting.pdf",
       cardEyebrow: "एक खास मेसेज",
@@ -305,7 +305,7 @@ const LANDING_DICT: Record<Locale, LandingDict> = {
     cta: {
       heading: "अपनी पहली पर्सनलाइज़्ड ग्रीटिंग बनाएँ।",
       body: "एक पुन: प्रयोज्य टेम्पलेट बनाएँ और मिनटों में इसे पर्सनलाइज़्ड दस्तावेज़ों में बदलें।",
-      getStarted: "शुरू करें",
+      getStarted: "लॉगिन / साइन अप",
     },
     contact: {
       heading: "सवाल हैं? बात करते हैं।",
@@ -321,14 +321,14 @@ const LANDING_DICT: Record<Locale, LandingDict> = {
       howItWorks: "हे कसे काम करते",
       useCases: "वापर प्रकार",
       contact: "संपर्क",
-      getStarted: "सुरुवात करा",
+      getStarted: "लॉगिन / साइन अप",
     },
     hero: {
       brandSignal: "Birthday Greeting",
       heading: "सहजपणे पर्सनलाइझ्ड ग्रीटिंग तयार करा.",
       subtitle:
         "एकदा सुंदर ग्रीटिंग टेम्पलेट डिझाइन करा, डायनॅमिक माहितीने पर्सनलाइझ करा, आणि प्रत्येक प्राप्तकर्त्यासाठी प्रोफेशनल PDF तयार करा.",
-      getStarted: "सुरुवात करा",
+      getStarted: "लॉगिन / साइन अप",
       contactUs: "संपर्क करा",
       filename: "birthday-greeting.pdf",
       cardEyebrow: "एक खास निरोप",
@@ -418,7 +418,7 @@ const LANDING_DICT: Record<Locale, LandingDict> = {
     cta: {
       heading: "तुमची पहिली पर्सनलाइझ्ड ग्रीटिंग तयार करा.",
       body: "पुन्हा वापरता येणारा टेम्पलेट तयार करा आणि काही मिनिटांत पर्सनलाइझ्ड कागदपत्रांमध्ये बदला.",
-      getStarted: "सुरुवात करा",
+      getStarted: "लॉगिन / साइन अप",
     },
     contact: {
       heading: "प्रश्न आहेत? बोलूया.",

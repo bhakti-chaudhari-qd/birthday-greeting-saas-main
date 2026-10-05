@@ -94,29 +94,12 @@ describe("platform default channels", () => {
     await prisma.$disconnect();
   });
 
-  it("does not offer the default to a free client that is not approved for live sending", async ({
+  it("offers the platform gateway to a newly registered free client with no gateway of its own", async ({
     skip,
   }) => {
     if (!databaseAvailable) skip();
     stubDefaultSms();
     const organizationId = await createOrg();
-
-    expect(await getEffectiveChannelConfig(organizationId, Channel.SMS)).toBeNull();
-    expect((await getSmsChannelConfig(organizationId)).usingPlatformDefault).toBeUndefined();
-
-    await prisma.organization.delete({ where: { id: organizationId } });
-  });
-
-  it("offers the platform gateway to an approved client with no gateway of its own", async ({
-    skip,
-  }) => {
-    if (!databaseAvailable) skip();
-    stubDefaultSms();
-    const organizationId = await createOrg();
-    await prisma.organization.update({
-      where: { id: organizationId },
-      data: { liveChannelsApproved: true },
-    });
 
     const config = await getEffectiveChannelConfig(organizationId, Channel.SMS);
     expect(config).not.toBeNull();

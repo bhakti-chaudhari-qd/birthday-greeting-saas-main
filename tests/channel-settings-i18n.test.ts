@@ -52,6 +52,25 @@ describe("channel settings i18n", () => {
       );
       expect(dict.sms.enterGatewayDetails(" note")).toContain("note");
       expect(dict.sms.routeHint(" demo")).toContain("demo");
+      expect(dict.sms.balanceCreditsLine("1,250")).toContain("1,250");
+      expect(dict.sms.verifiedWithBalance("1,250")).toContain("1,250");
+      expect(dict.common.changeSecret("API Key")).toContain("API Key");
+      expect(dict.common.newSecret("API Key")).toContain("API Key");
+    }
+  });
+
+  it("password field and SMS balance/verify messages are translated in hi/mr", () => {
+    for (const locale of ["hi", "mr"] as const) {
+      const dict = getChannelSettingsDict(locale);
+      expect(dict.common.password).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.common.cancel).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.common.changeSecret(dict.common.password)).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.page.channelTabsLabel).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.sms.balanceNoCredits).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.sms.balanceCreditsLine("5")).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.sms.testProviderReady).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.sms.verifiedSuccess).toMatch(DEVANAGARI_PATTERN);
+      expect(dict.sms.verifiedWithBalance("5")).toMatch(DEVANAGARI_PATTERN);
     }
   });
 
@@ -62,5 +81,9 @@ describe("channel settings i18n", () => {
     expect(dict.sms.gateway).toBe("SMS gateway");
     expect(dict.whatsapp.gateway).toBe("WhatsApp gateway");
     expect(dict.email.emailService).toBe("Email service");
+    expect(dict.common.password).toBe("Password");
+    expect(dict.common.changeSecret("Password")).toBe("Change Password");
+    expect(dict.common.newSecret("API Key")).toBe("New API Key");
+    expect(dict.page.channelTabsLabel).toBe("Channel");
   });
 });

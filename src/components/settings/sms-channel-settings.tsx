@@ -283,7 +283,9 @@ export function SmsChannelSettings() {
         return;
       }
 
-      setVerifyMessage(body.data?.message ?? dict.verifiedDefault);
+      setVerifyMessage(
+        body.data ? describeVerification(body.data as SmsWalletBalanceView) : dict.verifiedDefault,
+      );
       if (body.data) {
         setWalletBalance({
           provider: body.data.provider,
@@ -297,6 +299,26 @@ export function SmsChannelSettings() {
     } finally {
       setVerifying(false);
     }
+  }
+
+  // The API returns English status text; rebuild it from the structured
+  // fields so it follows the selected site language.
+  function describeBalance(view: SmsWalletBalanceView): string {
+    if (view.provider === "TEST") {
+      return dict.testProviderNoBalance;
+    }
+    return view.balanceCredits === null
+      ? dict.balanceNoCredits
+      : dict.balanceCreditsLine(view.balanceCredits.toLocaleString());
+  }
+
+  function describeVerification(view: SmsWalletBalanceView): string {
+    if (view.provider === "TEST") {
+      return dict.testProviderReady;
+    }
+    return view.balanceCredits === null
+      ? dict.verifiedSuccess
+      : dict.verifiedWithBalance(view.balanceCredits.toLocaleString());
   }
 
   const isCustomHttp = form.provider === "CUSTOM_HTTP";
@@ -353,8 +375,9 @@ export function SmsChannelSettings() {
                     ) : null}
                   </p>
                   <p className="mt-1 text-sm text-stone-600">
-                    {walletBalance?.message ??
-                      (config.walletBalanceSupported
+                    {walletBalance
+                      ? describeBalance(walletBalance)
+                      : (config.walletBalanceSupported
                         ? dict.refreshLiveBalance
                         : dict.testProviderNoBalance)}
                   </p>

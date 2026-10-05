@@ -4,6 +4,7 @@ export type ChannelSettingsDict = {
   page: {
     title: string;
     loading: string;
+    channelTabsLabel: string;
   };
   common: {
     active: string;
@@ -16,6 +17,10 @@ export type ChannelSettingsDict = {
     activeWord: string;
     inactiveWord: string;
     provider: string;
+    password: string;
+    changeSecret: (label: string) => string;
+    newSecret: (label: string) => string;
+    cancel: string;
   };
   sms: {
     usingPlatformDefault: string;
@@ -56,6 +61,11 @@ export type ChannelSettingsDict = {
     savedSuccess: string;
     saveConfigToEnable: string;
     verifiedDefault: string;
+    balanceNoCredits: string;
+    balanceCreditsLine: (credits: string) => string;
+    testProviderReady: string;
+    verifiedSuccess: string;
+    verifiedWithBalance: (credits: string) => string;
   };
   whatsapp: {
     walletBalance: string;
@@ -67,6 +77,11 @@ export type ChannelSettingsDict = {
     accessToken: string;
     accessTokenHint: string;
     apiVersionOptional: string;
+    vendorUid: string;
+    vendorUidHint: string;
+    apiToken: string;
+    apiTokenHint: string;
+    koverageTextOnlyNote: string;
     baseUrl: string;
     sendPath: string;
     authenticationMethod: string;
@@ -103,6 +118,7 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
     page: {
       title: "Channels",
       loading: "Loading channel settings…",
+      channelTabsLabel: "Channel",
     },
     common: {
       active: "Active",
@@ -115,6 +131,10 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       activeWord: "active",
       inactiveWord: "inactive",
       provider: "Provider",
+      password: "Password",
+      changeSecret: (label) => `Change ${label}`,
+      newSecret: (label) => `New ${label}`,
+      cancel: "Cancel",
     },
     sms: {
       usingPlatformDefault: "Using the platform SMS service",
@@ -157,6 +177,13 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       savedSuccess: "Configuration saved successfully.",
       saveConfigToEnable: "Save a configuration to enable SMS.",
       verifiedDefault: "Configuration verified",
+      balanceNoCredits:
+        "SMS provider credentials are valid, but no wallet balance was returned",
+      balanceCreditsLine: (credits) => `SMS wallet balance: ${credits} credits`,
+      testProviderReady: "Test provider configuration is ready",
+      verifiedSuccess: "SMS provider credentials verified successfully",
+      verifiedWithBalance: (credits) =>
+        `SMS provider credentials verified. Wallet balance: ${credits} credits`,
     },
     whatsapp: {
       walletBalance: "WhatsApp wallet balance",
@@ -170,6 +197,14 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       accessTokenHint:
         "A permanent System User token is recommended - a temporary token from the Meta dashboard expires within hours/days.",
       apiVersionOptional: "API version (optional)",
+      vendorUid: "Vendor UID",
+      vendorUidHint:
+        "From Koverage: Settings → API Access & Webhook → Your Vendor UID.",
+      apiToken: "API token",
+      apiTokenHint:
+        "Generate it in Koverage under Settings → API Access & Webhook.",
+      koverageTextOnlyNote:
+        "Koverage sends text-only templates. Templates with an image or video attached will fail.",
       baseUrl: "Base URL",
       sendPath: "Send path",
       authenticationMethod: "Authentication method",
@@ -207,6 +242,7 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
     page: {
       title: "चैनल",
       loading: "चैनल सेटिंग्स लोड हो रही हैं…",
+      channelTabsLabel: "चैनल",
     },
     common: {
       active: "एक्टिव",
@@ -219,6 +255,10 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       activeWord: "एक्टिव",
       inactiveWord: "इनएक्टिव",
       provider: "प्रोवाइडर",
+      password: "पासवर्ड",
+      changeSecret: (label) => `${label} बदलें`,
+      newSecret: (label) => `नया ${label}`,
+      cancel: "रद्द करें",
     },
     sms: {
       usingPlatformDefault: "प्लेटफ़ॉर्म SMS सेवा इस्तेमाल हो रही है",
@@ -261,6 +301,13 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       savedSuccess: "कॉन्फ़िगरेशन सफलतापूर्वक सेव हो गया।",
       saveConfigToEnable: "SMS चालू करने के लिए एक कॉन्फ़िगरेशन सेव करें।",
       verifiedDefault: "कॉन्फ़िगरेशन वेरिफ़ाई हो गया",
+      balanceNoCredits:
+        "SMS प्रोवाइडर क्रेडेंशियल सही हैं, लेकिन कोई वॉलेट बैलेंस नहीं मिला",
+      balanceCreditsLine: (credits) => `SMS वॉलेट बैलेंस: ${credits} क्रेडिट`,
+      testProviderReady: "टेस्ट प्रोवाइडर कॉन्फ़िगरेशन तैयार है",
+      verifiedSuccess: "SMS प्रोवाइडर क्रेडेंशियल सफलतापूर्वक वेरिफ़ाई हो गए",
+      verifiedWithBalance: (credits) =>
+        `SMS प्रोवाइडर क्रेडेंशियल वेरिफ़ाई हो गए। वॉलेट बैलेंस: ${credits} क्रेडिट`,
     },
     whatsapp: {
       walletBalance: "WhatsApp वॉलेट बैलेंस",
@@ -274,6 +321,14 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       accessTokenHint:
         "एक स्थायी (permanent) System User टोकन सुझाया जाता है - Meta डैशबोर्ड का टेम्पररी टोकन कुछ घंटों/दिनों में एक्सपायर हो जाता है।",
       apiVersionOptional: "API वर्शन (वैकल्पिक)",
+      vendorUid: "Vendor UID",
+      vendorUidHint:
+        "Koverage से: Settings → API Access & Webhook → Your Vendor UID.",
+      apiToken: "API टोकन",
+      apiTokenHint:
+        "इसे Koverage में Settings → API Access & Webhook से जनरेट करें।",
+      koverageTextOnlyNote:
+        "Koverage केवल टेक्स्ट वाले टेम्पलेट भेजता है। इमेज या वीडियो वाले टेम्पलेट फ़ेल होंगे।",
       baseUrl: "Base URL",
       sendPath: "Send path",
       authenticationMethod: "ऑथेंटिकेशन तरीका",
@@ -312,6 +367,7 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
     page: {
       title: "चॅनेल",
       loading: "चॅनेल सेटिंग्ज लोड होत आहेत…",
+      channelTabsLabel: "चॅनेल",
     },
     common: {
       active: "एक्टिव",
@@ -324,6 +380,10 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       activeWord: "एक्टिव्ह",
       inactiveWord: "इनएक्टिव्ह",
       provider: "प्रोव्हायडर",
+      password: "पासवर्ड",
+      changeSecret: (label) => `${label} बदला`,
+      newSecret: (label) => `नवीन ${label}`,
+      cancel: "रद्द करा",
     },
     sms: {
       usingPlatformDefault: "प्लॅटफॉर्म SMS सेवा वापरली जात आहे",
@@ -366,6 +426,13 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       savedSuccess: "कॉन्फिगरेशन यशस्वीरित्या सेव्ह झाले.",
       saveConfigToEnable: "SMS सुरू करण्यासाठी कॉन्फिगरेशन सेव्ह करा.",
       verifiedDefault: "कॉन्फिगरेशन व्हेरिफाय झाले",
+      balanceNoCredits:
+        "SMS प्रोव्हायडर क्रेडेन्शियल्स वैध आहेत, पण वॉलेट बॅलन्स मिळाला नाही",
+      balanceCreditsLine: (credits) => `SMS वॉलेट बॅलन्स: ${credits} क्रेडिट्स`,
+      testProviderReady: "टेस्ट प्रोव्हायडर कॉन्फिगरेशन तयार आहे",
+      verifiedSuccess: "SMS प्रोव्हायडर क्रेडेन्शियल्स यशस्वीरित्या व्हेरिफाय झाले",
+      verifiedWithBalance: (credits) =>
+        `SMS प्रोव्हायडर क्रेडेन्शियल्स व्हेरिफाय झाले. वॉलेट बॅलन्स: ${credits} क्रेडिट्स`,
     },
     whatsapp: {
       walletBalance: "WhatsApp वॉलेट बॅलन्स",
@@ -379,6 +446,14 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       accessTokenHint:
         "कायमस्वरूपी (permanent) System User टोकन सुचवले जाते - Meta डॅशबोर्डवरील तात्पुरता टोकन काही तास/दिवसांत एक्सपायर होतो.",
       apiVersionOptional: "API व्हर्जन (ऐच्छिक)",
+      vendorUid: "Vendor UID",
+      vendorUidHint:
+        "Koverage मधून: Settings → API Access & Webhook → Your Vendor UID.",
+      apiToken: "API टोकन",
+      apiTokenHint:
+        "हे Koverage मध्ये Settings → API Access & Webhook मधून जनरेट करा.",
+      koverageTextOnlyNote:
+        "Koverage फक्त टेक्स्ट टेम्पलेट पाठवते. इमेज किंवा व्हिडिओ असलेले टेम्पलेट अयशस्वी होतील.",
       baseUrl: "Base URL",
       sendPath: "Send path",
       authenticationMethod: "ऑथेंटिकेशन पद्धत",

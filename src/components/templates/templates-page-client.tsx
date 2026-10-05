@@ -18,6 +18,7 @@ import {
   secondaryButtonClass,
 } from "@/components/ui/page";
 import { getTemplatesDict } from "@/lib/i18n/dictionaries/templates";
+import { translateOccasionName } from "@/lib/i18n/occasion-labels";
 import { useLocale } from "@/lib/i18n/use-locale";
 
 type TemplateTab = "MESSAGE" | "DOCUMENT";
@@ -50,7 +51,8 @@ function channelFromSearchParam(value: string | null): TemplateChannel {
 }
 
 export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
-  const dict = getTemplatesDict(useLocale()).page;
+  const locale = useLocale();
+  const dict = getTemplatesDict(locale).page;
   const router = useRouter();
   const searchParams = useSearchParams();
   const [topTab, setTopTab] = useState<TemplateTab>("MESSAGE");
@@ -140,9 +142,12 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
     return templates.filter(
       (template) =>
         template.name.toLowerCase().includes(query) ||
-        (template.occasionName ?? "").toLowerCase().includes(query),
+        (template.occasionName ?? "").toLowerCase().includes(query) ||
+        (template.occasionName
+          ? translateOccasionName(template.occasionName, locale).toLowerCase().includes(query)
+          : false),
     );
-  }, [templates, search]);
+  }, [templates, search, locale]);
 
   async function handleConfirmDelete() {
     if (!pendingDelete) {
@@ -321,7 +326,9 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
                           </td>
                         ) : null}
                         <td className="px-4 py-3 text-stone-600">
-                          {template.occasionName ?? "—"}
+                          {template.occasionName
+                            ? translateOccasionName(template.occasionName, locale)
+                            : "—"}
                         </td>
                         {channel === "SMS" ? (
                           <td className="px-4 py-3 text-stone-600">

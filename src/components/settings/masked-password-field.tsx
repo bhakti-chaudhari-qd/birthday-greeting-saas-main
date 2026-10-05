@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { inputClass } from "@/components/ui/page";
+import { getChannelSettingsDict } from "@/lib/i18n/dictionaries/channel-settings";
+import { useLocale } from "@/lib/i18n/use-locale";
 
 export type MaskedPasswordFieldProps = {
   /** True when the server already has credentials stored for this channel. */
@@ -11,7 +13,7 @@ export type MaskedPasswordFieldProps = {
   onChange: (value: string) => void;
   required?: boolean;
   hint?: string;
-  /** Field label, e.g. "Password" or "API Key". Defaults to "Password". */
+  /** Field label, e.g. "Password" or "API Key". Defaults to the localized "Password". */
   label?: string;
 };
 
@@ -28,8 +30,10 @@ export function MaskedPasswordField({
   onChange,
   required = false,
   hint,
-  label = "Password",
+  label: labelProp,
 }: MaskedPasswordFieldProps) {
+  const common = getChannelSettingsDict(useLocale()).common;
+  const label = labelProp ?? common.password;
   const [editing, setEditing] = useState(!configured);
 
   useEffect(() => {
@@ -50,7 +54,7 @@ export function MaskedPasswordField({
             className="shrink-0 text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             onClick={() => setEditing(true)}
           >
-            Change {label}
+            {common.changeSecret(label)}
           </button>
         </div>
       </div>
@@ -60,7 +64,7 @@ export function MaskedPasswordField({
   return (
     <label className="block text-sm">
       <span className="font-medium text-stone-800">
-        {configured ? `New ${label}` : label}
+        {configured ? common.newSecret(label) : label}
       </span>
       <input
         type="password"
@@ -80,7 +84,7 @@ export function MaskedPasswordField({
             onChange("");
           }}
         >
-          Cancel
+          {common.cancel}
         </button>
       ) : null}
     </label>

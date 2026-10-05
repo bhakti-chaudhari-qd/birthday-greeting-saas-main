@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import {
   WHATSAPP_MEDIA_MAX_BASE64_CHARS,
+  whatsappHttpApiFormatSchema,
   whatsappMediaContentTypeSchema,
 } from "@/lib/channel-config/whatsapp-types";
 
@@ -16,6 +17,8 @@ export const whatsappChannelConfigWriteSchema = z
   .object({
     provider: z.enum(supportedWhatsAppProviders),
     isActive: z.boolean().default(true),
+    /** Custom HTTP request shape. Omit for the original CustomAPI multipart contract. */
+    apiFormat: whatsappHttpApiFormatSchema.optional(),
     username: z.string().trim().min(1).max(200).optional(),
     password: z.string().max(200).optional(),
     /** Single API-key auth (e.g. `apikey_wp`) - an alternative to username/password. */

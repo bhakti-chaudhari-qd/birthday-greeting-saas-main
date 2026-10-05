@@ -39,8 +39,19 @@ export const whatsappHttpCredentialsSchema = z
     }
   });
 
+/**
+ * Request shape a Custom HTTP gateway expects. Omitted means the original
+ * CustomAPI multipart contract; KOVERAGE is the Koverage send-message JSON API.
+ */
+export const WHATSAPP_HTTP_API_FORMATS = ["KOVERAGE"] as const;
+
+export type WhatsAppHttpApiFormat = (typeof WHATSAPP_HTTP_API_FORMATS)[number];
+
+export const whatsappHttpApiFormatSchema = z.enum(WHATSAPP_HTTP_API_FORMATS);
+
 export const whatsappHttpSettingsSchema = z
   .object({
+    apiFormat: whatsappHttpApiFormatSchema.optional(),
     /** Required per tenant - no product default vendor URL. */
     baseUrl: z.string().trim().url(),
     /** Required per tenant - e.g. /api/CustomAPI/CustomAPI_SendWhatsApp */
@@ -106,6 +117,7 @@ export type WhatsAppHttpCredentials = z.infer<
 export type WhatsAppHttpSettings = z.infer<typeof whatsappHttpSettingsSchema>;
 
 export type ResolvedWhatsAppHttpProviderConfig = {
+  apiFormat?: WhatsAppHttpApiFormat;
   baseUrl: string;
   sendPath: string;
   username?: string;

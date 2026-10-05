@@ -18,6 +18,7 @@ import {
   TEMPLATE_PREVIEW_VALUES,
 } from "@/lib/templates/variables";
 import { getTemplatesDict, type TemplatesDict } from "@/lib/i18n/dictionaries/templates";
+import { translateOccasionName } from "@/lib/i18n/occasion-labels";
 import { useLocale } from "@/lib/i18n/use-locale";
 
 const WHATSAPP_LANGUAGE_OPTIONS = WHATSAPP_TEMPLATE_LANGUAGES.map((language) => ({
@@ -155,7 +156,8 @@ export function TemplateForm({
   templateId,
   initialValues,
 }: TemplateFormProps) {
-  const dict = getTemplatesDict(useLocale()).form;
+  const locale = useLocale();
+  const dict = getTemplatesDict(locale).form;
   const router = useRouter();
   const { occasions } = useOccasions();
   const [values, setValues] = useState<TemplateFormValues>({
@@ -550,7 +552,7 @@ export function TemplateForm({
         >
           {occasions.map((occasion) => (
             <option key={occasion.id} value={occasion.id}>
-              {occasion.name}
+              {translateOccasionName(occasion.name, locale)}
             </option>
           ))}
         </select>
@@ -783,7 +785,7 @@ export function TemplateForm({
               {documentTemplates.map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.occasionName
-                    ? `${option.name} (${option.occasionName})`
+                    ? `${option.name} (${translateOccasionName(option.occasionName, locale)})`
                     : option.name}
                 </option>
               ))}

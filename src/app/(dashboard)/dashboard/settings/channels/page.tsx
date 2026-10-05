@@ -69,7 +69,7 @@ function ChannelSettingsTabs() {
     <PageShell>
       <PageHeader title={dict.title} />
 
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Channel">
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label={dict.channelTabsLabel}>
         <button
           type="button"
           role="tab"
