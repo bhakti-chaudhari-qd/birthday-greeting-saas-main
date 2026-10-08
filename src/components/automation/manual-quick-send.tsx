@@ -51,11 +51,15 @@ type ChannelFormState = { enabled: boolean; templateId: string };
 
 type CategoryAudienceSummary = {
   categoryCounts: Record<string, number>;
+  /** First few contacts of each category, shown as a preview of who is in it. */
+  categoryPreviews: Record<string, ContactOption[]>;
   contactIds: string[];
 };
 
 const CHANNELS: Channel[] = ["WHATSAPP", "EMAIL", "SMS"];
 const SEARCH_DEBOUNCE_MS = 250;
+const CONTACT_PICKER_PAGE_SIZE = 5;
+const CATEGORY_PREVIEW_SIZE = 4;
 const FORM_SECTION_CLASS = "rounded-xl border border-stone-200/90 bg-white p-4 shadow-sm sm:p-5";
 
 function emptyChannelForm(): Record<Channel, ChannelFormState> {
@@ -72,6 +76,7 @@ async function collectCategoryContactIds(
 ): Promise<CategoryAudienceSummary> {
   const contactIds = new Set<string>();
   const categoryCounts: Record<string, number> = {};
+  const categoryPreviews: Record<string, ContactOption[]> = {};
 
   for (const selectedCategoryId of categoryIds) {
     let page = 1;
@@ -89,7 +94,13 @@ async function collectCategoryContactIds(
         throw new Error(body.error?.message ?? dict.failedToLoadRecipients);
       }
       categoryCounts[selectedCategoryId] = body.meta?.total ?? 0;
-      for (const contact of body.data as Array<{ id: string }>) {
+      const contacts = body.data as ContactOption[];
+      if (page === 1) {
+        categoryPreviews[selectedCategoryId] = contacts
+          .slice(0, CATEGORY_PREVIEW_SIZE)
+          .map(({ id, name, mobile }) => ({ id, name, mobile }));
+      }
+      for (const contact of contacts) {
         contactIds.add(contact.id);
       }
       totalPages = body.meta?.totalPages ?? 1;
@@ -97,7 +108,7 @@ async function collectCategoryContactIds(
     }
   }
 
-  return { categoryCounts, contactIds: Array.from(contactIds) };
+  return { categoryCounts, categoryPreviews, contactIds: Array.from(contactIds) };
 }
 
 function parseQuickListInput(
@@ -152,12 +163,13 @@ export function ManualQuickSend() {
   const { showToast } = useToast();
   const { occasions } = useOccasions();
 
-  const [recipientMode, setRecipientMode] = useState<"category" | "individual" | "quickList">("category");
+  const [recipientMode, setRecipientMode] = useState<"category" | "individual" | "quickList">("individual");
 
   const [categories, setCategories] = useState<OrgCategory[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<OrgCategory[]>([]);
   const [categoryAudienceSummary, setCategoryAudienceSummary] = useState<CategoryAudienceSummary>({
     categoryCounts: {},
+    categoryPreviews: {},
     contactIds: [],
   });
   const [loadingCategoryAudience, setLoadingCategoryAudience] = useState(false);
@@ -165,6 +177,9 @@ export function ManualQuickSend() {
   const [recipientQuery, setRecipientQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [recipientOptions, setRecipientOptions] = useState<ContactOption[]>([]);
+  const [recipientPage, setRecipientPage] = useState(1);
+  const [recipientTotalPages, setRecipientTotalPages] = useState(1);
+  const [recipientsLoaded, setRecipientsLoaded] = useState(false);
   const [selectedRecipients, setSelectedRecipients] = useState<ContactOption[]>([]);
   const [quickListInput, setQuickListInput] = useState("");
   const [debouncedQuickListInput, setDebouncedQuickListInput] = useState("");
@@ -212,7 +227,7 @@ export function ManualQuickSend() {
     let cancelled = false;
     async function loadCategoryAudience() {
       if (recipientMode !== "category" || selectedCategories.length === 0) {
-        setCategoryAudienceSummary({ categoryCounts: {}, contactIds: [] });
+        setCategoryAudienceSummary({ categoryCounts: {}, categoryPreviews: {}, contactIds: [] });
         setLoadingCategoryAudience(false);
         return;
       }
@@ -227,7 +242,7 @@ export function ManualQuickSend() {
         }
       } catch {
         if (!cancelled) {
-          setCategoryAudienceSummary({ categoryCounts: {}, contactIds: [] });
+          setCategoryAudienceSummary({ categoryCounts: {}, categoryPreviews: {}, contactIds: [] });
         }
       } finally {
         if (!cancelled) setLoadingCategoryAudience(false);
@@ -251,27 +266,37 @@ export function ManualQuickSend() {
 
   useEffect(() => {
     let cancelled = false;
-    async function search() {
-      if (debouncedQuery.trim().length < 2) {
-        setRecipientOptions([]);
+    // Saved contacts are listed a page at a time as soon as this mode is
+    // chosen; typing in the search box narrows the same list.
+    async function loadContactPage() {
+      if (recipientMode !== "individual") {
         return;
       }
       try {
-        const params = new URLSearchParams({ search: debouncedQuery.trim(), limit: "8", isActive: "true" });
+        const params = new URLSearchParams({
+          page: String(recipientPage),
+          limit: String(CONTACT_PICKER_PAGE_SIZE),
+          isActive: "true",
+        });
+        if (debouncedQuery.trim()) {
+          params.set("search", debouncedQuery.trim());
+        }
         const response = await fetch(`/api/v1/contacts?${params.toString()}`);
         const body = await response.json();
         if (!cancelled && response.ok) {
           setRecipientOptions(body.data as ContactOption[]);
+          setRecipientTotalPages(Math.max(body.meta?.totalPages ?? 1, 1));
+          setRecipientsLoaded(true);
         }
       } catch {
-        // Search is best-effort; leave the previous options in place.
+        // Listing is best-effort; leave the previous options in place.
       }
     }
-    void search();
+    void loadContactPage();
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery]);
+  }, [recipientMode, debouncedQuery, recipientPage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -511,19 +536,19 @@ export function ManualQuickSend() {
             <input
               type="radio"
               name="recipient-mode"
-              checked={recipientMode === "category"}
-              onChange={() => setRecipientMode("category")}
+              checked={recipientMode === "individual"}
+              onChange={() => setRecipientMode("individual")}
             />
-            {dict.modeCategories}
+            {dict.modeIndividual}
           </label>
           <label className="flex items-center gap-1.5">
             <input
               type="radio"
               name="recipient-mode"
-              checked={recipientMode === "individual"}
-              onChange={() => setRecipientMode("individual")}
+              checked={recipientMode === "category"}
+              onChange={() => setRecipientMode("category")}
             />
-            {dict.modeIndividual}
+            {dict.modeCategories}
           </label>
           <label className="flex items-center gap-1.5">
             <input
@@ -572,16 +597,36 @@ export function ManualQuickSend() {
             ) : (
               <>
                 <span className="font-medium text-stone-900">{dict.categoriesSelectedHeading}</span>
-                <div className="mt-2 flex flex-col gap-1 text-xs text-stone-600">
+                <div className="mt-2 flex flex-col gap-2 text-xs text-stone-600">
                   {selectedCategories.map((category) => {
                     const count = categoryAudienceSummary.categoryCounts[category.id] ?? 0;
+                    const preview = categoryAudienceSummary.categoryPreviews[category.id] ?? [];
 
                     return (
-                      <div key={category.id} className="flex items-center justify-between gap-3">
-                        <span className="min-w-0 truncate">{category.name}</span>
-                        <span className="shrink-0">
-                          {dict.contactsCount(count)}
-                        </span>
+                      <div key={category.id}>
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="min-w-0 truncate font-medium text-stone-800">
+                            {category.name}
+                          </span>
+                          <span className="shrink-0">
+                            {dict.contactsCount(count)}
+                          </span>
+                        </div>
+                        {preview.length > 0 ? (
+                          <ul className="mt-1 flex flex-col gap-0.5 pl-2">
+                            {preview.map((contact) => (
+                              <li key={contact.id} className="flex justify-between gap-3">
+                                <span className="min-w-0 truncate">{contact.name}</span>
+                                <span className="shrink-0 text-stone-500">{contact.mobile}</span>
+                              </li>
+                            ))}
+                            {count > preview.length ? (
+                              <li className="text-stone-500">
+                                {dict.moreContacts(count - preview.length)}
+                              </li>
+                            ) : null}
+                          </ul>
+                        ) : null}
                       </div>
                     );
                   })}
@@ -628,10 +673,13 @@ export function ManualQuickSend() {
                 className={inputClass}
                 placeholder={dict.searchContactsPlaceholder}
                 value={recipientQuery}
-                onChange={(event) => setRecipientQuery(event.target.value)}
+                onChange={(event) => {
+                  setRecipientQuery(event.target.value);
+                  setRecipientPage(1);
+                }}
               />
               {recipientOptions.length > 0 ? (
-                <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-stone-200 bg-white shadow-lg">
+                <ul className="mt-2 overflow-hidden rounded-lg border border-stone-200 bg-white">
                   {recipientOptions.map((option) => {
                     const selected = selectedRecipientIds.has(option.id);
 
@@ -656,6 +704,33 @@ export function ManualQuickSend() {
                     );
                   })}
                 </ul>
+              ) : recipientsLoaded ? (
+                <p className="mt-2 text-xs text-stone-500">{dict.noContactsFound}</p>
+              ) : null}
+              {recipientTotalPages > 1 ? (
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    className={secondaryButtonClass}
+                    disabled={recipientPage <= 1}
+                    onClick={() => setRecipientPage((page) => Math.max(page - 1, 1))}
+                  >
+                    {dict.previousPage}
+                  </button>
+                  <span className="text-xs text-stone-600">
+                    {dict.pageOf(recipientPage, recipientTotalPages)}
+                  </span>
+                  <button
+                    type="button"
+                    className={secondaryButtonClass}
+                    disabled={recipientPage >= recipientTotalPages}
+                    onClick={() =>
+                      setRecipientPage((page) => Math.min(page + 1, recipientTotalPages))
+                    }
+                  >
+                    {dict.nextPage}
+                  </button>
+                </div>
               ) : null}
             </div>
 

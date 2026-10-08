@@ -53,6 +53,12 @@ export type AdminClientDetailDict = {
     deactivateMessage: (name: string) => string;
     deactivate: string;
     cancel: string;
+    deleteHeading: string;
+    deleteDescription: string;
+    deleteConfirmLabel: (name: string) => string;
+    deleteButton: string;
+    deleting: string;
+    failedToDeleteClient: string;
   };
   billing: {
     activatePlan: string;
@@ -330,6 +336,13 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
         `${name} and everyone in it will immediately lose access. This can be undone later by re-activating the client.`,
       deactivate: "Deactivate",
       cancel: "Cancel",
+      deleteHeading: "Delete client",
+      deleteDescription:
+        "Permanently removes this client and all of its users, contacts, templates, message history and billing records. This cannot be undone. To block access without losing data, deactivate the client instead.",
+      deleteConfirmLabel: (name) => `Type "${name}" to confirm`,
+      deleteButton: "Delete client permanently",
+      deleting: "Deleting…",
+      failedToDeleteClient: "Failed to delete client",
     },
     billing: {
       activatePlan: "Activate a plan",
@@ -615,6 +628,13 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
         `${name} और उसमें मौजूद सभी की एक्सेस तुरंत बंद हो जाएगी। बाद में क्लायंट को फिर से एक्टिव करके इसे वापस किया जा सकता है।`,
       deactivate: "इनएक्टिव करें",
       cancel: "रद्द करें",
+      deleteHeading: "क्लायंट डिलीट करें",
+      deleteDescription:
+        "यह क्लायंट और उसके सभी यूज़र, कॉन्टैक्ट, टेम्पलेट, मेसेज हिस्ट्री और बिलिंग रिकॉर्ड हमेशा के लिए हटा देता है। इसे वापस नहीं किया जा सकता। डेटा खोए बिना एक्सेस रोकने के लिए क्लायंट को इनएक्टिव करें।",
+      deleteConfirmLabel: (name) => `पुष्टि के लिए "${name}" टाइप करें`,
+      deleteButton: "क्लायंट हमेशा के लिए डिलीट करें",
+      deleting: "डिलीट हो रहा है…",
+      failedToDeleteClient: "क्लायंट डिलीट नहीं हो सका",
     },
     billing: {
       activatePlan: "प्लान एक्टिवेट करें",
@@ -898,6 +918,13 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
         `${name} आणि त्यातील सर्वांची अ‍ॅक्सेस लगेच बंद होईल. नंतर क्लायंट पुन्हा एक्टिव करून हे परत करता येईल.`,
       deactivate: "इनएक्टिव करा",
       cancel: "रद्द करा",
+      deleteHeading: "क्लायंट डिलीट करा",
+      deleteDescription:
+        "हा क्लायंट आणि त्याचे सर्व युजर, कॉन्टॅक्ट, टेम्पलेट, मेसेज हिस्ट्री आणि बिलिंग रेकॉर्ड कायमचे काढून टाकले जातात. हे परत करता येत नाही. डेटा न गमावता अ‍ॅक्सेस थांबवण्यासाठी क्लायंट इनएक्टिव करा.",
+      deleteConfirmLabel: (name) => `खात्रीसाठी "${name}" टाइप करा`,
+      deleteButton: "क्लायंट कायमचा डिलीट करा",
+      deleting: "डिलीट होत आहे…",
+      failedToDeleteClient: "क्लायंट डिलीट होऊ शकला नाही",
     },
     billing: {
       activatePlan: "प्लान एक्टिवेट करा",

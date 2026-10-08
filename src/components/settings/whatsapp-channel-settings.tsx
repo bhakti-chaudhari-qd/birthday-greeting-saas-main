@@ -33,6 +33,7 @@ type WhatsAppChannelConfigView = {
   createdAt?: string;
   updatedAt?: string;
   walletBalanceSupported: boolean;
+  usingPlatformDefault?: boolean;
 };
 
 type AuthMode = "password" | "apiKey";
@@ -272,6 +273,14 @@ export function WhatsAppChannelSettings() {
         <p className="text-sm text-stone-600">{common.loadingConfiguration}</p>
       ) : (
         <>
+          {!config?.configured && config?.usingPlatformDefault ? (
+            <Panel className="p-4 sm:p-5">
+              <p className="text-sm font-medium text-stone-800">
+                {dict.usingPlatformDefault}
+              </p>
+              <p className="mt-1 text-sm text-stone-600">{dict.platformReadyHint}</p>
+            </Panel>
+          ) : null}
           <Panel className="p-4 sm:p-5">
             <p className="text-sm font-medium text-stone-800">{dict.walletBalance}</p>
             <p className="mt-1 text-2xl font-semibold text-stone-900">-</p>
@@ -528,7 +537,9 @@ export function WhatsAppChannelSettings() {
                         ),
                         config.isActive ? common.activeWord : common.inactiveWord,
                       )
-                    : dict.currentStatusNotConfigured}
+                    : config?.usingPlatformDefault
+                      ? dict.usingPlatformDefault
+                      : dict.currentStatusNotConfigured}
                 </p>
                 {config?.provider === "CUSTOM_HTTP" && config.baseUrl ? (
                   <p className="mt-1 break-all text-xs text-stone-500">

@@ -40,6 +40,8 @@ export type SafeWhatsAppChannelConfigView = {
   updatedAt?: string;
   /** Live wallet lookup is not available for the current WhatsApp provider. */
   walletBalanceSupported: boolean;
+  /** True when the client has no gateway of its own and sends through the platform default. */
+  usingPlatformDefault?: boolean;
 };
 
 function safeCredentialSummaryFromConfig(config: ChannelConfig): {

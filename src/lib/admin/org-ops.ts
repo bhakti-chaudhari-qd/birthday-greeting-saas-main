@@ -23,10 +23,15 @@ import {
   listAdminPaymentLinksForOrganization,
   type AdminPaymentLinkSummary,
 } from "@/lib/billing/service";
+import {
+  cancelRazorpaySubscription,
+  getRazorpayCredentials,
+} from "@/lib/billing/razorpay";
 import { prisma } from "@/lib/db";
 import { RETRYABLE_ERROR_CODES } from "@/lib/queue/classify";
 import { MAX_SEND_ATTEMPTS } from "@/lib/queue/constants";
 import { startOfIstDay, startOfIstMonth } from "@/lib/queue/dates";
+import { documentStorage, type DocumentStorage } from "@/lib/storage";
 
 import {
   PLATFORM_ADMIN_AUDIT_ACTIONS,
@@ -43,6 +48,17 @@ export class PlatformAdminOrgError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "PlatformAdminOrgError";
+  }
+}
+
+/** A client delete that was refused; status is the HTTP status to return. */
+export class PlatformAdminOrgDeleteError extends Error {
+  readonly status: 400 | 409;
+
+  constructor(message: string, status: 400 | 409) {
+    super(message);
+    this.name = "PlatformAdminOrgDeleteError";
+    this.status = status;
   }
 }
 
@@ -368,6 +384,110 @@ export async function updateOrganizationForPlatformAdmin(
     throw new PlatformAdminOrgError("Client not found after update");
   }
   return updated;
+}
+
+export const deletePlatformOrganizationSchema = z
+  .object({
+    /** Must equal the client's name - guards against deleting the wrong client. */
+    confirmName: z.string().trim().min(1).max(200),
+  })
+  .strict();
+
+export type DeletePlatformOrganizationInput = z.infer<
+  typeof deletePlatformOrganizationSchema
+>;
+
+/**
+ * Permanently removes a client and everything it owns (users, contacts,
+ * templates, queue, delivery history, billing records) through the schema's
+ * cascade deletes. Any Razorpay auto-renewal is cancelled first so a removed
+ * client is never charged again; a failed cancel aborts the delete. Stored
+ * generated documents are removed afterwards on a best-effort basis.
+ */
+export async function deleteOrganizationForPlatformAdmin(
+  organizationId: string,
+  input: DeletePlatformOrganizationInput,
+  actorAdminId: string,
+  options: { storage?: DocumentStorage } = {},
+): Promise<void> {
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: {
+      id: true,
+      name: true,
+      subscription: {
+        select: { plan: true, status: true, razorpaySubscriptionId: true },
+      },
+      generatedDocuments: { select: { storageKey: true } },
+    },
+  });
+
+  if (!organization) {
+    throw new PlatformAdminOrgError("Client not found");
+  }
+
+  if (input.confirmName.trim() !== organization.name.trim()) {
+    throw new PlatformAdminOrgDeleteError(
+      "The name you typed does not match this client's name",
+      400,
+    );
+  }
+
+  const subscription = organization.subscription;
+  const credentials = getRazorpayCredentials();
+  if (
+    subscription?.razorpaySubscriptionId &&
+    subscription.status === SubscriptionStatus.ACTIVE &&
+    credentials
+  ) {
+    try {
+      await cancelRazorpaySubscription(
+        subscription.razorpaySubscriptionId,
+        credentials,
+      );
+    } catch (error) {
+      console.error("Razorpay subscription cancel failed before client delete", {
+        organizationId,
+        error,
+      });
+      throw new PlatformAdminOrgDeleteError(
+        "Could not cancel this client's Razorpay auto-renewal, so the client was not deleted. Cancel the subscription in Razorpay, then try again.",
+        409,
+      );
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.organization.delete({ where: { id: organizationId } });
+    await createPlatformAdminAuditEvent(
+      {
+        actorAdminId,
+        // The client row is gone, so the event cannot reference it.
+        organizationId: null,
+        action: PLATFORM_ADMIN_AUDIT_ACTIONS.ORGANIZATION_DELETED,
+        targetType: "organization",
+        targetId: organizationId,
+        before: {
+          name: organization.name,
+          plan: subscription?.plan ?? null,
+          subscriptionStatus: subscription?.status ?? null,
+        },
+      },
+      tx,
+    );
+  });
+
+  const storage = options.storage ?? documentStorage;
+  for (const document of organization.generatedDocuments) {
+    try {
+      await storage.delete(document.storageKey);
+    } catch (error) {
+      console.error("Stored document cleanup failed after client delete", {
+        organizationId,
+        error,
+      });
+    }
+  }
 }
 
 /** Activates (or renews) a STARTER/PRO/CUSTOM plan deal immediately, independent of payment. */

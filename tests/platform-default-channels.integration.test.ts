@@ -6,10 +6,14 @@ import { encryptCredentials } from "@/lib/crypto/credentials";
 import { getEmailChannelConfig } from "@/lib/channel-config/email-service";
 import {
   getEffectiveChannelConfig,
+  getPlatformDefaultWhatsAppConfig,
   readPlatformDefaultSms,
+  readPlatformDefaultWhatsApp,
 } from "@/lib/channel-config/platform-defaults";
 import { resolveSmsProviderConfig } from "@/lib/channel-config/resolve";
 import { getSmsChannelConfig } from "@/lib/channel-config/service";
+import { resolveWhatsAppHttpProviderConfig } from "@/lib/channel-config/whatsapp-resolve";
+import { resolveMessageProvider } from "@/lib/messaging/providers/factory";
 import { prisma } from "@/lib/db";
 import { uniqueSuffix } from "./helpers";
 
@@ -80,6 +84,51 @@ describe("readPlatformDefaultSms", () => {
         NODE_ENV: "production",
       } as NodeJS.ProcessEnv),
     ).toMatchObject({ baseUrl: "http://sms.platform.example" });
+  });
+});
+
+describe("platform default WhatsApp (Koverage)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("is off unless both the vendor UID and API token are set", () => {
+    expect(readPlatformDefaultWhatsApp({} as NodeJS.ProcessEnv)).toBeNull();
+    expect(
+      readPlatformDefaultWhatsApp({
+        DEFAULT_WHATSAPP_KOVERAGE_VENDOR_UID: "vendor-uid-1",
+      } as unknown as NodeJS.ProcessEnv),
+    ).toBeNull();
+    expect(
+      readPlatformDefaultWhatsApp({
+        DEFAULT_WHATSAPP_KOVERAGE_VENDOR_UID: "vendor-uid-1",
+        DEFAULT_WHATSAPP_KOVERAGE_API_TOKEN: "platform-token",
+      } as unknown as NodeJS.ProcessEnv),
+    ).toEqual({
+      baseUrl: "https://waba.koverage.in",
+      sendPath: "/api/vendor-uid-1/contact/send-template-message",
+      apiToken: "platform-token",
+    });
+  });
+
+  it("resolves to a Koverage gateway config the send pipeline accepts", async () => {
+    vi.stubEnv("DEFAULT_WHATSAPP_KOVERAGE_VENDOR_UID", "vendor-uid-1");
+    vi.stubEnv("DEFAULT_WHATSAPP_KOVERAGE_API_TOKEN", "platform-token");
+
+    const config = await getPlatformDefaultWhatsAppConfig("org-1");
+
+    expect(config).toMatchObject({
+      channel: Channel.WHATSAPP,
+      provider: ChannelProvider.CUSTOM_HTTP,
+      isActive: true,
+    });
+    expect(resolveWhatsAppHttpProviderConfig(config!)).toMatchObject({
+      apiFormat: "KOVERAGE",
+      baseUrl: "https://waba.koverage.in",
+      sendPath: "/api/vendor-uid-1/contact/send-template-message",
+      apiKey: "platform-token",
+    });
+    expect(resolveMessageProvider(config, Channel.WHATSAPP).name).toBe("KOVERAGE");
   });
 });
 
@@ -186,7 +235,7 @@ describe("platform default channels", () => {
     await prisma.organization.delete({ where: { id: organizationId } });
   });
 
-  it("has no platform default for WhatsApp", async ({ skip }) => {
+  it("has no WhatsApp default while the Koverage account is not configured", async ({ skip }) => {
     if (!databaseAvailable) skip();
     stubDefaultSms();
     const organizationId = await createOrg();

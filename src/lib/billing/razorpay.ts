@@ -271,6 +271,35 @@ export async function createRazorpayPaymentLink(
   return body as RazorpayPaymentLink;
 }
 
+/** Stops auto-renewal immediately (not at the end of the billing cycle). */
+export async function cancelRazorpaySubscription(
+  subscriptionId: string,
+  credentials: RazorpayCredentials = requireRazorpayCredentials(),
+): Promise<void> {
+  const response = await fetch(
+    `https://api.razorpay.com/v1/subscriptions/${subscriptionId}/cancel`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: basicAuthHeader(credentials.keyId, credentials.keySecret),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ cancel_at_cycle_end: 0 }),
+    },
+  );
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as {
+      error?: { description?: string };
+    } | null;
+    throw new RazorpayApiError(
+      body?.error?.description ||
+        `Razorpay subscription cancel failed (${response.status})`,
+      response.status,
+    );
+  }
+}
+
 export async function cancelRazorpayPaymentLink(
   paymentLinkId: string,
   credentials: RazorpayCredentials = requireRazorpayCredentials(),

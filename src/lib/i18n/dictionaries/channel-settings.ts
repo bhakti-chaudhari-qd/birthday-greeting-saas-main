@@ -68,6 +68,8 @@ export type ChannelSettingsDict = {
     verifiedWithBalance: (credits: string) => string;
   };
   whatsapp: {
+    usingPlatformDefault: string;
+    platformReadyHint: string;
     walletBalance: string;
     refreshLiveBalance: string;
     notAvailable: string;
@@ -105,6 +107,8 @@ export type ChannelSettingsDict = {
     fromNameOptional: string;
     resendApiKey: string;
     resendApiKeyHint: string;
+    usingPlatformDefault: string;
+    platformReadyHint: (defaultFrom: string) => string;
     notConfiguredDefault: (defaultFrom: string) => string;
     notConfiguredNoDefault: string;
     failedToLoad: string;
@@ -186,6 +190,9 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
         `SMS provider credentials verified. Wallet balance: ${credits} credits`,
     },
     whatsapp: {
+      usingPlatformDefault: "Using the platform WhatsApp service",
+      platformReadyHint:
+        "WhatsApp is ready to use - nothing to set up. Messages are sent from the platform's WhatsApp number using text-only approved templates. Save your own gateway below if you prefer to send from your own number.",
       walletBalance: "WhatsApp wallet balance",
       refreshLiveBalance: "Refresh to load your live WhatsApp gateway balance.",
       notAvailable: "Not available from the current WhatsApp provider.",
@@ -229,8 +236,11 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       fromNameOptional: "From name (optional)",
       resendApiKey: "Resend API key",
       resendApiKeyHint: "Required the first time you set up Resend.",
+      usingPlatformDefault: "Using the platform email service",
+      platformReadyHint: (defaultFrom) =>
+        `Email is ready to use - nothing to set up. Greetings are sent from ${defaultFrom}. Fill in the form below only if you want to send from your own address.`,
       notConfiguredDefault: (defaultFrom) =>
-        `Not configured - Email is sent from the platform default sender (${defaultFrom}). Add your own Resend details to send from your own address.`,
+        `Using the platform email service - Email is sent from the platform default sender (${defaultFrom}). Add your own Resend details to send from your own address.`,
       notConfiguredNoDefault:
         "Not configured - Email is unavailable until you add your Resend details",
       failedToLoad: "Failed to load Email channel configuration",
@@ -310,6 +320,9 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
         `SMS प्रोवाइडर क्रेडेंशियल वेरिफ़ाई हो गए। वॉलेट बैलेंस: ${credits} क्रेडिट`,
     },
     whatsapp: {
+      usingPlatformDefault: "प्लेटफ़ॉर्म WhatsApp सेवा इस्तेमाल हो रही है",
+      platformReadyHint:
+        "WhatsApp इस्तेमाल के लिए तैयार है - कुछ सेट करने की ज़रूरत नहीं। मेसेज प्लेटफ़ॉर्म के WhatsApp नंबर से, केवल टेक्स्ट वाले अप्रूव्ड टेम्पलेट से भेजे जाते हैं। अपने नंबर से भेजना चाहें तो नीचे अपना गेटवे सेव करें।",
       walletBalance: "WhatsApp वॉलेट बैलेंस",
       refreshLiveBalance: "अपने लाइव WhatsApp गेटवे बैलेंस के लिए रीफ़्रेश करें।",
       notAvailable: "मौजूदा WhatsApp प्रोवाइडर से यह उपलब्ध नहीं है।",
@@ -354,8 +367,11 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       fromNameOptional: "From name (वैकल्पिक)",
       resendApiKey: "Resend API key",
       resendApiKeyHint: "Resend पहली बार सेट करते समय ज़रूरी है।",
+      usingPlatformDefault: "प्लेटफ़ॉर्म Email सेवा इस्तेमाल हो रही है",
+      platformReadyHint: (defaultFrom) =>
+        `Email इस्तेमाल के लिए तैयार है - कुछ सेट करने की ज़रूरत नहीं। ग्रीटिंग ${defaultFrom} से भेजी जाती हैं। अपने पते से भेजना हो तभी नीचे का फ़ॉर्म भरें।`,
       notConfiguredDefault: (defaultFrom) =>
-        `कॉन्फ़िगर नहीं है - Email प्लेटफ़ॉर्म के डिफ़ॉल्ट सेंडर (${defaultFrom}) से जाती है। अपने पते से भेजने के लिए अपनी Resend जानकारी जोड़ें।`,
+        `प्लेटफ़ॉर्म Email सेवा इस्तेमाल हो रही है - Email प्लेटफ़ॉर्म के डिफ़ॉल्ट सेंडर (${defaultFrom}) से जाती है। अपने पते से भेजने के लिए अपनी Resend जानकारी जोड़ें।`,
       notConfiguredNoDefault:
         "कॉन्फ़िगर नहीं है - जब तक आप अपनी Resend जानकारी नहीं जोड़ते, Email उपलब्ध नहीं है",
       failedToLoad: "Email चैनल कॉन्फ़िगरेशन लोड नहीं हो सका",
@@ -435,6 +451,9 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
         `SMS प्रोव्हायडर क्रेडेन्शियल्स व्हेरिफाय झाले. वॉलेट बॅलन्स: ${credits} क्रेडिट्स`,
     },
     whatsapp: {
+      usingPlatformDefault: "प्लॅटफॉर्म WhatsApp सेवा वापरली जात आहे",
+      platformReadyHint:
+        "WhatsApp वापरण्यासाठी तयार आहे - काहीही सेट करण्याची गरज नाही. मेसेज प्लॅटफॉर्मच्या WhatsApp नंबरवरून, फक्त टेक्स्ट असलेल्या मंजूर टेम्पलेटने पाठवले जातात. तुमच्या नंबरवरून पाठवायचे असल्यास खाली तुमचे गेटवे सेव्ह करा.",
       walletBalance: "WhatsApp वॉलेट बॅलन्स",
       refreshLiveBalance: "तुमच्या लाइव्ह WhatsApp गेटवे बॅलन्ससाठी रीफ्रेश करा.",
       notAvailable: "सध्याच्या WhatsApp प्रोव्हायडरकडून हे उपलब्ध नाही.",
@@ -478,8 +497,11 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       fromNameOptional: "From name (ऐच्छिक)",
       resendApiKey: "Resend API key",
       resendApiKeyHint: "Resend पहिल्यांदा सेट करताना आवश्यक आहे.",
+      usingPlatformDefault: "प्लॅटफॉर्म Email सेवा वापरली जात आहे",
+      platformReadyHint: (defaultFrom) =>
+        `Email वापरण्यासाठी तयार आहे - काहीही सेट करण्याची गरज नाही. ग्रीटिंग ${defaultFrom} वरून पाठवल्या जातात. तुमच्या पत्त्यावरून पाठवायचे असेल तरच खालील फॉर्म भरा.`,
       notConfiguredDefault: (defaultFrom) =>
-        `कॉन्फिगर केलेले नाही - Email प्लॅटफॉर्मच्या डिफॉल्ट सेंडरवरून (${defaultFrom}) जाते. तुमच्या पत्त्यावरून पाठवण्यासाठी तुमची Resend माहिती जोडा.`,
+        `प्लॅटफॉर्म Email सेवा वापरली जात आहे - Email प्लॅटफॉर्मच्या डिफॉल्ट सेंडरवरून (${defaultFrom}) जाते. तुमच्या पत्त्यावरून पाठवण्यासाठी तुमची Resend माहिती जोडा.`,
       notConfiguredNoDefault:
         "कॉन्फिगर केलेले नाही - तुम्ही तुमची Resend माहिती जोडेपर्यंत Email उपलब्ध नाही",
       failedToLoad: "Email चॅनेल कॉन्फिगरेशन लोड होऊ शकले नाही",

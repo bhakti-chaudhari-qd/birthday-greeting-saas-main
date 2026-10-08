@@ -8,6 +8,7 @@ import { encryptCredentials } from "@/lib/crypto/credentials";
 import { prisma } from "@/lib/db";
 
 import { buildSmsHttpSettings } from "./resolve";
+import { buildWhatsAppHttpSettings } from "./whatsapp-resolve";
 
 export type PlatformDefaultSms = {
   baseUrl: string;
@@ -19,6 +20,15 @@ export type PlatformDefaultSms = {
 };
 
 const PLATFORM_DEFAULT_SMS_CONFIG_ID = "platform-default-sms";
+
+export type PlatformDefaultWhatsApp = {
+  baseUrl: string;
+  sendPath: string;
+  apiToken: string;
+};
+
+const PLATFORM_DEFAULT_WHATSAPP_CONFIG_ID = "platform-default-whatsapp";
+const KOVERAGE_DEFAULT_BASE_URL = "https://waba.koverage.in";
 
 function value(raw: string | undefined): string {
   return raw?.trim() ?? "";
@@ -110,9 +120,84 @@ export async function getPlatformDefaultSmsConfig(
 }
 
 /**
+ * The platform's own Koverage WhatsApp account, offered to clients that
+ * haven't configured a WhatsApp gateway. Configured through
+ * DEFAULT_WHATSAPP_KOVERAGE_* env vars; returns null (feature off) unless the
+ * vendor UID and API token are both present.
+ */
+export function readPlatformDefaultWhatsApp(
+  env: NodeJS.ProcessEnv = process.env,
+): PlatformDefaultWhatsApp | null {
+  const vendorUid = value(env.DEFAULT_WHATSAPP_KOVERAGE_VENDOR_UID);
+  const apiToken = value(env.DEFAULT_WHATSAPP_KOVERAGE_API_TOKEN);
+  const baseUrl =
+    value(env.DEFAULT_WHATSAPP_KOVERAGE_BASE_URL) || KOVERAGE_DEFAULT_BASE_URL;
+
+  if (!vendorUid || !apiToken) {
+    return null;
+  }
+
+  const sendPath = `/api/${encodeURIComponent(vendorUid)}/contact/send-template-message`;
+
+  try {
+    if (new URL(baseUrl).protocol !== "https:") {
+      return null;
+    }
+    buildWhatsAppHttpSettings(baseUrl, sendPath, null, false, "KOVERAGE");
+  } catch {
+    return null;
+  }
+
+  return { baseUrl, sendPath, apiToken };
+}
+
+/** In-memory ChannelConfig (never stored), same idea as the SMS default. */
+function toWhatsAppChannelConfig(
+  organizationId: string,
+  whatsapp: PlatformDefaultWhatsApp,
+): ChannelConfig {
+  return {
+    id: PLATFORM_DEFAULT_WHATSAPP_CONFIG_ID,
+    organizationId,
+    channel: Channel.WHATSAPP,
+    provider: ChannelProvider.CUSTOM_HTTP,
+    encryptedCredentials: encryptCredentials(
+      JSON.stringify({ apiKey: whatsapp.apiToken, password: "" }),
+    ),
+    settings: buildWhatsAppHttpSettings(
+      whatsapp.baseUrl,
+      whatsapp.sendPath,
+      null,
+      false,
+      "KOVERAGE",
+    ),
+    isActive: true,
+    vendorId: null,
+    createdAt: new Date(0),
+    updatedAt: new Date(0),
+  };
+}
+
+/**
+ * The platform default WhatsApp gateway for this client, or null when it
+ * isn't configured. Like the SMS default, every client gets it from
+ * registration onward until it saves a gateway of its own.
+ */
+export async function getPlatformDefaultWhatsAppConfig(
+  organizationId: string,
+): Promise<ChannelConfig | null> {
+  const whatsapp = readPlatformDefaultWhatsApp();
+  if (!whatsapp) {
+    return null;
+  }
+
+  return toWhatsAppChannelConfig(organizationId, whatsapp);
+}
+
+/**
  * The gateway config to send a channel's messages with: the client's own when
  * it has one (inactive means the client turned the channel off, so no
- * fallback), otherwise - SMS only - the platform default.
+ * fallback), otherwise the platform default for SMS or WhatsApp.
  */
 export async function getEffectiveChannelConfig(
   organizationId: string,
@@ -126,9 +211,13 @@ export async function getEffectiveChannelConfig(
     return own.isActive ? own : null;
   }
 
-  if (channel !== Channel.SMS) {
-    return null;
+  if (channel === Channel.SMS) {
+    return getPlatformDefaultSmsConfig(organizationId);
   }
 
-  return getPlatformDefaultSmsConfig(organizationId);
+  if (channel === Channel.WHATSAPP) {
+    return getPlatformDefaultWhatsAppConfig(organizationId);
+  }
+
+  return null;
 }

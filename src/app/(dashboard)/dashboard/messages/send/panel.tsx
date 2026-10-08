@@ -44,6 +44,7 @@ type ChannelConfigSummary = {
   configured: boolean;
   provider: "TEST" | "CUSTOM_HTTP" | null;
   isActive: boolean;
+  usingPlatformDefault?: boolean;
 };
 
 type PreviewItem = {
@@ -810,6 +811,7 @@ export function ManualSendPanel() {
                   <p className="mt-2 text-sm text-zinc-600">{dict.setup.emailHint}</p>
                 ) : null}
                 {sendChannel === "WHATSAPP" &&
+                !channelConfig?.usingPlatformDefault &&
                 (!channelConfig?.configured || !channelConfig.isActive) ? (
                   <div className="mt-2">
                     <p className="text-sm text-amber-800">

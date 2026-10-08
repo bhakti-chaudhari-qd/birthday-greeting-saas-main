@@ -8,6 +8,7 @@ import { ChannelTopUpPanel } from "@/components/admin/channel-top-up-panel";
 import { DealHistoryPanel } from "@/components/admin/deal-history-panel";
 import { FailedQueueTable } from "@/components/admin/failed-queue-table";
 import { OrganizationDetailTabs } from "@/components/admin/organization-detail-tabs";
+import { DeleteClientPanel } from "@/components/admin/delete-client-panel";
 import { OrganizationOpsForm } from "@/components/admin/organization-ops-form";
 import { OrganizationUsersTable } from "@/components/admin/organization-users-table";
 import { PaymentLinksPanel } from "@/components/admin/payment-links-panel";
@@ -139,6 +140,18 @@ export function AdminClientDetailClient({
           </p>
         </div>
         <OrganizationOpsForm organization={organization} />
+      </Panel>
+
+      <Panel>
+        <div className="border-b border-stone-200 px-5 py-3 sm:px-6">
+          <h2 className="text-sm font-semibold text-red-700">
+            {dict.opsForm.deleteHeading}
+          </h2>
+        </div>
+        <DeleteClientPanel
+          organizationId={organization.id}
+          organizationName={organization.name}
+        />
       </Panel>
     </>
   );

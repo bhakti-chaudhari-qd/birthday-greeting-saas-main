@@ -125,11 +125,16 @@ export type GreetingRoutesDict = {
     countingRecipients: string;
     categoriesSelectedHeading: string;
     contactsCount: (n: number) => string;
+    moreContacts: (n: number) => string;
     totalUniqueRecipients: string;
     selectedContacts: string;
     removeContactAria: (name: string) => string;
     noContactsSelected: string;
     searchContactsPlaceholder: string;
+    noContactsFound: string;
+    previousPage: string;
+    nextPage: string;
+    pageOf: (page: number, total: number) => string;
     selectContactAria: (name: string) => string;
     contactsSelectedCount: (n: number) => string;
     quickListLabel: string;
@@ -358,11 +363,16 @@ const GREETING_ROUTES_DICT: Record<Locale, GreetingRoutesDict> = {
       countingRecipients: "Counting recipients...",
       categoriesSelectedHeading: "Categories Selected",
       contactsCount: (n) => `${n} Contact${n === 1 ? "" : "s"}`,
+      moreContacts: (n) => `+${n} more`,
       totalUniqueRecipients: "Total Unique Recipients",
       selectedContacts: "Selected Contacts",
       removeContactAria: (name) => `Remove ${name}`,
       noContactsSelected: "No contacts selected",
       searchContactsPlaceholder: "Search contacts...",
+      noContactsFound: "No contacts found.",
+      previousPage: "Previous",
+      nextPage: "Next",
+      pageOf: (page, total) => `Page ${page} of ${total}`,
       selectContactAria: (name) => `Select ${name}`,
       contactsSelectedCount: (n) =>
         n === 0 ? "No contacts selected" : `${n} Contact${n === 1 ? "" : "s"} Selected`,
@@ -601,11 +611,16 @@ Supports:
       countingRecipients: "प्राप्तकर्ता गिने जा रहे हैं...",
       categoriesSelectedHeading: "चुनी गई कैटेगरी",
       contactsCount: (n) => `${n} कॉन्टैक्ट`,
+      moreContacts: (n) => `+${n} और`,
       totalUniqueRecipients: "कुल यूनीक प्राप्तकर्ता",
       selectedContacts: "चुने गए कॉन्टैक्ट",
       removeContactAria: (name) => `${name} हटाएं`,
       noContactsSelected: "कोई कॉन्टैक्ट नहीं चुना गया",
       searchContactsPlaceholder: "कॉन्टैक्ट खोजें...",
+      noContactsFound: "कोई कॉन्टैक्ट नहीं मिला।",
+      previousPage: "पिछला",
+      nextPage: "अगला",
+      pageOf: (page, total) => `पेज ${page} / ${total}`,
       selectContactAria: (name) => `${name} चुनें`,
       contactsSelectedCount: (n) =>
         n === 0 ? "कोई कॉन्टैक्ट नहीं चुना गया" : `${n} कॉन्टैक्ट चुने गए`,
@@ -844,11 +859,16 @@ Supports:
       countingRecipients: "प्राप्तकर्ते मोजले जात आहेत...",
       categoriesSelectedHeading: "निवडलेल्या कॅटेगरी",
       contactsCount: (n) => `${n} कॉन्टॅक्ट`,
+      moreContacts: (n) => `+${n} आणखी`,
       totalUniqueRecipients: "एकूण युनिक प्राप्तकर्ते",
       selectedContacts: "निवडलेले कॉन्टॅक्ट्स",
       removeContactAria: (name) => `${name} काढा`,
       noContactsSelected: "कोणताही कॉन्टॅक्ट निवडलेला नाही",
       searchContactsPlaceholder: "कॉन्टॅक्ट्स शोधा...",
+      noContactsFound: "कोणताही कॉन्टॅक्ट सापडला नाही.",
+      previousPage: "मागील",
+      nextPage: "पुढील",
+      pageOf: (page, total) => `पेज ${page} / ${total}`,
       selectContactAria: (name) => `${name} निवडा`,
       contactsSelectedCount: (n) =>
         n === 0 ? "कोणताही कॉन्टॅक्ट निवडलेला नाही" : `${n} कॉन्टॅक्ट निवडले`,

@@ -140,6 +140,17 @@ export function EmailChannelSettings() {
       {loading ? (
         <p className="text-sm text-stone-600">{common.loadingConfiguration}</p>
       ) : (
+        <>
+        {!config?.configured && config?.platformDefaultFrom ? (
+          <Panel className="p-4 sm:p-5">
+            <p className="text-sm font-medium text-stone-800">
+              {dict.usingPlatformDefault}
+            </p>
+            <p className="mt-1 text-sm text-stone-600">
+              {dict.platformReadyHint(config.platformDefaultFrom)}
+            </p>
+          </Panel>
+        ) : null}
         <Panel className="p-4 sm:p-5">
           <form className="flex flex-col gap-4" onSubmit={handleSave}>
             <div className="block text-sm">
@@ -231,6 +242,7 @@ export function EmailChannelSettings() {
             </div>
           </form>
         </Panel>
+        </>
       )}
     </div>
   );

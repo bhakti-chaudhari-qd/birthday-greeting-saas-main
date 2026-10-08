@@ -124,9 +124,15 @@ export function AutomationDrawer({
         ]);
         const [smsBody, waBody] = await Promise.all([smsRes.json(), waRes.json()]);
         setChannelStatus({
-          sms: smsRes.ok ? { configured: smsBody.data?.configured, isActive: smsBody.data?.isActive } : null,
+          sms: smsRes.ok
+            ? smsBody.data?.usingPlatformDefault
+              ? { configured: true, isActive: true }
+              : { configured: smsBody.data?.configured, isActive: smsBody.data?.isActive }
+            : null,
           whatsapp: waRes.ok
-            ? { configured: waBody.data?.configured, isActive: waBody.data?.isActive }
+            ? waBody.data?.usingPlatformDefault
+              ? { configured: true, isActive: true }
+              : { configured: waBody.data?.configured, isActive: waBody.data?.isActive }
             : null,
         });
       } catch {

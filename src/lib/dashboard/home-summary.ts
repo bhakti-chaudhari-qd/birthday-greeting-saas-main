@@ -307,7 +307,8 @@ export async function getDashboardHomeSummary(
     smsChannel?.usingPlatformDefault,
   );
   const whatsappConnected = Boolean(
-    whatsappChannel?.configured && whatsappChannel.isActive,
+    (whatsappChannel?.configured && whatsappChannel.isActive) ||
+    whatsappChannel?.usingPlatformDefault,
   );
 
   const alerts: DashboardHomeAlert[] = [];

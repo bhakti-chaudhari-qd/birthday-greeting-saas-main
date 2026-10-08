@@ -13,6 +13,7 @@ import { prisma } from "@/lib/db";
 import type { WhatsAppChannelConfigWriteInput } from "@/lib/validation/whatsapp-channel-config";
 
 import { ChannelConfigValidationError } from "./errors";
+import { getPlatformDefaultWhatsAppConfig } from "./platform-defaults";
 import { TEST_PROVIDER_STORAGE_CREDENTIALS } from "./test-provider-storage";
 import { buildWhatsAppHttpSettings } from "./whatsapp-resolve";
 import {
@@ -375,7 +376,11 @@ export async function getWhatsAppChannelConfig(
   organizationId: string,
 ): Promise<SafeWhatsAppChannelConfigView> {
   const config = await getTenantWhatsAppChannelConfig(organizationId);
-  return serializeWhatsAppChannelConfig(config);
+  const view = serializeWhatsAppChannelConfig(config);
+  if (!config && (await getPlatformDefaultWhatsAppConfig(organizationId))) {
+    return { ...view, usingPlatformDefault: true };
+  }
+  return view;
 }
 
 export async function upsertWhatsAppChannelConfig(
