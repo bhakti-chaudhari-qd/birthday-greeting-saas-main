@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -67,6 +68,8 @@ export function VendorAdminForm({ vendor }: VendorAdminFormProps) {
     }
   }
 
+  const confirm = useConfirm();
+
   /**
    * buttonLabel is shown on the button while the request is in flight (and
    * doubles as the loading state key); successMessage/failureMessage are
@@ -81,7 +84,7 @@ export function VendorAdminForm({ vendor }: VendorAdminFormProps) {
     path: string;
     body?: Record<string, unknown>;
   }) {
-    if (!window.confirm(config.confirmation)) return;
+    if (!(await confirm({ message: config.confirmation }))) return;
     setActionLabel(config.buttonLabel);
     setError(null);
     setSuccess(null);

@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -20,8 +21,10 @@ export function DeleteTemplateButton({
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const confirm = useConfirm();
+
   async function handleDelete() {
-    const confirmed = window.confirm(dict.confirmPrompt(templateName));
+    const confirmed = await confirm({ message: dict.confirmPrompt(templateName) });
     if (!confirmed) {
       return;
     }

@@ -87,7 +87,7 @@ const ACTIVITY_DICT: Record<Locale, ActivityDict> = {
     summary: {
       todayTotal: "Today's Total",
       periodTotal: (period) => `${period} Total`,
-      sentSuccessfully: "Sent Successfully",
+      sentSuccessfully: "Submitted",
       failed: "Failed",
       pending: "Pending",
     },
@@ -165,7 +165,7 @@ const ACTIVITY_DICT: Record<Locale, ActivityDict> = {
     summary: {
       todayTotal: "आज का कुल",
       periodTotal: (period) => `${period} का कुल`,
-      sentSuccessfully: "सफलतापूर्वक भेजे गए",
+      sentSuccessfully: "सबमिटेड",
       failed: "असफल",
       pending: "पेंडिंग",
     },
@@ -244,7 +244,7 @@ const ACTIVITY_DICT: Record<Locale, ActivityDict> = {
     summary: {
       todayTotal: "आजचे एकूण",
       periodTotal: (period) => `${period} चे एकूण`,
-      sentSuccessfully: "यशस्वीरित्या पाठवले",
+      sentSuccessfully: "सबमिट केलेले",
       failed: "अयशस्वी",
       pending: "पेंडिंग",
     },

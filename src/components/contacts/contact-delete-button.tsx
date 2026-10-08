@@ -1,9 +1,11 @@
 "use client";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { compactSecondaryButtonClass } from "@/components/ui/page";
+import { useToast } from "@/components/ui/toast";
 import { getContactsDict } from "@/lib/i18n/dictionaries/contacts";
 import { useLocale } from "@/lib/i18n/use-locale";
 
@@ -25,10 +27,13 @@ export function ContactDeleteButton({
 }: ContactDeleteButtonProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const { showToast } = useToast();
   const dict = getContactsDict(useLocale()).deleteButton;
 
+  const confirm = useConfirm();
+
   async function handleDelete() {
-    const confirmed = window.confirm(dict.confirmDelete(contactName));
+    const confirmed = await confirm({ message: dict.confirmDelete(contactName) });
 
     if (!confirmed) {
       return;
@@ -43,7 +48,7 @@ export function ContactDeleteButton({
 
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        window.alert(body?.error?.message ?? dict.couldNotDelete);
+        showToast(body?.error?.message ?? dict.couldNotDelete, "error");
         return;
       }
 
@@ -54,7 +59,7 @@ export function ContactDeleteButton({
         router.refresh();
       }
     } catch {
-      window.alert(dict.couldNotDeleteConn);
+      showToast(dict.couldNotDeleteConn, "error");
     } finally {
       setDeleting(false);
     }

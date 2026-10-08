@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirm } from "@/components/ui/confirm";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -457,7 +458,7 @@ export function ContactsPageClient({
     }
 
     const action = nextActive ? "activate" : "deactivate";
-    if (!window.confirm(dict.bulk.confirmBulkStatus(nextActive, ids.length))) {
+    if (!(await confirm({ message: dict.bulk.confirmBulkStatus(nextActive, ids.length) }))) {
       return;
     }
 
@@ -493,13 +494,15 @@ export function ContactsPageClient({
     }
   }
 
+  const confirm = useConfirm();
+
   async function handleBulkDelete() {
     const ids = [...selectedIds];
     if (ids.length === 0) {
       return;
     }
 
-    if (!window.confirm(dict.bulk.confirmBulkDelete(ids.length))) {
+    if (!(await confirm({ message: dict.bulk.confirmBulkDelete(ids.length) }))) {
       return;
     }
 

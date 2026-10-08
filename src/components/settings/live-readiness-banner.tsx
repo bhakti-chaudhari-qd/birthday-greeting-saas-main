@@ -3,17 +3,42 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import type { LiveChannelReadiness } from "@/lib/abuse/live-readiness";
+import type {
+  LiveChannelReadiness,
+  LiveReadinessChecklistItem,
+} from "@/lib/abuse/live-readiness";
+import {
+  getLiveReadinessDict,
+  type LiveReadinessDict,
+} from "@/lib/i18n/dictionaries/live-readiness";
+import { useLocale } from "@/lib/i18n/use-locale";
+
+function itemLabel(
+  item: LiveReadinessChecklistItem,
+  readiness: LiveChannelReadiness,
+  dict: LiveReadinessDict,
+): string {
+  if (item.id === "paid_plan") {
+    return readiness.liveChannelsApproved ? dict.paidPlanApproved : dict.paidPlan;
+  }
+  if (item.id === "dlt_templates") {
+    return readiness.smsTemplatesReadyForLive + readiness.smsTemplatesNeedingSetup === 0
+      ? dict.dltCreate
+      : dict.dltComplete;
+  }
+  return dict.liveProvider;
+}
 
 /**
- * Owner-only checklist for going live with Custom HTTP.
- * Compact step cards — hidden for Staff (403).
+ * Owner-only checklist of what is still needed before messages can go out.
+ * Compact step cards — hidden for Staff (403) and once every step is done.
  */
 export function LiveReadinessBanner({
   className,
 }: {
   className?: string;
 } = {}) {
+  const dict = getLiveReadinessDict(useLocale());
   const [readiness, setReadiness] = useState<LiveChannelReadiness | null>(null);
 
   useEffect(() => {
@@ -41,13 +66,9 @@ export function LiveReadinessBanner({
     };
   }, []);
 
-  if (!readiness?.checklist?.length) {
+  if (!readiness?.checklist?.length || !readiness.showBanner) {
     return null;
   }
-
-  const total = readiness.checklist.length;
-  const completed = readiness.checklist.filter((item) => item.done).length;
-  const allDone = completed === total;
 
   return (
     <ol className={["flex flex-wrap gap-3", className ?? ""].join(" ")}>
@@ -70,13 +91,15 @@ export function LiveReadinessBanner({
               {item.done ? "✓" : index + 1}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-medium leading-snug text-zinc-900">{item.label}</p>
+              <p className="text-[12px] font-medium leading-snug text-zinc-900">
+                {itemLabel(item, readiness, dict)}
+              </p>
               <div className="mt-1.5">
                 {item.done ? (
-                  <span className="text-[11px] font-medium text-emerald-700">Complete</span>
+                  <span className="text-[11px] font-medium text-emerald-700">{dict.complete}</span>
                 ) : (
                   <Link href={item.href} className="text-[11px] font-medium text-sky-800 underline-offset-2 hover:underline">
-                    Set up
+                    {dict.setUp}
                   </Link>
                 )}
               </div>

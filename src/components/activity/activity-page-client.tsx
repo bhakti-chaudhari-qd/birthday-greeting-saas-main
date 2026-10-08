@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { Channel } from "@prisma/client";
 
@@ -564,11 +565,15 @@ export function ActivityPageClient({
     setEndDate(todayDate);
   }
 
+  const confirm = useConfirm();
+
   async function handleRetry(recipient: ActivityRecipientRow) {
     const isAmbiguous = recipient.lastErrorCode === AMBIGUOUS_PROVIDER_OUTCOME;
-    const confirmed = isAmbiguous
-      ? window.confirm(dict.messages.retryConfirmAmbiguous(recipient.contactName))
-      : window.confirm(dict.messages.retryConfirm(recipient.contactName));
+    const confirmed = await confirm({
+      message: isAmbiguous
+        ? dict.messages.retryConfirmAmbiguous(recipient.contactName)
+        : dict.messages.retryConfirm(recipient.contactName),
+    });
     if (!confirmed) {
       return;
     }

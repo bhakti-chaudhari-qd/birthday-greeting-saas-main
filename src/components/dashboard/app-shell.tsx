@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirm } from "@/components/ui/confirm";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -398,9 +399,11 @@ function UserMenu({
     };
   }, [open]);
 
+  const confirm = useConfirm();
+
   async function runLogout(mode: "current" | "everywhere") {
     if (mode === "everywhere") {
-      const confirmed = window.confirm(dict.confirmEverywhere);
+      const confirmed = await confirm({ message: dict.confirmEverywhere });
       if (!confirmed) {
         return;
       }

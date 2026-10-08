@@ -5,6 +5,10 @@ import {
   SubscriptionStatus,
 } from "@prisma/client";
 
+import {
+  readPlatformDefaultSms,
+  readPlatformDefaultWhatsApp,
+} from "@/lib/channel-config/platform-defaults";
 import { prisma } from "@/lib/db";
 import { deriveRealSmsReadiness } from "@/lib/templates/readiness";
 
@@ -53,6 +57,57 @@ function asWhatsAppProviderMode(
     return "META";
   }
   return asProviderMode(provider);
+}
+
+/**
+ * A client that can already send through a platform default route does not
+ * need a paid plan or a gateway of its own, so those steps are only listed
+ * when no platform route exists. DLT setup is listed whenever the client has
+ * SMS templates that still need it.
+ */
+export function buildLiveReadinessChecklist(input: {
+  paidPlanActive: boolean;
+  liveChannelsApproved: boolean;
+  liveProviderDone: boolean;
+  smsTemplateCount: number;
+  smsTemplatesNeedingSetup: number;
+  hasPlatformRoute: boolean;
+}): LiveReadinessChecklistItem[] {
+  const checklist: LiveReadinessChecklistItem[] = [];
+
+  if (!input.hasPlatformRoute) {
+    checklist.push({
+      id: "paid_plan",
+      label: input.liveChannelsApproved
+        ? "Live messaging approved by platform"
+        : "Activate a paid plan (Starter or Pro)",
+      done: input.paidPlanActive || input.liveChannelsApproved,
+      href: "/dashboard/settings/billing",
+    });
+  }
+
+  if (!input.hasPlatformRoute || input.smsTemplatesNeedingSetup > 0) {
+    checklist.push({
+      id: "dlt_templates",
+      label:
+        input.smsTemplateCount === 0
+          ? "Create SMS templates and complete DLT setup for live SMS"
+          : "Complete DLT setup for SMS templates",
+      done: input.smsTemplateCount > 0 && input.smsTemplatesNeedingSetup === 0,
+      href: "/dashboard/settings/sms/templates",
+    });
+  }
+
+  if (!input.hasPlatformRoute) {
+    checklist.push({
+      id: "live_provider",
+      label: "Switch SMS or WhatsApp to a live provider (Custom HTTP or Meta)",
+      done: input.liveProviderDone,
+      href: "/dashboard/settings/channels",
+    });
+  }
+
+  return checklist;
 }
 
 /**
@@ -123,33 +178,19 @@ export async function getLiveChannelReadiness(
     smsProvider === "CUSTOM_HTTP" ||
     whatsappProvider === "CUSTOM_HTTP" ||
     whatsappProvider === "META";
-  const dltDone = smsTemplates.length > 0 && smsTemplatesNeedingSetup === 0;
 
-  const checklist: LiveReadinessChecklistItem[] = [
-    {
-      id: "paid_plan",
-      label: liveChannelsApproved
-        ? "Live messaging approved by platform"
-        : "Activate a paid plan (Starter or Pro)",
-      done: paidPlanActive || liveChannelsApproved,
-      href: "/dashboard/settings/billing",
-    },
-    {
-      id: "dlt_templates",
-      label:
-        smsTemplates.length === 0
-          ? "Create SMS templates and complete DLT setup for live SMS"
-          : "Complete DLT setup for SMS templates",
-      done: dltDone,
-      href: "/dashboard/settings/sms/templates",
-    },
-    {
-      id: "live_provider",
-      label: "Switch SMS or WhatsApp to a live provider (Custom HTTP or Meta)",
-      done: liveProviderDone,
-      href: "/dashboard/settings/channels",
-    },
-  ];
+  const checklist = buildLiveReadinessChecklist({
+    paidPlanActive,
+    liveChannelsApproved,
+    liveProviderDone,
+    smsTemplateCount: smsTemplates.length,
+    smsTemplatesNeedingSetup,
+    hasPlatformRoute: Boolean(
+      readPlatformDefaultSms() ||
+        readPlatformDefaultWhatsApp() ||
+        process.env.RESEND_API_KEY?.trim(),
+    ),
+  });
 
   const showBanner = checklist.some((item) => !item.done);
 

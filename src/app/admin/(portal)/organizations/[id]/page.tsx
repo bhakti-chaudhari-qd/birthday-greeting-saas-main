@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { AdminClientDetailClient } from "@/components/admin/admin-client-detail-client";
 import { listPlatformAdminAuditEventsForOrganization } from "@/lib/admin/audit";
+import { getChannelStatusesForPlatformAdmin } from "@/lib/admin/channel-status";
 import { listFailedQueueDiagnosticsForPlatformAdmin } from "@/lib/admin/failed-queue";
 import { getOrganizationForPlatformAdmin } from "@/lib/admin/org-ops";
 import { listPlanCatalogueEntriesForPlatformAdmin } from "@/lib/admin/plan-catalogue-ops";
@@ -23,10 +24,11 @@ export default async function AdminOrganizationDetailPage({
     notFound();
   }
 
-  const [failedQueueItems, recentActivity, catalogueEntries] = await Promise.all([
+  const [failedQueueItems, recentActivity, catalogueEntries, channelStatuses] = await Promise.all([
     listFailedQueueDiagnosticsForPlatformAdmin(organization.id),
     listPlatformAdminAuditEventsForOrganization(organization.id, 15),
     listPlanCatalogueEntriesForPlatformAdmin(),
+    getChannelStatusesForPlatformAdmin(organization.id),
   ]);
   const planLabels: PlanLabelMap = Object.fromEntries(
     catalogueEntries.map((entry) => [entry.plan, entry.label]),
@@ -38,6 +40,7 @@ export default async function AdminOrganizationDetailPage({
       failedQueueItems={failedQueueItems}
       recentActivity={recentActivity}
       planLabels={planLabels}
+      channelStatuses={channelStatuses}
     />
   );
 }

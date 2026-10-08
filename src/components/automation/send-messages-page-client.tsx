@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AutomationCard } from "@/components/automation/automation-card";
@@ -172,8 +173,10 @@ export function SendMessagesPageClient() {
     }
   }
 
+  const confirm = useConfirm();
+
   async function handleDelete(card: AutomationCardData) {
-    if (!window.confirm(dict.confirmDelete(card.title))) {
+    if (!(await confirm({ message: dict.confirmDelete(card.title) }))) {
       return;
     }
     setBusyKey(card.key);

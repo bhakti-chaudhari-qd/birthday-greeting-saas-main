@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -27,12 +28,14 @@ export function FailedQueueTable({
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, startRefreshTransition] = useTransition();
 
+  const confirm = useConfirm();
+
   async function retry(item: PlatformFailedQueueDiagnostic) {
     const requiresConfirmation = item.failureReason.startsWith(
       AMBIGUOUS_FAILURE_PREFIX,
     );
 
-    if (requiresConfirmation && !window.confirm(dict.ambiguousConfirm)) {
+    if (requiresConfirmation && !(await confirm({ message: dict.ambiguousConfirm }))) {
       return;
     }
 

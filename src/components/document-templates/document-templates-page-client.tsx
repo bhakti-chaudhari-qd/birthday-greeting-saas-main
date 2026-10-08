@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { useEffect, useRef, useState } from "react";
 
 import { InlineAlert, StatusBadge } from "@/components/ui/feedback";
@@ -168,8 +169,10 @@ export function DocumentTemplatesManager() {
     }
   }
 
+  const confirm = useConfirm();
+
   async function handleDelete(template: DocumentTemplate) {
-    const confirmed = window.confirm(dict.confirmDelete(template.name));
+    const confirmed = await confirm({ message: dict.confirmDelete(template.name) });
     if (!confirmed) {
       return;
     }

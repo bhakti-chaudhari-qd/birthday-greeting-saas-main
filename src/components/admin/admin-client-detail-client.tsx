@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { AddClientContactsPanel } from "@/components/admin/add-client-contacts-panel";
 import { AddOrganizationUserForm } from "@/components/admin/add-organization-user-form";
+import { ChannelStatusPanel } from "@/components/admin/channel-status-panel";
 import { ChannelTopUpPanel } from "@/components/admin/channel-top-up-panel";
 import { DealHistoryPanel } from "@/components/admin/deal-history-panel";
 import { FailedQueueTable } from "@/components/admin/failed-queue-table";
@@ -22,9 +23,11 @@ import {
   SecondaryButtonLink,
 } from "@/components/ui/page";
 import type { PlatformAdminAuditListItem } from "@/lib/admin/audit";
+import type { PlatformChannelStatus } from "@/lib/admin/channel-status";
 import type { PlatformFailedQueueDiagnostic } from "@/lib/admin/failed-queue";
 import type { PlatformOrganizationDetail } from "@/lib/admin/org-ops";
 import { formatInrFromPaise, type PlanLabelMap } from "@/lib/billing/catalogue";
+import { getAdminChannelStatusDict } from "@/lib/i18n/dictionaries/admin-channel-status";
 import { getAdminClientDetailDict } from "@/lib/i18n/dictionaries/admin-client-detail";
 import {
   translateHealthLabel,
@@ -38,6 +41,7 @@ type AdminClientDetailClientProps = {
   failedQueueItems: PlatformFailedQueueDiagnostic[];
   recentActivity: PlatformAdminAuditListItem[];
   planLabels: PlanLabelMap;
+  channelStatuses: PlatformChannelStatus[];
 };
 
 export function AdminClientDetailClient({
@@ -45,9 +49,11 @@ export function AdminClientDetailClient({
   failedQueueItems,
   recentActivity,
   planLabels,
+  channelStatuses,
 }: AdminClientDetailClientProps) {
   const locale = useLocale();
   const dict = getAdminClientDetailDict(locale);
+  const channelDict = getAdminChannelStatusDict(locale);
 
   const overviewTab = (
     <>
@@ -128,6 +134,19 @@ export function AdminClientDetailClient({
             ))}
           </ul>
         ) : null}
+      </Panel>
+
+      <Panel>
+        <div className="border-b border-stone-200 px-5 py-3 sm:px-6">
+          <h2 className="text-sm font-semibold text-stone-900">
+            {channelDict.heading}
+          </h2>
+          <p className="mt-0.5 text-sm text-stone-600">{channelDict.description}</p>
+        </div>
+        <ChannelStatusPanel
+          organizationId={organization.id}
+          channels={channelStatuses}
+        />
       </Panel>
 
       <Panel>

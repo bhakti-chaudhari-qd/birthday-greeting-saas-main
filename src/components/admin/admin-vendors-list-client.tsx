@@ -1,20 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import {
   VendorLifecycleBadge,
   describeLatestVendorInvite,
   maskedVendorMobile,
 } from "@/components/admin/vendor-lifecycle";
+import { ListPagination, paginate } from "@/components/admin/list-pagination";
 import { StatusBadge } from "@/components/ui/feedback";
 import {
   PageHeader,
   PageShell,
   Panel,
   PrimaryButtonLink,
+  inputClass,
 } from "@/components/ui/page";
 import type { PlatformVendorSummary } from "@/lib/admin/vendors";
+import { getAdminListControlsDict } from "@/lib/i18n/dictionaries/admin-list-controls";
 import { getAdminVendorsListDict } from "@/lib/i18n/dictionaries/admin-vendors-list";
 import { useLocale } from "@/lib/i18n/use-locale";
 
@@ -25,6 +29,21 @@ export function AdminVendorsListClient({
 }) {
   const locale = useLocale();
   const dict = getAdminVendorsListDict(locale);
+  const controls = getAdminListControlsDict(locale);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return vendors;
+    return vendors.filter(
+      (vendor) =>
+        vendor.name.toLowerCase().includes(query) ||
+        (vendor.mobile ?? "").includes(query),
+    );
+  }, [vendors, search]);
+
+  const { pageItems, totalPages, currentPage } = paginate(filtered, page);
 
   return (
     <PageShell wide>
@@ -37,6 +56,21 @@ export function AdminVendorsListClient({
           </PrimaryButtonLink>
         }
       />
+
+      <Panel className="p-4">
+        <label className="block text-sm">
+          <span className="sr-only">{controls.searchVendors}</span>
+          <input
+            className={inputClass}
+            placeholder={controls.searchVendors}
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+          />
+        </label>
+      </Panel>
 
       <Panel>
         <div className="overflow-x-auto">
@@ -65,8 +99,14 @@ export function AdminVendorsListClient({
                     {dict.noVendorsYet}
                   </td>
                 </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td className="px-4 py-6 text-stone-500" colSpan={9}>
+                    {controls.noMatches}
+                  </td>
+                </tr>
               ) : (
-                vendors.map((vendor) => (
+                pageItems.map((vendor) => (
                   <tr key={vendor.id} className="border-b border-stone-100">
                     <td className="px-4 py-3 font-medium text-stone-900">
                       <Link
@@ -116,6 +156,16 @@ export function AdminVendorsListClient({
             </tbody>
           </table>
         </div>
+        {vendors.length > 0 ? (
+          <ListPagination
+            dict={controls}
+            page={currentPage}
+            totalPages={totalPages}
+            shownCount={pageItems.length}
+            totalCount={filtered.length}
+            onPageChange={setPage}
+          />
+        ) : null}
       </Panel>
     </PageShell>
   );

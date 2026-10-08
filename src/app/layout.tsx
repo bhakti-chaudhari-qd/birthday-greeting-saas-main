@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { LocaleHtmlSync } from "@/components/i18n/locale-html-sync";
+import { ConfirmProvider } from "@/components/ui/confirm";
 
 import "./globals.css";
 
@@ -32,7 +33,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col font-sans">
         <LocaleHtmlSync />
-        {children}
+        <ConfirmProvider>{children}</ConfirmProvider>
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { useCallback, useEffect, useState } from "react";
 
 import { InlineAlert, StatusBadge } from "@/components/ui/feedback";
@@ -73,8 +74,10 @@ export function GeneratedDocumentsPageClient() {
     void loadInitialDocuments();
   }, [loadDocuments]);
 
+  const confirm = useConfirm();
+
   async function handleDelete(document: GeneratedDocument) {
-    const confirmed = window.confirm(dict.confirmDelete(document.fileName));
+    const confirmed = await confirm({ message: dict.confirmDelete(document.fileName) });
     if (!confirmed) {
       return;
     }
