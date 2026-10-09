@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { MobileNumberFields } from "@/components/auth/mobile-number-fields";
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass } from "@/components/ui/page";
 import { PasswordField } from "@/components/ui/password-field";
@@ -31,6 +32,7 @@ export function AddClientForm() {
           adminName: formData.get("adminName"),
           email: formData.get("email"),
           mobile: formData.get("mobile"),
+          whatsappNumber: formData.get("whatsappNumber"),
           password: formData.get("password"),
         }),
       });
@@ -84,18 +86,12 @@ export function AddClientForm() {
           required
         />
       </label>
-      <label className="block text-sm">
-        <span className="font-medium text-stone-800">{dict.ownerMobile}</span>
-        <input
-          name="mobile"
-          type="tel"
-          inputMode="tel"
-          autoComplete="off"
-          className={`mt-1 ${inputClass}`}
-          placeholder={dict.mobilePlaceholder}
-          required
-        />
-      </label>
+      <MobileNumberFields
+        mobileLabel={dict.ownerMobile}
+        mobilePlaceholder={dict.mobilePlaceholder}
+        captionClassName="font-medium text-stone-800"
+        inputClassName={`mt-1 ${inputClass}`}
+      />
       <PasswordField
         label={dict.initialPassword}
         name="password"

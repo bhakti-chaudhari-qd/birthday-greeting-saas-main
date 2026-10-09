@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { ChannelSetupSteps } from "@/components/settings/channel-setup-steps";
+import { DailySummarySettings } from "@/components/settings/daily-summary-settings";
 import { EmailChannelSettings } from "@/components/settings/email-channel-settings";
 import { SmsChannelSettings } from "@/components/settings/sms-channel-settings";
 import { WhatsAppChannelSettings } from "@/components/settings/whatsapp-channel-settings";
@@ -108,6 +109,8 @@ function ChannelSettingsTabs() {
         {tab === "whatsapp" ? <WhatsAppChannelSettings /> : null}
         {tab === "email" ? <EmailChannelSettings /> : null}
       </div>
+
+      <DailySummarySettings />
     </PageShell>
   );
 }

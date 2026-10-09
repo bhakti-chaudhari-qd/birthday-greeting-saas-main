@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { MobileNumberFields } from "@/components/auth/mobile-number-fields";
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/page";
 import { PasswordField } from "@/components/ui/password-field";
@@ -36,7 +37,8 @@ export function AddOrganizationUserForm({
           body: JSON.stringify({
             name: formData.get("name"),
             email: formData.get("email"),
-            mobile: (formData.get("mobile") as string)?.trim() || undefined,
+            mobile: formData.get("mobile"),
+            whatsappNumber: formData.get("whatsappNumber"),
             password: formData.get("password"),
             role: formData.get("role"),
           }),
@@ -104,19 +106,12 @@ export function AddOrganizationUserForm({
             required
           />
         </label>
-        <label className="block text-sm">
-          <span className="font-medium text-stone-800">
-            {dict.addUser.mobile} {dict.addUser.optional}
-          </span>
-          <input
-            name="mobile"
-            type="tel"
-            inputMode="tel"
-            autoComplete="off"
-            className={`mt-1 ${inputClass}`}
-            placeholder="10-digit mobile number"
-          />
-        </label>
+        <MobileNumberFields
+          mobileLabel={dict.addUser.mobile}
+          mobilePlaceholder="10-digit mobile number"
+          captionClassName="font-medium text-stone-800"
+          inputClassName={`mt-1 ${inputClass}`}
+        />
         <div className="sm:col-span-2">
           <PasswordField
             label={dict.addUser.initialPassword}

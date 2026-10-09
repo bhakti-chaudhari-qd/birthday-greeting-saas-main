@@ -15,12 +15,12 @@ import {
   resolveOptionalVendorReferral,
 } from "@/lib/auth/vendor-referral";
 import { withTransientDbRetry } from "@/lib/db/transient-retry";
-import { registerSchema } from "@/lib/validation/auth";
+import { signupSchema } from "@/lib/validation/auth";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const input = registerSchema.parse(body);
+    const input = signupSchema.parse(body);
     const ip = getClientIp(request);
     const throttleKey = registerThrottleKey(ip);
 

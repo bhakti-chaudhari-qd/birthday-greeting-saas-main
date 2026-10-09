@@ -1,14 +1,15 @@
-import { registerSchema } from "@/lib/validation/auth";
+import { signupSchema } from "@/lib/validation/auth";
 import { createRegisteredOrganization } from "@/lib/auth/register";
+import type { RegisterInput } from "@/lib/validation/auth";
 import {
   PLATFORM_ADMIN_AUDIT_ACTIONS,
   createPlatformAdminAuditEvent,
 } from "@/lib/admin/audit";
 
-/** Same fields and rules as public signup (strong password, unique email/mobile), minus the vendor referral code. */
-export const createClientSchema = registerSchema.omit({ referralCode: true });
+/** Same fields and rules as public signup (strong password, unique email/mobile, mandatory mobile + WhatsApp number), minus the vendor referral code. */
+export const createClientSchema = signupSchema.omit({ referralCode: true });
 
-export type CreateClientInput = ReturnType<typeof createClientSchema.parse>;
+export type CreateClientInput = Omit<RegisterInput, "referralCode">;
 
 /**
  * Creates a client organization with its Owner account on behalf of a

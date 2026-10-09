@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { MobileNumberFields } from "@/components/auth/mobile-number-fields";
 import {
   SecondaryButtonLink,
   primaryButtonClass,
@@ -40,6 +41,7 @@ function RegisterForm() {
           adminName: formData.get("adminName"),
           email: formData.get("email"),
           mobile: formData.get("mobile"),
+          whatsappNumber: formData.get("whatsappNumber"),
           password: formData.get("password"),
           referralCode: formData.get("referralCode") || undefined,
         }),
@@ -77,12 +79,11 @@ function RegisterForm() {
         <Field label={dict.organizationNameLabel} name="organizationName" required />
         <Field label={dict.ownerNameLabel} name="adminName" required />
         <Field label={dict.emailLabel} name="email" type="email" required />
-        <Field
-          label={dict.mobileLabel}
-          name="mobile"
-          type="tel"
-          required
-          placeholder={dict.mobilePlaceholder}
+        <MobileNumberFields
+          mobileLabel={dict.mobileLabel}
+          mobilePlaceholder={dict.mobilePlaceholder}
+          captionClassName="font-medium text-zinc-800"
+          inputClassName="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
         />
         <PasswordField
           label={dict.passwordLabel}

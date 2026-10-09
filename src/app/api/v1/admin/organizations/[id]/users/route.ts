@@ -4,7 +4,7 @@ import { ZodError } from "zod";
 import { jsonError } from "@/lib/api/response";
 import {
   addOrganizationUserForPlatformAdmin,
-  addOrganizationUserSchema,
+  addOrganizationUserRequestSchema,
 } from "@/lib/admin/add-organization-user";
 import { PlatformAdminOrgError } from "@/lib/admin/org-ops";
 import { getPlatformAdminContext } from "@/lib/auth/platform-admin-session";
@@ -24,7 +24,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const { id } = await context.params;
-    const input = addOrganizationUserSchema.parse(await request.json());
+    const input = addOrganizationUserRequestSchema.parse(await request.json());
     const user = await addOrganizationUserForPlatformAdmin(
       input,
       id,

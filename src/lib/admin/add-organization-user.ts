@@ -1,13 +1,12 @@
 import { Prisma, UserRole } from "@prisma/client";
 import { z } from "zod";
 
-import { strongPassword } from "@/lib/validation/auth";
+import { requiredIndianMobile, strongPassword } from "@/lib/validation/auth";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
 import { lockAndCheckPrincipalEmail } from "@/lib/auth/principal-email";
 import { lockAndCheckPrincipalMobile } from "@/lib/auth/principal-mobile";
-import { normalizeMobile } from "@/lib/contacts/mobile";
-import { RegistrationError } from "@/lib/auth/register";
+import { RegistrationError, normalizeAccountNumbers } from "@/lib/auth/register";
 
 import {
   createPlatformAdminAuditEvent,
@@ -20,8 +19,15 @@ export const addOrganizationUserSchema = z.object({
   name: z.string().trim().min(2).max(100),
   email: z.string().trim().email().max(255),
   mobile: z.string().trim().min(10).max(16).optional(),
+  whatsappNumber: z.string().trim().min(10).max(16).optional(),
   password: strongPassword,
   role: z.nativeEnum(UserRole).default(UserRole.STAFF),
+});
+
+/** What the admin add-user API accepts: both numbers are mandatory. */
+export const addOrganizationUserRequestSchema = addOrganizationUserSchema.extend({
+  mobile: requiredIndianMobile,
+  whatsappNumber: requiredIndianMobile,
 });
 
 export type AddOrganizationUserInput = z.infer<typeof addOrganizationUserSchema>;
@@ -46,17 +52,7 @@ export async function addOrganizationUserForPlatformAdmin(
     throw new PlatformAdminOrgError("Client not found");
   }
 
-  let mobile: string | null = null;
-  if (input.mobile) {
-    try {
-      mobile = normalizeMobile(input.mobile);
-    } catch (error) {
-      throw new RegistrationError(
-        error instanceof Error ? error.message : "Invalid mobile number",
-        "VALIDATION",
-      );
-    }
-  }
+  const { mobile, whatsappNumber } = normalizeAccountNumbers(input);
 
   const passwordHash = await hashPassword(input.password);
 
@@ -85,6 +81,7 @@ export async function addOrganizationUserForPlatformAdmin(
           organizationId,
           email: principalEmail.normalizedEmail,
           mobile,
+          whatsappNumber,
           passwordHash,
           name: input.name,
           role: input.role,

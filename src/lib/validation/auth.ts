@@ -29,11 +29,34 @@ export const registerSchema = z.object({
   timezone: z.string().trim().min(1).max(100).optional(),
   adminName: z.string().trim().min(2).max(100),
   email: z.string().trim().email().max(255),
-  /** Indian mobile; required by the signup form, optional here so service callers can omit it. */
+  /** Indian mobile; optional here so service callers can omit it - see signupSchema. */
   mobile: z.string().trim().min(10).max(16).optional(),
+  /** WhatsApp number; falls back to mobile when omitted. */
+  whatsappNumber: z.string().trim().min(10).max(16).optional(),
   password: strongPassword,
   /** Optional vendor referral code (attribution only; signup stays open). */
   referralCode: z.string().trim().max(32).optional(),
+});
+
+/** A required Indian mobile, as every account-creating form must supply. */
+export const requiredIndianMobile = z
+  .string()
+  .trim()
+  .min(10)
+  .max(16)
+  .refine((mobile) => {
+    try {
+      normalizeMobile(mobile);
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Enter a valid 10-digit Indian mobile number");
+
+/** What the signup and admin add-client APIs accept: both numbers are mandatory. */
+export const signupSchema = registerSchema.extend({
+  mobile: requiredIndianMobile,
+  whatsappNumber: requiredIndianMobile,
 });
 
 export const loginSchema = z.object({

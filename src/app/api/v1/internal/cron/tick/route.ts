@@ -4,6 +4,7 @@ import { CronAuthError, requireCronSecret } from "@/lib/api/cron-auth";
 import { jsonError } from "@/lib/api/response";
 import { runOccasionAutomation } from "@/lib/automation/run-occasion";
 import { runContactImportWorker } from "@/lib/contacts/import-worker";
+import { runDailySummaries } from "@/lib/daily-summary/service";
 import { prisma } from "@/lib/db";
 import { runMessageWorker } from "@/lib/queue/worker";
 import { expireOverduePaidSubscriptions } from "@/lib/billing/apply-plan";
@@ -68,17 +69,23 @@ export async function POST(request: Request) {
       expireOverduePaidSubscriptions(),
     );
 
+    const dailySummary = await runStep("daily-summary", () =>
+      runDailySummaries(),
+    );
+
     const steps = {
       occasions: occasionSteps,
       contactImport,
       drain,
       billingExpiry,
+      dailySummary,
     };
     const failed =
       Object.values(occasionSteps).some((step) => !step.ok) ||
       !contactImport.ok ||
       !drain.ok ||
-      !billingExpiry.ok;
+      !billingExpiry.ok ||
+      !dailySummary.ok;
 
     return NextResponse.json(
       { data: { steps } },

@@ -66,6 +66,28 @@ async function allocateUniqueOrganizationSlug(
   );
 }
 
+/**
+ * Normalizes an account's login mobile and WhatsApp number to 10 digits.
+ * The WhatsApp number defaults to the mobile when it isn't given.
+ */
+export function normalizeAccountNumbers(input: {
+  mobile?: string;
+  whatsappNumber?: string;
+}): { mobile: string | null; whatsappNumber: string | null } {
+  try {
+    const mobile = input.mobile ? normalizeMobile(input.mobile) : null;
+    const whatsappNumber = input.whatsappNumber
+      ? normalizeMobile(input.whatsappNumber)
+      : mobile;
+    return { mobile, whatsappNumber };
+  } catch (error) {
+    throw new RegistrationError(
+      error instanceof Error ? error.message : "Invalid mobile number",
+      "VALIDATION",
+    );
+  }
+}
+
 export type CreateRegisteredOrganizationOptions = {
   referredByVendorId?: string | null;
 };
@@ -80,17 +102,7 @@ export async function createRegisteredOrganization(
     slugifyOrganizationName(input.organizationName);
   const timezone = input.timezone?.trim() || DEFAULT_ORGANIZATION_TIMEZONE;
   const referredByVendorId = options.referredByVendorId?.trim() || null;
-  let mobile: string | null = null;
-  if (input.mobile) {
-    try {
-      mobile = normalizeMobile(input.mobile);
-    } catch (error) {
-      throw new RegistrationError(
-        error instanceof Error ? error.message : "Invalid mobile number",
-        "VALIDATION",
-      );
-    }
-  }
+  const { mobile, whatsappNumber } = normalizeAccountNumbers(input);
 
   try {
     return await prisma.$transaction(async (tx) => {
@@ -134,6 +146,7 @@ export async function createRegisteredOrganization(
           organizationId: organization.id,
           email: principalEmail.normalizedEmail,
           mobile,
+          whatsappNumber,
           passwordHash,
           name: input.adminName,
           role: UserRole.ADMIN,
