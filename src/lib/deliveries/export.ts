@@ -33,7 +33,9 @@ export async function exportDeliveriesCsv(
           occasionId: true,
           recipientName: true,
           recipientMobile: true,
-          contact: { select: { name: true, mobile: true } },
+          contact: {
+            select: { name: true, mobile: true, addedByPlatformAdmin: true },
+          },
           template: { select: { name: true } },
         },
       },

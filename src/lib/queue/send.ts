@@ -249,7 +249,9 @@ async function deferForSendVelocity(
       ...clearClaimFields(),
     },
     include: {
-      contact: { select: { id: true, name: true, mobile: true } },
+      contact: {
+        select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+      },
       template: { select: { id: true, name: true } },
     },
   });
@@ -278,7 +280,9 @@ async function finalizeSkippedInactive(
       nextAttemptAt: null,
     },
     include: {
-      contact: { select: { id: true, name: true, mobile: true } },
+      contact: {
+        select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+      },
       template: { select: { id: true, name: true } },
     },
   });
@@ -357,7 +361,9 @@ async function finalizeSuccess(
         ...clearClaimFields(),
       },
       include: {
-        contact: { select: { id: true, name: true, mobile: true } },
+        contact: {
+        select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+      },
         template: { select: { id: true, name: true } },
       },
     });
@@ -437,7 +443,9 @@ async function finalizeFailure(
         ...clearClaimFields(),
       },
       include: {
-        contact: { select: { id: true, name: true, mobile: true } },
+        contact: {
+        select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+      },
         template: { select: { id: true, name: true } },
       },
     });
@@ -484,7 +492,9 @@ export async function processClaimedQueueItem(
         ...clearClaimFields(),
       },
       include: {
-        contact: { select: { id: true, name: true, mobile: true } },
+        contact: {
+        select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+      },
         template: { select: { id: true, name: true } },
       },
     });
@@ -520,7 +530,9 @@ export async function processClaimedQueueItem(
             ...clearClaimFields(),
           },
           include: {
-            contact: { select: { id: true, name: true, mobile: true } },
+            contact: {
+        select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+      },
             template: { select: { id: true, name: true } },
           },
         });
@@ -560,7 +572,9 @@ export async function processClaimedQueueItem(
           ...clearClaimFields(),
         },
         include: {
-          contact: { select: { id: true, name: true, mobile: true } },
+          contact: {
+        select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+      },
           template: { select: { id: true, name: true } },
         },
       });
@@ -597,7 +611,9 @@ export async function processClaimedQueueItem(
           ...clearClaimFields(),
         },
         include: {
-          contact: { select: { id: true, name: true, mobile: true } },
+          contact: {
+        select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+      },
           template: { select: { id: true, name: true } },
         },
       });
@@ -871,7 +887,9 @@ export async function processClaimedQueueItem(
         ...clearClaimFields(),
       },
       include: {
-        contact: { select: { id: true, name: true, mobile: true } },
+        contact: {
+        select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+      },
         template: { select: { id: true, name: true } },
       },
     });
@@ -970,7 +988,9 @@ export async function scheduleQueueRetry(
   const queue = await db.sendQueue.findFirst({
     where: { id: queueId, organizationId },
     include: {
-      contact: { select: { id: true, name: true, mobile: true } },
+      contact: {
+        select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+      },
       template: { select: { id: true, name: true } },
     },
   });
@@ -1014,7 +1034,9 @@ export async function scheduleQueueRetry(
       providerAttemptStartedAt: null,
     },
     include: {
-      contact: { select: { id: true, name: true, mobile: true } },
+      contact: {
+        select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+      },
       template: { select: { id: true, name: true } },
     },
   });

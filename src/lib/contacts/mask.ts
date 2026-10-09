@@ -1,41 +1,11 @@
-import { UserRole } from "@prisma/client";
-
-import { prisma } from "@/lib/db";
-
 /**
- * Whether a Staff viewer should see a Platform-Admin-added contact's real
- * mobile/email masked. The Owner always sees it in full. For Staff, both
- * the admin-controlled ceiling (Organization.staffContactVisibilityAdminAllowed)
- * and the Owner's own choice (staffContactVisibilityOwnerAllowed) must allow
- * it - most-restrictive-wins - otherwise it's masked. Defaults preserve the
- * original always-masked-for-Staff behavior until the Owner opts in.
+ * A contact a Platform Admin added on the client's behalf
+ * (Contact.addedByPlatformAdmin) never shows its real mobile/email to anyone
+ * on the client side - Owner and Staff alike. Only Platform Admin screens
+ * read the stored values directly. Every client-facing serializer goes
+ * through clientVisibleMobile/clientVisibleEmail below.
  */
-export async function shouldMaskAdminAddedContactsForViewer(
-  organizationId: string,
-  viewerRole: UserRole,
-): Promise<boolean> {
-  if (viewerRole === UserRole.ADMIN) {
-    return false;
-  }
-
-  const organization = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: {
-      staffContactVisibilityAdminAllowed: true,
-      staffContactVisibilityOwnerAllowed: true,
-    },
-  });
-
-  if (!organization) {
-    return true;
-  }
-
-  const staffAllowed =
-    organization.staffContactVisibilityAdminAllowed &&
-    organization.staffContactVisibilityOwnerAllowed;
-
-  return !staffAllowed;
-}
+type AdminAddedMarker = { addedByPlatformAdmin: boolean };
 
 /** Same shape as the provider-log masking (e.g. "******3210"). */
 export function maskMobileForDisplay(mobile: string): string {
@@ -58,3 +28,27 @@ export function maskEmailForDisplay(email: string): string {
 
   return `${visible}${"*".repeat(maskedLength)}@${domain}`;
 }
+
+/** The mobile a client-side viewer may see for this contact. */
+export function clientVisibleMobile(
+  contact: AdminAddedMarker & { mobile: string },
+): string {
+  return contact.addedByPlatformAdmin
+    ? maskMobileForDisplay(contact.mobile)
+    : contact.mobile;
+}
+
+/** The email a client-side viewer may see for this contact. */
+export function clientVisibleEmail(
+  contact: AdminAddedMarker & { email: string | null },
+): string | null {
+  return contact.addedByPlatformAdmin && contact.email
+    ? maskEmailForDisplay(contact.email)
+    : contact.email;
+}
+
+/**
+ * Prisma filter fragment for client-side search by mobile/email: masked
+ * contacts must not match, or searching digits would reveal the hidden value.
+ */
+export const CLIENT_SEARCHABLE_CONTACT = { addedByPlatformAdmin: false } as const;

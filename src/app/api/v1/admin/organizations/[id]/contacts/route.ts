@@ -68,7 +68,7 @@ export async function POST(request: Request, context: RouteContext) {
     });
 
     return NextResponse.json(
-      { data: serializeContact(contact) },
+      { data: serializeContact(contact, { revealAdminAdded: true }) },
       { status: 201 },
     );
   } catch (error) {

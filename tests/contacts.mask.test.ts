@@ -55,19 +55,9 @@ function buildContact(overrides: Partial<{
 }
 
 describe("serializeContact masking", () => {
-  it("does not mask by default (no options passed)", () => {
+  it("masks an admin-added contact by default (every client-side viewer)", () => {
     const serialized = serializeContact(
       buildContact({ addedByPlatformAdmin: true }),
-    );
-    expect(serialized.mobile).toBe("9876543210");
-    expect(serialized.email).toBe("alice@example.com");
-    expect(serialized.mobileMasked).toBe(false);
-  });
-
-  it("masks mobile/email when maskAdminAdded is true and the contact was admin-added", () => {
-    const serialized = serializeContact(
-      buildContact({ addedByPlatformAdmin: true }),
-      { maskAdminAdded: true },
     );
     expect(serialized.mobile).toBe("******3210");
     expect(serialized.email).toBe("al***@example.com");
@@ -75,10 +65,19 @@ describe("serializeContact masking", () => {
     expect(serialized.addedByPlatformAdmin).toBe(true);
   });
 
-  it("does not mask a client-added contact even when maskAdminAdded is true", () => {
+  it("shows the real values only when a Platform Admin route asks to reveal", () => {
+    const serialized = serializeContact(
+      buildContact({ addedByPlatformAdmin: true }),
+      { revealAdminAdded: true },
+    );
+    expect(serialized.mobile).toBe("9876543210");
+    expect(serialized.email).toBe("alice@example.com");
+    expect(serialized.mobileMasked).toBe(false);
+  });
+
+  it("does not mask a client-added contact", () => {
     const serialized = serializeContact(
       buildContact({ addedByPlatformAdmin: false }),
-      { maskAdminAdded: true },
     );
     expect(serialized.mobile).toBe("9876543210");
     expect(serialized.email).toBe("alice@example.com");
@@ -88,7 +87,6 @@ describe("serializeContact masking", () => {
   it("leaves a null email as null under masking", () => {
     const serialized = serializeContact(
       buildContact({ addedByPlatformAdmin: true, email: null }),
-      { maskAdminAdded: true },
     );
     expect(serialized.email).toBeNull();
   });

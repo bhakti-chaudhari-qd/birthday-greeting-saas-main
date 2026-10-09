@@ -8,7 +8,6 @@ import {
 } from "@/components/contacts/contact-form-page-header";
 import { getAuthContext } from "@/lib/auth/context";
 import { ContactNotFoundError } from "@/lib/contacts/errors";
-import { shouldMaskAdminAddedContactsForViewer } from "@/lib/contacts/mask";
 import { getContactById, serializeContact } from "@/lib/contacts/service";
 
 type EditContactPageProps = {
@@ -35,12 +34,7 @@ export default async function EditContactPage({ params }: EditContactPageProps) 
     throw error;
   }
 
-  const serialized = serializeContact(contact, {
-    maskAdminAdded: await shouldMaskAdminAddedContactsForViewer(
-      auth.organizationId,
-      auth.role,
-    ),
-  });
+  const serialized = serializeContact(contact);
 
   return (
     <main className="mx-auto max-w-xl px-4 py-6 sm:px-6 sm:py-8">

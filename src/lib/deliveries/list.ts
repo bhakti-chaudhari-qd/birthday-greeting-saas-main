@@ -1,5 +1,9 @@
 import type { DeliveryLog, Prisma } from "@prisma/client";
 
+import {
+  CLIENT_SEARCHABLE_CONTACT,
+  clientVisibleMobile,
+} from "@/lib/contacts/mask";
 import { prisma } from "@/lib/db";
 import type {
   ExportDeliveriesQuery,
@@ -56,7 +60,11 @@ export function serializeDeliveryLog(
       occasionId: string | null;
       recipientName: string;
       recipientMobile: string;
-      contact: { name: string; mobile: string } | null;
+      contact: {
+        name: string;
+        mobile: string;
+        addedByPlatformAdmin: boolean;
+      } | null;
       template: { name: string };
     };
   },
@@ -67,7 +75,9 @@ export function serializeDeliveryLog(
     sendQueueId: log.sendQueueId,
     queueStatus: log.sendQueue.status,
     contactName: log.sendQueue.contact?.name ?? log.sendQueue.recipientName,
-    contactMobile: log.sendQueue.contact?.mobile ?? log.sendQueue.recipientMobile,
+    contactMobile: log.sendQueue.contact
+      ? clientVisibleMobile(log.sendQueue.contact)
+      : log.sendQueue.recipientMobile,
     templateName: log.sendQueue.template.name,
     channel: log.sendQueue.channel,
     provider: getProviderFromLog(log),
@@ -150,7 +160,12 @@ export function buildDeliveryListWhere(
         ? {
             OR: [
               { contact: { name: { contains: query.search, mode: "insensitive" } } },
-              { contact: { mobile: { contains: query.search } } },
+              {
+                contact: {
+                  mobile: { contains: query.search },
+                  ...CLIENT_SEARCHABLE_CONTACT,
+                },
+              },
               { recipientName: { contains: query.search, mode: "insensitive" } },
               { recipientMobile: { contains: query.search } },
             ],
@@ -190,7 +205,9 @@ export async function listDeliveries(
             occasionId: true,
             recipientName: true,
             recipientMobile: true,
-            contact: { select: { name: true, mobile: true } },
+            contact: {
+              select: { name: true, mobile: true, addedByPlatformAdmin: true },
+            },
             template: { select: { name: true } },
           },
         },

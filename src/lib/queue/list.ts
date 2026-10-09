@@ -15,7 +15,7 @@ export async function listQueue(
       where,
       include: {
         contact: {
-          select: { id: true, name: true, mobile: true },
+          select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
         },
         template: {
           select: { id: true, name: true },

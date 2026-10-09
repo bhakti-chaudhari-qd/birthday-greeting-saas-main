@@ -1,5 +1,6 @@
 import { Channel, QueueStatus } from "@prisma/client";
 
+import { clientVisibleMobile } from "@/lib/contacts/mask";
 import { prisma } from "@/lib/db";
 import {
   getOccasionsDayView,
@@ -270,6 +271,7 @@ export async function getActivityUpcoming(
         select: {
           name: true,
           mobile: true,
+          addedByPlatformAdmin: true,
           category: { select: { name: true } },
         },
       },
@@ -300,7 +302,9 @@ export async function getActivityUpcoming(
       id: `manual:${row.id}`,
       source: "manual_queue" as const,
       contactName: row.contact?.name ?? row.recipientName,
-      contactMobile: row.contact?.mobile ?? row.recipientMobile,
+      contactMobile: row.contact
+        ? clientVisibleMobile(row.contact)
+        : row.recipientMobile,
       categoryName: row.contact?.category?.name ?? null,
       occasionLabel: "Send Messages",
       channel,

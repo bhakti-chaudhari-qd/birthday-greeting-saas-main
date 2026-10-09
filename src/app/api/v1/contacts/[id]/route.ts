@@ -13,7 +13,6 @@ import {
   ContactNotFoundError,
   ContactValidationError,
 } from "@/lib/contacts/errors";
-import { shouldMaskAdminAddedContactsForViewer } from "@/lib/contacts/mask";
 import {
   deleteContact,
   getContactById,
@@ -34,14 +33,7 @@ export async function GET(_request: Request, context: RouteContext) {
     const { id } = await context.params;
     const contact = await getContactById(auth.organizationId, id);
 
-    return NextResponse.json({
-      data: serializeContact(contact, {
-        maskAdminAdded: await shouldMaskAdminAddedContactsForViewer(
-          auth.organizationId,
-          auth.role,
-        ),
-      }),
-    });
+    return NextResponse.json({ data: serializeContact(contact) });
   } catch (error) {
     const authError = sessionAuthErrorResponse(error);
     if (authError) {
@@ -65,14 +57,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const input = updateContactSchema.parse(body);
     const contact = await updateContact(auth.organizationId, id, input);
 
-    return NextResponse.json({
-      data: serializeContact(contact, {
-        maskAdminAdded: await shouldMaskAdminAddedContactsForViewer(
-          auth.organizationId,
-          auth.role,
-        ),
-      }),
-    });
+    return NextResponse.json({ data: serializeContact(contact) });
   } catch (error) {
     const authError = sessionAuthErrorResponse(error);
     if (authError) {

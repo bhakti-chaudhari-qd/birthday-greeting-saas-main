@@ -12,7 +12,6 @@ import {
   ContactLimitError,
   ContactValidationError,
 } from "@/lib/contacts/errors";
-import { shouldMaskAdminAddedContactsForViewer } from "@/lib/contacts/mask";
 import {
   createContact,
   listContacts,
@@ -80,12 +79,7 @@ export async function GET(request: Request) {
       occasionId: searchParams.get("occasionId") ?? undefined,
     });
 
-    const result = await listContacts(auth.organizationId, query, {
-      maskAdminAdded: await shouldMaskAdminAddedContactsForViewer(
-        auth.organizationId,
-        auth.role,
-      ),
-    });
+    const result = await listContacts(auth.organizationId, query);
 
     return NextResponse.json(result);
   } catch (error) {

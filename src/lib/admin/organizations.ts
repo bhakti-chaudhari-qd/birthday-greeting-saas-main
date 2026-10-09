@@ -23,8 +23,6 @@ export type PlatformOrganizationSummary = {
   slug: string;
   isActive: boolean;
   liveChannelsApproved: boolean;
-  /** Admin-controlled ceiling: whether Staff may ever see full mobile/email of an admin-added contact. */
-  staffContactVisibilityAdminAllowed: boolean;
   timezone: string;
   createdAt: string;
   userCount: number;
@@ -264,8 +262,6 @@ async function loadOrganizationsForPlatformAdmin(
       slug: organization.slug,
       isActive: organization.isActive,
       liveChannelsApproved: organization.liveChannelsApproved,
-      staffContactVisibilityAdminAllowed:
-        organization.staffContactVisibilityAdminAllowed,
       timezone: organization.timezone,
       createdAt: organization.createdAt.toISOString(),
       userCount: organization._count.users,

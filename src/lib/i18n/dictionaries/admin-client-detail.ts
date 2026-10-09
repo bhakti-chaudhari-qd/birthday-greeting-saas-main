@@ -42,8 +42,6 @@ export type AdminClientDetailDict = {
   opsForm: {
     clientActive: string;
     approveLiveCustomHttp: string;
-    allowStaffVisibility: string;
-    allowStaffVisibilityHint: string;
     timezone: string;
     saving: string;
     saveOpsSettings: string;
@@ -323,9 +321,6 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
     opsForm: {
       clientActive: "Client active",
       approveLiveCustomHttp: "Approve live Custom HTTP (even on FREE)",
-      allowStaffVisibility: "Allow Staff to see admin-added contact details",
-      allowStaffVisibilityHint:
-        "Sets the ceiling only - the client's Owner still decides whether Staff actually sees it. Turn off to force-hide it regardless of what the Owner sets.",
       timezone: "Timezone",
       saving: "Saving…",
       saveOpsSettings: "Save ops settings",
@@ -615,9 +610,6 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
     opsForm: {
       clientActive: "क्लायंट एक्टिव",
       approveLiveCustomHttp: "लाइव Custom HTTP मंज़ूर करें (FREE पर भी)",
-      allowStaffVisibility: "स्टाफ को admin द्वारा जोड़े गए कॉन्टैक्ट की डिटेल देखने दें",
-      allowStaffVisibilityHint:
-        "यह सिर्फ ऊपरी सीमा सेट करता है - क्लायंट का Owner अभी भी तय करता है कि स्टाफ को असल में दिखे या नहीं। Owner ने जो भी सेट किया हो, इसे बंद करने पर यह हमेशा छुपा रहेगा।",
       timezone: "टाइमज़ोन",
       saving: "सेव हो रहा है…",
       saveOpsSettings: "ऑप्स सेटिंग्स सेव करें",
@@ -905,9 +897,6 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
     opsForm: {
       clientActive: "क्लायंट एक्टिव",
       approveLiveCustomHttp: "लाइव्ह Custom HTTP मंजूर करा (FREE वरही)",
-      allowStaffVisibility: "स्टाफला admin ने जोडलेल्या कॉन्टॅक्टची माहिती पाहू द्या",
-      allowStaffVisibilityHint:
-        "हे फक्त वरची मर्यादा सेट करते - क्लायंटचा Owner अजूनही ठरवतो की स्टाफला खरोखर दिसते की नाही. Owner ने काहीही सेट केलेले असो, हे बंद केल्यास ते नेहमी लपलेले राहील.",
       timezone: "टाइमझोन",
       saving: "सेव्ह होत आहे…",
       saveOpsSettings: "ऑप्स सेटिंग्ज सेव्ह करा",

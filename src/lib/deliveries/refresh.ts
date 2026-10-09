@@ -83,7 +83,9 @@ async function loadRefreshContext(organizationId: string, deliveryLogId: string)
           occasionId: true,
           recipientName: true,
           recipientMobile: true,
-          contact: { select: { name: true, mobile: true } },
+          contact: {
+        select: { name: true, mobile: true, addedByPlatformAdmin: true },
+      },
           template: { select: { name: true } },
           organization: { select: { timezone: true } },
         },
@@ -111,7 +113,9 @@ const refreshLogInclude = {
       occasionId: true,
       recipientName: true,
       recipientMobile: true,
-      contact: { select: { name: true, mobile: true } },
+      contact: {
+        select: { name: true, mobile: true, addedByPlatformAdmin: true },
+      },
       template: { select: { name: true } },
       organization: { select: { timezone: true } },
     },

@@ -7,6 +7,7 @@ import {
 
 import { AUTOMATION_TIMEZONE } from "@/lib/automation/constants";
 import { formatAutomationSendTimeLabel } from "@/lib/automation/send-time";
+import { clientVisibleMobile } from "@/lib/contacts/mask";
 import { listOccasionOptions } from "@/lib/occasions/queries";
 import { prisma } from "@/lib/db";
 import {
@@ -296,7 +297,7 @@ function buildSectionContacts(
     rows.push({
       id: contact.id,
       name: contact.name,
-      mobile: contact.mobile,
+      mobile: clientVisibleMobile(contact),
       categoryId: contact.categoryId,
       categoryName: contact.category?.name ?? null,
       smsAutomationEnabled: smsEnabled,

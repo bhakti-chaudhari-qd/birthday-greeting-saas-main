@@ -1,10 +1,19 @@
 import type { Prisma, SendQueue } from "@prisma/client";
 
+import {
+  CLIENT_SEARCHABLE_CONTACT,
+  clientVisibleMobile,
+} from "@/lib/contacts/mask";
 import { previewTemplate } from "@/lib/templates/variables";
 
 export function serializeQueueItem(
   item: SendQueue & {
-    contact: { id: string; name: string; mobile: string } | null;
+    contact: {
+      id: string;
+      name: string;
+      mobile: string;
+      addedByPlatformAdmin: boolean;
+    } | null;
     template: { id: string; name: string };
     whatsappMediaAsset?: { filename: string } | null;
   },
@@ -13,7 +22,9 @@ export function serializeQueueItem(
     id: item.id,
     contactId: item.contact?.id ?? item.contactId,
     contactName: item.contact?.name ?? item.recipientName,
-    contactMobile: item.contact?.mobile ?? item.recipientMobile,
+    contactMobile: item.contact
+      ? clientVisibleMobile(item.contact)
+      : item.recipientMobile,
     templateId: item.template.id,
     templateName: item.template.name,
     channel: item.channel,
@@ -92,7 +103,12 @@ export function buildQueueListWhere(
   if (query.search) {
     where.OR = [
       { contact: { name: { contains: query.search, mode: "insensitive" } } },
-      { contact: { mobile: { contains: query.search } } },
+      {
+        contact: {
+          mobile: { contains: query.search },
+          ...CLIENT_SEARCHABLE_CONTACT,
+        },
+      },
       { recipientName: { contains: query.search, mode: "insensitive" } },
       { recipientMobile: { contains: query.search } },
     ];

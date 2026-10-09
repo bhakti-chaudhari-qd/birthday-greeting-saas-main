@@ -7,7 +7,11 @@ import type {
 } from "@prisma/client";
 
 import { formatOccasionDate } from "@/lib/contacts/dates";
-import { maskEmailForDisplay, maskMobileForDisplay } from "@/lib/contacts/mask";
+import {
+  CLIENT_SEARCHABLE_CONTACT,
+  maskEmailForDisplay,
+  maskMobileForDisplay,
+} from "@/lib/contacts/mask";
 
 type ContactWithCategory = Contact & {
   category?: Pick<ContactCategoryDefinition, "id" | "name"> | null;
@@ -22,17 +26,17 @@ type ContactWithCategory = Contact & {
 };
 
 /**
- * `maskAdminAdded: true` hides the real mobile/email of a contact a
- * Platform Admin added on the client's behalf (Contact.addedByPlatformAdmin)
- * behind a display mask - used for Staff viewers; the org Owner always sees
- * the real values. The mask clears once the client edits and saves the
- * contact (see updateContact).
+ * The real mobile/email of a contact a Platform Admin added on the client's
+ * behalf (Contact.addedByPlatformAdmin) is hidden behind a display mask for
+ * every client-side viewer, Owner included. Only Platform Admin routes pass
+ * `revealAdminAdded: true`. The mask clears only once the client has
+ * replaced those values with their own (see updateContact).
  */
 export function serializeContact(
   contact: ContactWithCategory,
-  options: { maskAdminAdded?: boolean } = {},
+  options: { revealAdminAdded?: boolean } = {},
 ) {
-  const isMasked = options.maskAdminAdded === true && contact.addedByPlatformAdmin;
+  const isMasked = contact.addedByPlatformAdmin && options.revealAdminAdded !== true;
   const occasionDates: Record<string, string> = {};
   const occasionDateDetails: Array<{
     occasionId: string;
@@ -141,11 +145,14 @@ export function buildContactListWhere(
       const digits = term.replace(/\D/g, "");
       const clauses: Prisma.ContactWhereInput[] = [
         { name: { contains: term, mode: "insensitive" } },
-        { email: { contains: term, mode: "insensitive" } },
+        {
+          email: { contains: term, mode: "insensitive" },
+          ...CLIENT_SEARCHABLE_CONTACT,
+        },
       ];
       // Mobiles are stored as 10 digits; match on digits when the user typed any.
       if (digits.length > 0) {
-        clauses.push({ mobile: { contains: digits } });
+        clauses.push({ mobile: { contains: digits }, ...CLIENT_SEARCHABLE_CONTACT });
       }
       where.OR = clauses;
     }

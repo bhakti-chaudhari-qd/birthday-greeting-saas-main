@@ -149,13 +149,6 @@ export type ContactsDict = {
     couldNotDelete: string;
     couldNotDeleteConn: string;
   };
-  staffVisibility: {
-    title: string;
-    description: string;
-    toggleLabel: string;
-    adminRestrictedNote: string;
-    failedToSave: string;
-  };
   csvImportDialog: {
     title: string;
     uploadPrompt: string;
@@ -343,15 +336,6 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       deleting: "Deleting…",
       couldNotDelete: "Could not delete contact. Try again.",
       couldNotDeleteConn: "Could not delete contact. Check your connection and try again.",
-    },
-    staffVisibility: {
-      title: "Staff visibility for admin-added contacts",
-      description:
-        "When our platform admin adds or imports contacts into your account on your behalf, their mobile number and email are hidden from Staff users by default. Turning this on lets Staff see those details in full. This never affects what you (Owner) can see, and doesn't change anything for contacts your team added themselves.",
-      toggleLabel: "Staff can view full details of contacts admin added for us",
-      adminRestrictedNote:
-        "Our platform has restricted this for your account, so it stays hidden from Staff regardless of this setting. Contact support if you have questions.",
-      failedToSave: "Failed to save setting",
     },
     csvImportDialog: {
       title: "Import CSV",
@@ -543,15 +527,6 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       couldNotDelete: "कॉन्टैक्ट हटाया नहीं जा सका। फिर कोशिश करें।",
       couldNotDeleteConn: "कॉन्टैक्ट हटाया नहीं जा सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
     },
-    staffVisibility: {
-      title: "एडमिन द्वारा जोड़े गए कॉन्टैक्ट के लिए स्टाफ विज़िबिलिटी",
-      description:
-        "जब हमारा platform admin आपकी ओर से आपके अकाउंट में कॉन्टैक्ट जोड़ता या इम्पोर्ट करता है, तो उनका मोबाइल नंबर और ईमेल डिफ़ॉल्ट रूप से Staff यूज़र से छुपे रहते हैं। इसे ऑन करने पर Staff इन डिटेल्स को पूरा देख सकेंगे। इससे आप (Owner) जो देखते हैं वह कभी नहीं बदलता, और आपकी टीम द्वारा खुद जोड़े गए कॉन्टैक्ट पर कोई असर नहीं पड़ता।",
-      toggleLabel: "Staff हमारी ओर से admin द्वारा जोड़े गए कॉन्टैक्ट की पूरी डिटेल देख सकें",
-      adminRestrictedNote:
-        "हमारे प्लेटफ़ॉर्म ने आपके अकाउंट के लिए इसे प्रतिबंधित किया है, इसलिए यह इस सेटिंग की परवाह किए बिना Staff से छुपा रहेगा। सवाल हों तो सपोर्ट से संपर्क करें।",
-      failedToSave: "सेटिंग सेव नहीं हो सकी",
-    },
     csvImportDialog: {
       title: "CSV इम्पोर्ट करें",
       uploadPrompt:
@@ -741,15 +716,6 @@ const CONTACTS_DICT: Record<Locale, ContactsDict> = {
       deleting: "हटत आहे…",
       couldNotDelete: "कॉन्टॅक्ट हटवता आला नाही. पुन्हा प्रयत्न करा.",
       couldNotDeleteConn: "कॉन्टॅक्ट हटवता आला नाही. तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.",
-    },
-    staffVisibility: {
-      title: "अ‍ॅडमिनने जोडलेल्या कॉन्टॅक्टसाठी स्टाफ व्हिजिबिलिटी",
-      description:
-        "जेव्हा आमचा platform admin तुमच्या वतीने तुमच्या खात्यात कॉन्टॅक्ट जोडतो किंवा इम्पोर्ट करतो, तेव्हा त्यांचा मोबाइल नंबर आणि ईमेल डीफॉल्टनुसार Staff युजरपासून लपलेले असतात. हे चालू केल्यास Staff या तपशील पूर्णपणे पाहू शकतील. यामुळे तुम्ही (Owner) जे पाहता त्यावर कधीच परिणाम होत नाही, आणि तुमच्या टीमने स्वतः जोडलेल्या कॉन्टॅक्टवर काहीही परिणाम होत नाही.",
-      toggleLabel: "Staff ला आमच्या वतीने अ‍ॅडमिनने जोडलेल्या कॉन्टॅक्टचे संपूर्ण तपशील दिसू द्या",
-      adminRestrictedNote:
-        "आमच्या प्लॅटफॉर्मने तुमच्या खात्यासाठी हे प्रतिबंधित केले आहे, त्यामुळे या सेटिंगची पर्वा न करता ते Staff पासून लपलेलेच राहील. प्रश्न असल्यास सपोर्टशी संपर्क साधा.",
-      failedToSave: "सेटिंग सेव्ह होऊ शकली नाही",
     },
     csvImportDialog: {
       title: "CSV इम्पोर्ट करा",

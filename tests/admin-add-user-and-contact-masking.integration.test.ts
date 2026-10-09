@@ -98,8 +98,8 @@ describe("addOrganizationUserForPlatformAdmin", () => {
   });
 });
 
-describe("Staff masking end-to-end (admin-added contact)", () => {
-  it("masks for Staff, shows full for Owner, and unmasks after the client saves an edit", async ({
+describe("Client-side masking end-to-end (admin-added contact)", () => {
+  it("stays masked for the client until they replace the mobile themselves", async ({
     skip,
   }) => {
     if (!databaseAvailable) skip();
@@ -117,24 +117,27 @@ describe("Staff masking end-to-end (admin-added contact)", () => {
 
     const loaded = await getContactById(org.organization.id, contact.id);
 
-    const asStaff = serializeContact(loaded, { maskAdminAdded: true });
-    expect(asStaff.mobile).toBe("******9859");
-    expect(asStaff.mobileMasked).toBe(true);
+    const asClient = serializeContact(loaded);
+    expect(asClient.mobile).toBe("******9859");
+    expect(asClient.mobileMasked).toBe(true);
 
-    const asOwner = serializeContact(loaded, { maskAdminAdded: false });
-    expect(asOwner.mobile).toBe("8999109859");
-    expect(asOwner.mobileMasked).toBe(false);
+    const asPlatformAdmin = serializeContact(loaded, { revealAdminAdded: true });
+    expect(asPlatformAdmin.mobile).toBe("8999109859");
+    expect(asPlatformAdmin.mobileMasked).toBe(false);
 
-    // The client edits and saves (e.g. just the name) - this unmasks it,
-    // regardless of whether mobile/email were touched.
-    const updated = await updateContact(org.organization.id, contact.id, {
+    // Saving other fields must not reveal the admin-provided mobile.
+    const renamed = await updateContact(org.organization.id, contact.id, {
       name: "Ishika Thakur",
     });
+    expect(renamed.addedByPlatformAdmin).toBe(true);
+    expect(serializeContact(renamed).mobile).toBe("******9859");
 
-    expect(updated.addedByPlatformAdmin).toBe(false);
-    const afterEdit = serializeContact(updated, { maskAdminAdded: true });
-    expect(afterEdit.mobile).toBe("8999109859");
-    expect(afterEdit.mobileMasked).toBe(false);
+    // Once the client supplies their own mobile, the data is theirs.
+    const replaced = await updateContact(org.organization.id, contact.id, {
+      mobile: "9123456780",
+    });
+    expect(replaced.addedByPlatformAdmin).toBe(false);
+    expect(serializeContact(replaced).mobile).toBe("9123456780");
 
     await cleanupOrganization(org.organization.id);
   });

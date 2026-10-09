@@ -122,7 +122,9 @@ async function exportFailedCsv(
       prisma.sendQueue.findMany({
         where: queueWhere,
         include: {
-          contact: { select: { id: true, name: true, mobile: true } },
+          contact: {
+            select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+          },
           template: { select: { id: true, name: true } },
           whatsappMediaAsset: { select: { filename: true } },
         },
@@ -147,7 +149,9 @@ async function exportFailedCsv(
               scheduledDate: true,
               recipientName: true,
               recipientMobile: true,
-              contact: { select: { name: true, mobile: true } },
+              contact: {
+                select: { name: true, mobile: true, addedByPlatformAdmin: true },
+              },
               template: { select: { name: true } },
             },
           },

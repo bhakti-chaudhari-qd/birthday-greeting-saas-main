@@ -322,7 +322,6 @@ export async function createContact(
 export async function listContacts(
   organizationId: string,
   query: ListContactsQuery,
-  options: { maskAdminAdded?: boolean } = {},
 ) {
   const where = buildContactListWhere(organizationId, query);
 
@@ -338,7 +337,7 @@ export async function listContacts(
   ]);
 
   return {
-    data: contacts.map((contact) => serializeContact(contact, options)),
+    data: contacts.map((contact) => serializeContact(contact)),
     meta: {
       page: query.page,
       limit: query.limit,
@@ -417,11 +416,15 @@ export async function updateContact(
             : {}),
           ...(mapped.email !== undefined ? { email: mapped.email } : {}),
           ...(mapped.isActive !== undefined ? { isActive: mapped.isActive } : {}),
-          // The client editing/saving a Platform-Admin-added contact treats
-          // it as their own data from here on (see serializeContact's
-          // maskAdminAdded option) - not conditional on which fields
-          // changed, matching the "any save unmasks" product decision.
-          ...(clearAdminAddedFlag && existing.addedByPlatformAdmin
+          // A Platform-Admin-added contact stays masked for the client (see
+          // serializeContact) until this save leaves none of the admin's
+          // mobile/email behind: the client must supply the mobile and
+          // either supply or already lack an email. Saving other fields
+          // must not unmask, or any edit would reveal the hidden values.
+          ...(clearAdminAddedFlag &&
+          existing.addedByPlatformAdmin &&
+          mapped.mobile !== undefined &&
+          (mapped.email !== undefined || !existing.email)
             ? { addedByPlatformAdmin: false }
             : {}),
         },

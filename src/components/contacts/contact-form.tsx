@@ -43,8 +43,8 @@ type ContactFormProps = {
   initialValues?: Partial<ContactFormValues>;
   /**
    * True when initialValues.mobile/email are masked display values (this
-   * contact was added by a Platform Admin and the current viewer is Staff,
-   * not Owner) - not the real data. Renders a "leave blank to keep" UX for
+   * contact was added by a Platform Admin, which hides them from every
+   * client-side viewer) - not the real data. Renders a "leave blank to keep" UX for
    * those two fields instead of a plain pre-filled input, and omits them
    * from the save payload unless the viewer explicitly changes them.
    */
