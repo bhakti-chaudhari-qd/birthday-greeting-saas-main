@@ -189,31 +189,39 @@ async function resolveActiveContactsForManualSend(
 function resolveQuickListRecipients(
   recipients: ManualSendRequestInput["recipients"],
 ): ManualSendRecipient[] {
-  const seenMobiles = new Set<string>();
+  const seenRecipients = new Set<string>();
   const resolved: ManualSendRecipient[] = [];
 
   for (const [index, recipient] of (recipients ?? []).entries()) {
-    let mobile: string;
-    try {
-      mobile = normalizeMobile(recipient.mobile);
-    } catch (error) {
-      throw new QueueValidationError(
-        error instanceof Error ? error.message : "Invalid phone number",
-      );
+    const email = recipient.email?.trim() || null;
+    // Email-only recipients carry a blank mobile; the channel check in
+    // prepareManualSend rejects them for WhatsApp/SMS.
+    let mobile = "";
+    if (recipient.mobile.trim()) {
+      try {
+        mobile = normalizeMobile(recipient.mobile);
+      } catch (error) {
+        throw new QueueValidationError(
+          error instanceof Error ? error.message : "Invalid phone number",
+        );
+      }
+    } else if (!email) {
+      throw new QueueValidationError("Enter a phone number or email address");
     }
 
-    if (seenMobiles.has(mobile)) {
+    const identity = mobile || email!.toLowerCase();
+    if (seenRecipients.has(identity)) {
       continue;
     }
-    seenMobiles.add(mobile);
+    seenRecipients.add(identity);
 
     const name = recipient.name.trim() || "Unnamed Recipient";
     resolved.push({
-      key: `quick-${index}-${mobile}`,
+      key: `quick-${index}-${identity}`,
       contactId: null,
       name,
       mobile,
-      email: recipient.email?.trim() || null,
+      email,
       address: null,
       attributes: {},
       isActive: true,
@@ -313,6 +321,13 @@ async function prepareManualSend(
     if (missing.length > 0) {
       throw new QueueValidationError(
         `Email is required for: ${missing.map((c) => c.name).join(", ")}`,
+      );
+    }
+  } else {
+    const missing = recipients.filter((recipient) => !recipient.mobile.trim());
+    if (missing.length > 0) {
+      throw new QueueValidationError(
+        `Phone number is required for: ${missing.map((c) => c.name).join(", ")}`,
       );
     }
   }

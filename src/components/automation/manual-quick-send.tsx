@@ -16,6 +16,7 @@ import {
 } from "@/lib/i18n/dictionaries/greeting-routes";
 import { useLocale } from "@/lib/i18n/use-locale";
 import { chunkIds, MANUAL_SEND_API_BATCH_SIZE } from "@/lib/queue/manual-send-batches";
+import { isValidQuickListEmail } from "@/lib/validation/manual-send";
 
 import { CategoryMultiSelect } from "./category-multi-select";
 import { CHANNEL_LABEL, type OrgCategory } from "./types";
@@ -33,7 +34,9 @@ type TemplateOption = {
 
 type QuickListRecipient = {
   name: string;
+  /** Blank when the line only carried an email address. */
   mobile: string;
+  email?: string;
 };
 
 type InvalidQuickListEntry = {
@@ -118,35 +121,54 @@ function parseQuickListInput(
   const valid: QuickListRecipient[] = [];
   const invalid: InvalidQuickListEntry[] = [];
   const duplicates: QuickListRecipient[] = [];
-  const seenMobiles = new Set<string>();
+  const seenRecipients = new Set<string>();
 
   for (const rawLine of input.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line) continue;
 
-    const columns = line.split(/\t|,/).map((part) => part.trim()).filter(Boolean);
-    const mobileText = columns.length >= 2 ? columns[columns.length - 1]! : line.match(/(?:\+?91[\s()-]*)?(?:0[\s()-]*)?[6-9](?:[\s()-]*\d){9}\s*$/)?.[0];
-    const nameText =
-      columns.length >= 2
-        ? columns.slice(0, -1).join(" ").trim()
-        : mobileText
-          ? line.slice(0, line.length - mobileText.length).trim()
+    // An email can sit anywhere on the line; pull it out first and parse
+    // what is left as the usual name + phone number.
+    const emailText = line.match(/[^\s,;<>()"']*@[^\s,;<>()"']*/)?.[0];
+    if (emailText && !isValidQuickListEmail(emailText)) {
+      invalid.push({ line, reason: dict.invalidEmailAddress });
+      continue;
+    }
+    const rest = emailText ? line.replace(emailText, " ").replace(/[<>;]/g, " ").trim() : line;
+
+    const columns = rest.split(/\t|,/).map((part) => part.trim()).filter(Boolean);
+    // With an email present the last column may just be more of the name.
+    const lastColumnIsMobile =
+      columns.length >= 2 && (!emailText || /\d/.test(columns[columns.length - 1]!));
+    const mobileText = lastColumnIsMobile
+      ? columns[columns.length - 1]!
+      : columns.join(" ").match(/(?:\+?91[\s()-]*)?(?:0[\s()-]*)?[6-9](?:[\s()-]*\d){9}\s*$/)?.[0];
+    const nameText = lastColumnIsMobile
+      ? columns.slice(0, -1).join(" ").trim()
+      : mobileText
+        ? columns.join(" ").slice(0, -mobileText.length).trim()
+        : emailText
+          ? columns.join(" ")
           : "";
 
-    if (!mobileText) {
+    if (!mobileText && !emailText) {
       invalid.push({ line, reason: dict.invalidPhoneNumber });
       continue;
     }
 
     try {
-      const mobile = normalizeMobile(mobileText);
+      const mobile = mobileText ? normalizeMobile(mobileText) : "";
       const name = nameText || dict.unnamedRecipient;
-      if (seenMobiles.has(mobile)) {
-        duplicates.push({ name, mobile });
+      const recipient: QuickListRecipient = emailText
+        ? { name, mobile, email: emailText }
+        : { name, mobile };
+      const identity = mobile || emailText!.toLowerCase();
+      if (seenRecipients.has(identity)) {
+        duplicates.push(recipient);
         continue;
       }
-      seenMobiles.add(mobile);
-      valid.push({ name, mobile });
+      seenRecipients.add(identity);
+      valid.push(recipient);
     } catch (error) {
       invalid.push({
         line,
@@ -385,6 +407,21 @@ export function ManualQuickSend() {
   const actionControlsDisabled =
     !channelsReady || (recipientMode === "category" && loadingCategoryAudience);
 
+  // Quick List lines may carry only a phone number or only an email, so check
+  // every recipient can actually be reached on the chosen channels.
+  function quickListChannelError(): string | null {
+    if (recipientMode !== "quickList") return null;
+    if (channelForm.EMAIL.enabled) {
+      const missing = parsedQuickList.valid.filter((recipient) => !recipient.email).length;
+      if (missing > 0) return dict.errorRecipientsMissingEmail(missing);
+    }
+    if (channelForm.WHATSAPP.enabled || channelForm.SMS.enabled) {
+      const missing = parsedQuickList.valid.filter((recipient) => !recipient.mobile).length;
+      if (missing > 0) return dict.errorRecipientsMissingMobile(missing);
+    }
+    return null;
+  }
+
   async function handlePreview() {
     if (recipientMode === "category" && selectedCategoryCount === 0) {
       setError(dict.errorSelectCategory);
@@ -399,6 +436,11 @@ export function ManualQuickSend() {
       return;
     }
     if (!canAct) return;
+    const channelError = quickListChannelError();
+    if (channelError) {
+      setError(channelError);
+      return;
+    }
     setPreviewing(true);
     setError(null);
     try {
@@ -445,6 +487,11 @@ export function ManualQuickSend() {
       return;
     }
     if (!canAct) return;
+    const channelError = quickListChannelError();
+    if (channelError) {
+      setError(channelError);
+      return;
+    }
     setSending(true);
     setError(null);
     setSendSummary(null);
@@ -774,13 +821,15 @@ export function ManualQuickSend() {
                   <div className="mt-2 max-h-64 overflow-y-auto rounded-lg border border-stone-200 bg-white">
                     {parsedQuickList.valid.slice(0, 100).map((recipient, index) => (
                       <div
-                        key={`${recipient.mobile}-${index}`}
+                        key={`${recipient.mobile || recipient.email}-${index}`}
                         className="border-b border-stone-100 px-3 py-2 last:border-0"
                       >
                         <div className="text-sm font-medium text-stone-900">
                           {recipient.name}
                         </div>
-                        <div className="text-xs text-stone-500">{recipient.mobile}</div>
+                        <div className="text-xs text-stone-500">
+                          {[recipient.mobile, recipient.email].filter(Boolean).join(" · ")}
+                        </div>
                       </div>
                     ))}
                     {parsedQuickList.valid.length > 100 ? (

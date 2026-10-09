@@ -149,6 +149,9 @@ export type GreetingRoutesDict = {
     invalidEntriesHeading: string;
     moreInvalidEntries: (n: number) => string;
     invalidPhoneNumber: string;
+    invalidEmailAddress: string;
+    errorRecipientsMissingEmail: (n: number) => string;
+    errorRecipientsMissingMobile: (n: number) => string;
     unnamedRecipient: string;
     occasion: string;
     deliveryChannels: string;
@@ -381,12 +384,14 @@ const GREETING_ROUTES_DICT: Record<Locale, GreetingRoutesDict> = {
       quickListPlaceholder: `Paste recipients here...
 
 Name, Phone Number
-Name Phone Number
+Name, Email
+Name, Phone Number, Email
 Phone Number
+Email
 
 Supports:
-- Name + Number
-- Number only
+- Name + Number and/or Email
+- Number only or Email only
 - Excel/Google Sheets paste`,
       recipientsHeading: "Recipients",
       noValidRecipientsYet: "No valid recipients yet",
@@ -396,7 +401,12 @@ Supports:
       duplicatesIgnored: (n) => `Duplicate Entries Ignored: ${n}`,
       invalidEntriesHeading: "Invalid Entries",
       moreInvalidEntries: (n) => `+${n} more invalid entries`,
-      invalidPhoneNumber: "Invalid phone number",
+      invalidPhoneNumber: "Invalid phone number or email address",
+      invalidEmailAddress: "Invalid email address",
+      errorRecipientsMissingEmail: (n) =>
+        `${n} recipient${n === 1 ? " has" : "s have"} no email address. Add one or turn off the Email channel.`,
+      errorRecipientsMissingMobile: (n) =>
+        `${n} recipient${n === 1 ? " has" : "s have"} no phone number. Add one or send by Email only.`,
       unnamedRecipient: "Unnamed Recipient",
       occasion: "Occasion",
       deliveryChannels: "Delivery Channels",
@@ -629,12 +639,14 @@ Supports:
       quickListPlaceholder: `प्राप्तकर्ता यहां पेस्ट करें...
 
 नाम, फ़ोन नंबर
-नाम फ़ोन नंबर
+नाम, ईमेल
+नाम, फ़ोन नंबर, ईमेल
 फ़ोन नंबर
+ईमेल
 
 सपोर्ट करता है:
-- नाम + नंबर
-- सिर्फ़ नंबर
+- नाम + नंबर और/या ईमेल
+- सिर्फ़ नंबर या सिर्फ़ ईमेल
 - Excel/Google Sheets से पेस्ट`,
       recipientsHeading: "प्राप्तकर्ता",
       noValidRecipientsYet: "अभी तक कोई सही प्राप्तकर्ता नहीं",
@@ -644,7 +656,12 @@ Supports:
       duplicatesIgnored: (n) => `डुप्लीकेट एंट्री नज़रअंदाज़ की गईं: ${n}`,
       invalidEntriesHeading: "गलत एंट्री",
       moreInvalidEntries: (n) => `+${n} और गलत एंट्री`,
-      invalidPhoneNumber: "गलत फ़ोन नंबर",
+      invalidPhoneNumber: "गलत फ़ोन नंबर या ईमेल पता",
+      invalidEmailAddress: "गलत ईमेल पता",
+      errorRecipientsMissingEmail: (n) =>
+        `${n} प्राप्तकर्ताओं का ईमेल पता नहीं है। ईमेल जोड़ें या Email चैनल बंद करें।`,
+      errorRecipientsMissingMobile: (n) =>
+        `${n} प्राप्तकर्ताओं का फ़ोन नंबर नहीं है। नंबर जोड़ें या सिर्फ़ Email से भेजें।`,
       unnamedRecipient: "बेनाम प्राप्तकर्ता",
       occasion: "अवसर",
       deliveryChannels: "डिलीवरी चैनल",
@@ -877,12 +894,14 @@ Supports:
       quickListPlaceholder: `प्राप्तकर्ते इथे पेस्ट करा...
 
 नाव, फोन नंबर
-नाव फोन नंबर
+नाव, ईमेल
+नाव, फोन नंबर, ईमेल
 फोन नंबर
+ईमेल
 
 सपोर्ट करते:
-- नाव + नंबर
-- फक्त नंबर
+- नाव + नंबर आणि/किंवा ईमेल
+- फक्त नंबर किंवा फक्त ईमेल
 - Excel/Google Sheets मधून पेस्ट`,
       recipientsHeading: "प्राप्तकर्ते",
       noValidRecipientsYet: "अजून कोणतेही वैध प्राप्तकर्ते नाहीत",
@@ -892,7 +911,12 @@ Supports:
       duplicatesIgnored: (n) => `डुप्लिकेट नोंदी दुर्लक्षित केल्या: ${n}`,
       invalidEntriesHeading: "अवैध नोंदी",
       moreInvalidEntries: (n) => `+${n} आणखी अवैध नोंदी`,
-      invalidPhoneNumber: "अवैध फोन नंबर",
+      invalidPhoneNumber: "अवैध फोन नंबर किंवा ईमेल पत्ता",
+      invalidEmailAddress: "अवैध ईमेल पत्ता",
+      errorRecipientsMissingEmail: (n) =>
+        `${n} प्राप्तकर्त्यांचा ईमेल पत्ता नाही. ईमेल जोडा किंवा Email चॅनेल बंद करा.`,
+      errorRecipientsMissingMobile: (n) =>
+        `${n} प्राप्तकर्त्यांचा फोन नंबर नाही. नंबर जोडा किंवा फक्त Email ने पाठवा.`,
       unnamedRecipient: "अनामित प्राप्तकर्ता",
       occasion: "प्रसंग",
       deliveryChannels: "डिलिव्हरी चॅनेल",

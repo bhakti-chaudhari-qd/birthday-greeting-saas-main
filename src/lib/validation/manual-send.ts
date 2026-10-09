@@ -1,13 +1,24 @@
 import { z } from "zod";
 
 const contactIdSchema = z.string().trim().min(1);
+const quickRecipientEmailSchema = z.string().trim().email().max(254);
 const quickRecipientSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
-    mobile: z.string().trim().min(1).max(16),
-    email: z.string().trim().email().max(254).optional().nullable(),
+    /** Blank for an email-only recipient. */
+    mobile: z.string().trim().max(16),
+    email: quickRecipientEmailSchema.optional().nullable(),
   })
-  .strict();
+  .strict()
+  .refine((value) => Boolean(value.mobile || value.email), {
+    message: "Enter a phone number or email address",
+    path: ["mobile"],
+  });
+
+/** Same email rule the API enforces, so the Quick List can flag bad lines up front. */
+export function isValidQuickListEmail(value: string): boolean {
+  return quickRecipientEmailSchema.safeParse(value).success;
+}
 
 export const manualSendRequestSchema = z
   .object({
