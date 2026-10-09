@@ -2,52 +2,39 @@ import { describe, expect, it } from "vitest";
 
 import { addOrganizationUserRequestSchema } from "@/lib/admin/add-organization-user";
 import { normalizeAccountNumbers } from "@/lib/auth/register";
-import {
-  buildDailySummaryParameters,
-  readDailySummaryConfig,
-} from "@/lib/daily-summary/service";
+import { updatePlatformDailySummarySchema } from "@/lib/daily-summary/platform-config";
+import { buildDailySummaryParameters } from "@/lib/daily-summary/service";
 import { signupSchema } from "@/lib/validation/auth";
 
-describe("readDailySummaryConfig", () => {
-  const meta = {
-    DAILY_SUMMARY_META_ACCESS_TOKEN: "token",
-    DAILY_SUMMARY_META_PHONE_NUMBER_ID: "12345",
+describe("updatePlatformDailySummarySchema", () => {
+  const valid = {
+    enabled: true,
+    accessToken: "token",
+    phoneNumberId: "1320947411098948",
+    templateName: "daily_summary",
+    language: "en",
+    sendHour: 9,
   };
 
-  it("is off until the Meta account and template are all set", () => {
-    expect(readDailySummaryConfig({} as NodeJS.ProcessEnv)).toBeNull();
-    expect(readDailySummaryConfig(meta as unknown as NodeJS.ProcessEnv)).toBeNull();
+  it("accepts a complete config, with or without a new token", () => {
+    expect(updatePlatformDailySummarySchema.safeParse(valid).success).toBe(true);
     expect(
-      readDailySummaryConfig({
-        DAILY_SUMMARY_WHATSAPP_TEMPLATE: "daily_summary",
-      } as unknown as NodeJS.ProcessEnv),
-    ).toBeNull();
+      updatePlatformDailySummarySchema.safeParse({ ...valid, accessToken: undefined })
+        .success,
+    ).toBe(true);
   });
 
-  it("defaults the language and send hour", () => {
-    expect(
-      readDailySummaryConfig({
-        ...meta,
-        DAILY_SUMMARY_WHATSAPP_TEMPLATE: "daily_summary",
-      } as unknown as NodeJS.ProcessEnv),
-    ).toEqual({
-      accessToken: "token",
-      phoneNumberId: "12345",
-      apiVersion: "v21.0",
-      templateName: "daily_summary",
-      language: "en",
-      sendHour: 9,
-    });
-  });
-
-  it("ignores an out-of-range send hour", () => {
-    expect(
-      readDailySummaryConfig({
-        ...meta,
-        DAILY_SUMMARY_WHATSAPP_TEMPLATE: "daily_summary",
-        DAILY_SUMMARY_SEND_HOUR: "42",
-      } as unknown as NodeJS.ProcessEnv)?.sendHour,
-    ).toBe(9);
+  it("rejects a bad template name, language or hour", () => {
+    for (const bad of [
+      { templateName: "Daily Summary" },
+      { language: "english" },
+      { sendHour: 24 },
+      { phoneNumberId: "+91 98765" },
+    ]) {
+      expect(
+        updatePlatformDailySummarySchema.safeParse({ ...valid, ...bad }).success,
+      ).toBe(false);
+    }
   });
 });
 

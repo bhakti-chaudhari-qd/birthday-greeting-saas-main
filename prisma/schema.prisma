@@ -161,6 +161,24 @@ model Organization {
   @@index([referredByVendorId])
 }
 
+/// Single row (id "default"): the platform's own Meta Cloud API account and
+/// approved template that every organization's daily summary is sent with.
+/// Set by a Platform Admin under Admin > Settings; no row means the summary
+/// is not configured yet.
+model PlatformDailySummaryConfig {
+  id                   String   @id @default("default")
+  isEnabled            Boolean  @default(true)
+  encryptedAccessToken String
+  phoneNumberId        String
+  apiVersion           String
+  templateName         String
+  language             String   @default("en")
+  /// Hour of day (IST, 0-23) from which the previous day's summary goes out.
+  sendHour             Int      @default(9)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
 /// Numbers the Owner chose to receive the daily summary on. With no rows,
 /// the summary goes to the Owner's own WhatsApp number.
 model DailySummaryRecipient {

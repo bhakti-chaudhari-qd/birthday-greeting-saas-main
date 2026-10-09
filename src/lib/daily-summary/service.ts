@@ -1,34 +1,24 @@
 import { Channel, QueueStatus, UserRole } from "@prisma/client";
 
 import { AUTOMATION_TIMEZONE } from "@/lib/automation/constants";
-import { WHATSAPP_META_DEFAULT_API_VERSION } from "@/lib/channel-config/whatsapp-types";
 import { normalizeMobile } from "@/lib/contacts/mobile";
 import { prisma } from "@/lib/db";
 import { createMetaWhatsAppProvider } from "@/lib/messaging/providers/whatsapp/meta-whatsapp-provider";
+import type { MessageProvider } from "@/lib/messaging/providers/types";
 import {
   getOrganizationLocalIsoDate,
   getPreviousIsoDate,
   parseTargetDate,
 } from "@/lib/queue/dates";
 
+import { loadDailySummaryConfig, type DailySummaryConfig } from "./platform-config";
+
 export const DAILY_SUMMARY_MAX_RECIPIENTS = 5;
 
 /** Organizations handled per cron tick; the rest follow on the next ticks. */
 const ORGANIZATIONS_PER_RUN = 25;
-const DEFAULT_SEND_HOUR = 9;
 const META_REQUEST_TIMEOUT_MS = 15_000;
 const SUMMARY_CHANNELS = [Channel.WHATSAPP, Channel.SMS, Channel.EMAIL] as const;
-
-export type DailySummaryConfig = {
-  /** The platform's own Meta Cloud API account the summary is sent from. */
-  accessToken: string;
-  phoneNumberId: string;
-  apiVersion: string;
-  templateName: string;
-  language: string;
-  /** Hour of day (IST, 0-23) from which the previous day's summary goes out. */
-  sendHour: number;
-};
 
 export type ChannelCounts = Record<
   (typeof SUMMARY_CHANNELS)[number],
@@ -42,34 +32,13 @@ export class DailySummaryValidationError extends Error {
   }
 }
 
-/**
- * The summary is sent as an approved WhatsApp template from the platform's
- * own Meta Cloud API account, never a client's gateway. It stays off (null)
- * until the access token, phone number ID and template name are all set.
- */
-export function readDailySummaryConfig(
-  env: NodeJS.ProcessEnv = process.env,
-): DailySummaryConfig | null {
-  const accessToken = env.DAILY_SUMMARY_META_ACCESS_TOKEN?.trim() ?? "";
-  const phoneNumberId = env.DAILY_SUMMARY_META_PHONE_NUMBER_ID?.trim() ?? "";
-  const templateName = env.DAILY_SUMMARY_WHATSAPP_TEMPLATE?.trim() ?? "";
-  if (!accessToken || !phoneNumberId || !templateName) {
-    return null;
-  }
-
-  const hour = Number(env.DAILY_SUMMARY_SEND_HOUR?.trim() || DEFAULT_SEND_HOUR);
-
-  return {
-    accessToken,
-    phoneNumberId,
-    apiVersion:
-      env.DAILY_SUMMARY_META_API_VERSION?.trim() ||
-      WHATSAPP_META_DEFAULT_API_VERSION,
-    templateName,
-    language: env.DAILY_SUMMARY_WHATSAPP_LANGUAGE?.trim() || "en",
-    sendHour:
-      Number.isInteger(hour) && hour >= 0 && hour <= 23 ? hour : DEFAULT_SEND_HOUR,
-  };
+function summaryProvider(config: DailySummaryConfig): MessageProvider {
+  return createMetaWhatsAppProvider({
+    accessToken: config.accessToken,
+    phoneNumberId: config.phoneNumberId,
+    apiVersion: config.apiVersion,
+    requestTimeoutMs: META_REQUEST_TIMEOUT_MS,
+  });
 }
 
 function emptyCounts(): ChannelCounts {
@@ -137,7 +106,7 @@ export type DailySummaryRunResult =
 export async function runDailySummaries(
   now: Date = new Date(),
 ): Promise<DailySummaryRunResult> {
-  const config = readDailySummaryConfig();
+  const config = await loadDailySummaryConfig();
   if (!config) {
     return { status: "not_configured" };
   }
@@ -199,12 +168,7 @@ export async function runDailySummaries(
     _count: { _all: true },
   });
 
-  const provider = createMetaWhatsAppProvider({
-    accessToken: config.accessToken,
-    phoneNumberId: config.phoneNumberId,
-    apiVersion: config.apiVersion,
-    requestTimeoutMs: META_REQUEST_TIMEOUT_MS,
-  });
+  const provider = summaryProvider(config);
 
   const countsByOrganization = new Map<string, ChannelCounts>();
   for (const row of grouped) {
@@ -268,6 +232,49 @@ export async function runDailySummaries(
   }
 
   return result;
+}
+
+/**
+ * Sends one summary with sample numbers to `mobile` using the saved Meta
+ * account and template, so a Platform Admin can check both before 9 AM.
+ * Throws the provider's own error message when Meta rejects it.
+ */
+export async function sendDailySummaryTest(mobile: string): Promise<void> {
+  const config = await loadDailySummaryConfig();
+  if (!config) {
+    throw new DailySummaryValidationError(
+      "Save and enable the daily summary settings first",
+    );
+  }
+
+  let recipient: string;
+  try {
+    recipient = normalizeMobile(mobile);
+  } catch {
+    throw new DailySummaryValidationError(
+      "Enter a valid 10-digit Indian mobile number",
+    );
+  }
+
+  const targetIso = getPreviousIsoDate(
+    getOrganizationLocalIsoDate(AUTOMATION_TIMEZONE),
+  );
+  const parameterValues = buildDailySummaryParameters("Test Organization", targetIso, {
+    WHATSAPP: { sent: 12, failed: 1 },
+    SMS: { sent: 5, failed: 0 },
+    EMAIL: { sent: 3, failed: 0 },
+  });
+
+  await summaryProvider(config).send({
+    channel: "WHATSAPP",
+    recipient,
+    templateName: config.templateName,
+    language: config.language,
+    parameterValues,
+    renderedBody: parameterValues.join(" | "),
+    idempotencyKey: `daily-summary-test:${Date.now()}`,
+    attemptNumber: 1,
+  });
 }
 
 export type DailySummarySettings = {
