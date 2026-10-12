@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireSessionAdmin,
+  requireApiAdmin,
   sessionAuthErrorResponse,
-} from "@/lib/api/session-auth";
+} from "@/lib/api/api-auth";
 import { jsonError } from "@/lib/api/response";
 import {
   QueueInvalidStateError,
@@ -23,7 +23,7 @@ type RouteContext = {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
-    const auth = await requireSessionAdmin();
+    const auth = await requireApiAdmin(request);
     const { id } = await context.params;
 
     let body: unknown = {};

@@ -6,6 +6,7 @@ import {
   AuthorizationError,
 } from "@/lib/auth/permissions";
 import { getAuthContext } from "@/lib/auth/context";
+import { RateLimitError } from "@/lib/auth/rate-limit";
 import type { AuthContext } from "@/lib/auth/types";
 
 export async function requireSessionAuth(): Promise<AuthContext> {
@@ -29,7 +30,7 @@ export async function requireSessionAdmin(): Promise<AuthContext> {
   return auth;
 }
 
-/** Maps session auth failures to 401/403 responses; otherwise null. */
+/** Maps auth failures to 401/403/429 responses; otherwise null. */
 export function sessionAuthErrorResponse(
   error: unknown,
 ): NextResponse | null {
@@ -39,6 +40,12 @@ export function sessionAuthErrorResponse(
 
   if (error instanceof AuthorizationError) {
     return jsonError("Forbidden", 403);
+  }
+
+  if (error instanceof RateLimitError) {
+    const response = jsonError(error.message, 429);
+    response.headers.set("Retry-After", "60");
+    return response;
   }
 
   return null;

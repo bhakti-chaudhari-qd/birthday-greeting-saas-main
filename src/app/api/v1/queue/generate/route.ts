@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireSessionAdmin,
+  requireApiAdmin,
   sessionAuthErrorResponse,
-} from "@/lib/api/session-auth";
+} from "@/lib/api/api-auth";
 import { jsonError } from "@/lib/api/response";
 import { SubscriptionBlockedError } from "@/lib/abuse/subscription-send";
 import { prisma } from "@/lib/db";
@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireSessionAdmin();
+    const auth = await requireApiAdmin(request);
     const body = await request.json();
     const input = generateQueueSchema.parse(body);
 

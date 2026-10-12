@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireSessionAuth,
+  requireApiAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/session-auth";
+} from "@/lib/api/api-auth";
 import { jsonError } from "@/lib/api/response";
 import {
   ContactCategoryConflictError,
@@ -23,7 +23,7 @@ type RouteContext = {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    const auth = await requireSessionAuth();
+    const auth = await requireApiAuth(request);
     const { id } = await context.params;
     const body = await request.json();
     const input = updateContactCategorySchema.parse(body);
@@ -60,9 +60,9 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
-    const auth = await requireSessionAuth();
+    const auth = await requireApiAuth(request);
     const { id } = await context.params;
     await deleteContactCategory(auth.organizationId, id);
     return new NextResponse(null, { status: 204 });

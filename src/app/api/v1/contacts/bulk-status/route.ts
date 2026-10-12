@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireSessionAuth,
+  requireApiAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/session-auth";
+} from "@/lib/api/api-auth";
 import { jsonError } from "@/lib/api/response";
 import { ContactLimitError } from "@/lib/contacts/errors";
 import { bulkUpdateContactStatus } from "@/lib/contacts/service";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export async function PATCH(request: Request) {
   try {
-    const auth = await requireSessionAuth();
+    const auth = await requireApiAuth(request);
     const body = await request.json();
     const input = bulkUpdateContactStatusSchema.parse(body);
     const result = await bulkUpdateContactStatus(auth.organizationId, input);

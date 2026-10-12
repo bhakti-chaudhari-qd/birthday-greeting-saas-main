@@ -27,6 +27,7 @@ describe("dashboard navigation mapping", () => {
       "/dashboard/settings/occasions",
       "/dashboard/settings/contact-fields",
       "/dashboard/settings/billing",
+      "/dashboard/settings/api-keys",
     ]);
   });
 
@@ -130,6 +131,7 @@ describe("dashboard navigation mapping", () => {
       "Occasion Management",
       "Contact Fields",
       "Billing",
+      "API Keys",
     ]);
   });
 

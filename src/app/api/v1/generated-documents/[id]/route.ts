@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
 import {
-  requireSessionAdmin,
-  requireSessionAuth,
+  requireApiAdmin,
+  requireApiAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/session-auth";
+} from "@/lib/api/api-auth";
 import { jsonError } from "@/lib/api/response";
 import { generatedDocumentErrorResponse } from "@/lib/generated-documents/api-errors";
 import {
@@ -17,9 +17,9 @@ export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
-    const auth = await requireSessionAuth();
+    const auth = await requireApiAuth(request);
     const { id } = await context.params;
     const document = await getGeneratedDocument(auth.organizationId, id);
 
@@ -40,9 +40,9 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
-    const auth = await requireSessionAdmin();
+    const auth = await requireApiAdmin(request);
     const { id } = await context.params;
     await deleteGeneratedDocument(auth.organizationId, id);
 

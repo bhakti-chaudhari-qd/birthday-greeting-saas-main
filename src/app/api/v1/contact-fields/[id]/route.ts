@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireSessionAdmin,
+  requireApiAdmin,
   sessionAuthErrorResponse,
-} from "@/lib/api/session-auth";
+} from "@/lib/api/api-auth";
 import { jsonError } from "@/lib/api/response";
 import {
   ContactFieldConflictError,
@@ -24,7 +24,7 @@ type RouteContext = {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    const auth = await requireSessionAdmin();
+    const auth = await requireApiAdmin(request);
     const { id } = await context.params;
     const body = await request.json();
     const input = updateContactFieldDefinitionSchema.parse(body);
@@ -52,9 +52,9 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
-    const auth = await requireSessionAdmin();
+    const auth = await requireApiAdmin(request);
     const { id } = await context.params;
     await deleteContactFieldDefinition(auth.organizationId, id);
     return new NextResponse(null, { status: 204 });

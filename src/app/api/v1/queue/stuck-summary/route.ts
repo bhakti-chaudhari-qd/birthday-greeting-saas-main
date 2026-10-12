@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 
 import {
-  requireSessionAuth,
+  requireApiAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/session-auth";
+} from "@/lib/api/api-auth";
 import { jsonError } from "@/lib/api/response";
 import { getStuckPendingSummary } from "@/lib/queue/stuck";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request?: Request) {
   try {
-    const auth = await requireSessionAuth();
+    const auth = await requireApiAuth(request);
     const summary = await getStuckPendingSummary(auth.organizationId);
     return NextResponse.json({ data: summary });
   } catch (error) {

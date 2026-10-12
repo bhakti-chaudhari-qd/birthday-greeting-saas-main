@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireSessionAdmin,
+  requireApiAdmin,
   sessionAuthErrorResponse,
-} from "@/lib/api/session-auth";
+} from "@/lib/api/api-auth";
 import { jsonError } from "@/lib/api/response";
 import {
   exportContactsCsv,
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireSessionAdmin();
+    const auth = await requireApiAdmin(request);
     const { searchParams } = new URL(request.url);
     const query = exportContactsQuerySchema.parse({
       search: searchParams.get("search") ?? undefined,
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
 /** Export only the given contact IDs (Owner-only). */
 export async function POST(request: Request) {
   try {
-    const auth = await requireSessionAdmin();
+    const auth = await requireApiAdmin(request);
     const body = await request.json();
     const input = bulkContactIdsSchema.parse(body);
     const result = await exportContactsCsvByIds(

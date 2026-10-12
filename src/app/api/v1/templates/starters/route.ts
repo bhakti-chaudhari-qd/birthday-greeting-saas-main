@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 
 import {
-  requireSessionAuth,
+  requireApiAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/session-auth";
+} from "@/lib/api/api-auth";
 import { jsonError } from "@/lib/api/response";
 import { listStarterTemplatesForOrganization } from "@/lib/templates/service";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request?: Request) {
   try {
-    const auth = await requireSessionAuth();
+    const auth = await requireApiAuth(request);
 
     return NextResponse.json({
       data: await listStarterTemplatesForOrganization(auth.organizationId),

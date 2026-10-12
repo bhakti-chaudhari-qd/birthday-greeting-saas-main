@@ -39,6 +39,7 @@ export const ADMIN_ONLY_NAV_HREFS: ReadonlySet<string> = new Set([
   "/dashboard/settings/billing",
   "/dashboard/settings/occasions",
   "/dashboard/settings/contact-fields",
+  "/dashboard/settings/api-keys",
   "/dashboard/templates",
 ]);
 
@@ -59,6 +60,7 @@ export const DASHBOARD_NAV: readonly DashboardNavItem[] = [
       { label: "Occasion Management", href: "/dashboard/settings/occasions" },
       { label: "Contact Fields", href: "/dashboard/settings/contact-fields" },
       { label: "Billing", href: "/dashboard/settings/billing" },
+      { label: "API Keys", href: "/dashboard/settings/api-keys" },
     ],
   },
 ] as const;

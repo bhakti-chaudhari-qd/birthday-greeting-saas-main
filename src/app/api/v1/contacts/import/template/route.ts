@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
 import {
-  requireSessionAuth,
+  requireApiAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/session-auth";
+} from "@/lib/api/api-auth";
 import { jsonError } from "@/lib/api/response";
 import { buildContactCsvTemplate } from "@/lib/contacts/csv";
 import { listOccasions } from "@/lib/occasions/service";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request?: Request) {
   try {
-    const auth = await requireSessionAuth();
+    const auth = await requireApiAuth(request);
     const occasions = await listOccasions(auth.organizationId);
 
     return new NextResponse(withUtf8Bom(

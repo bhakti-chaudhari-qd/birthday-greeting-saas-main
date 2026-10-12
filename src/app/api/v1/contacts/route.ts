@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireSessionAuth,
+  requireApiAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/session-auth";
+} from "@/lib/api/api-auth";
 import { jsonError } from "@/lib/api/response";
 import { ContactFieldValidationError } from "@/lib/contact-fields/service";
 import {
@@ -26,7 +26,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireSessionAuth();
+    const auth = await requireApiAuth(request);
     const body = await request.json();
     const input = createContactSchema.parse(body);
 
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireSessionAuth();
+    const auth = await requireApiAuth(request);
     const { searchParams } = new URL(request.url);
     const query = listContactsQuerySchema.parse({
       page: searchParams.get("page") ?? undefined,

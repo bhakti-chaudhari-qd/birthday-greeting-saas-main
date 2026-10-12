@@ -3,9 +3,9 @@ import { z } from "zod";
 import { ZodError } from "zod";
 
 import {
-  requireSessionAdmin,
+  requireApiAdmin,
   sessionAuthErrorResponse,
-} from "@/lib/api/session-auth";
+} from "@/lib/api/api-auth";
 import { jsonError } from "@/lib/api/response";
 import { resolveManualSendDefaultsForContacts } from "@/lib/automation/category-settings";
 import { ensureSystemBirthdayOccasion } from "@/lib/occasions/service";
@@ -29,7 +29,7 @@ const querySchema = z.object({
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireSessionAdmin();
+    const auth = await requireApiAdmin(request);
     const { searchParams } = new URL(request.url);
     const parsed = querySchema.parse({
       occasionId: searchParams.get("occasionId") ?? undefined,
