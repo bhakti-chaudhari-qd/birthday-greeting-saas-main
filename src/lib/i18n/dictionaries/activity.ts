@@ -56,6 +56,8 @@ export type ActivityDict = {
     retry: string;
     retrying: string;
     statusSuccess: string;
+    statusSubmitted: string;
+    statusDelivered: string;
     statusFailed: string;
     statusProcessing: string;
     statusPending: string;
@@ -134,6 +136,8 @@ const ACTIVITY_DICT: Record<Locale, ActivityDict> = {
       retry: "Retry",
       retrying: "Retrying…",
       statusSuccess: "Success",
+      statusSubmitted: "Submitted",
+      statusDelivered: "Delivered",
       statusFailed: "Failed",
       statusProcessing: "Processing",
       statusPending: "Pending",
@@ -212,6 +216,8 @@ const ACTIVITY_DICT: Record<Locale, ActivityDict> = {
       retry: "फिर कोशिश करें",
       retrying: "फिर कोशिश हो रही है…",
       statusSuccess: "सफल",
+      statusSubmitted: "सबमिटेड",
+      statusDelivered: "डिलीवर हुआ",
       statusFailed: "असफल",
       statusProcessing: "प्रोसेस हो रहा है",
       statusPending: "पेंडिंग",
@@ -291,6 +297,8 @@ const ACTIVITY_DICT: Record<Locale, ActivityDict> = {
       retry: "पुन्हा प्रयत्न करा",
       retrying: "पुन्हा प्रयत्न होत आहे…",
       statusSuccess: "यशस्वी",
+      statusSubmitted: "सबमिट केलेले",
+      statusDelivered: "डिलिव्हर झाले",
       statusFailed: "अयशस्वी",
       statusProcessing: "प्रोसेस होत आहे",
       statusPending: "पेंडिंग",

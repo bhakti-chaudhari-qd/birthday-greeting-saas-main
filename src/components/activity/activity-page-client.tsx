@@ -165,13 +165,18 @@ function SummaryCard({
   );
 }
 
-/** Success reads "Success" (not the backend's raw "Sent"/"Delivered"); Sending shows as its own "Processing" tone. */
+/**
+ * "Delivered" only once the provider confirmed it reached the phone; a message
+ * the provider merely accepted reads "Submitted". Sending shows as "Processing".
+ */
 function recipientStatusDisplay(
   recipient: ActivityRecipientRow,
   dict: ActivityDict,
 ): { label: string; tone: "success" | "danger" | "warning" | "info" } {
   if (recipient.status === "sent")
-    return { label: dict.group.statusSuccess, tone: "success" };
+    return recipient.statusLabel === "Delivered"
+      ? { label: dict.group.statusDelivered, tone: "success" }
+      : { label: dict.group.statusSubmitted, tone: "info" };
   if (recipient.status === "failed")
     return { label: dict.group.statusFailed, tone: "danger" };
   if (recipient.statusLabel === "Sending")
