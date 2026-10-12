@@ -33,6 +33,7 @@ export const ADMIN_ONLY_NAV_HREFS: ReadonlySet<string> = new Set([
   "/dashboard/messages",
   "/dashboard/settings/greeting-routes",
   "/dashboard/settings/channels",
+  "/dashboard/settings/daily-summary",
   "/dashboard/settings/sms",
   "/dashboard/settings/whatsapp",
   "/dashboard/settings/sms/templates",
@@ -56,6 +57,7 @@ export const DASHBOARD_NAV: readonly DashboardNavItem[] = [
     label: "Settings",
     children: [
       { label: "Channels", href: "/dashboard/settings/channels" },
+      { label: "Daily Summary", href: "/dashboard/settings/daily-summary" },
       { label: "Manage Templates", href: "/dashboard/templates" },
       { label: "Occasion Management", href: "/dashboard/settings/occasions" },
       { label: "Contact Fields", href: "/dashboard/settings/contact-fields" },

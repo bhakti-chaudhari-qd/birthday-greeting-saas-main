@@ -5,7 +5,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import { CallChannelSettings } from "@/components/settings/call-channel-settings";
 import { ChannelSetupSteps } from "@/components/settings/channel-setup-steps";
-import { DailySummarySettings } from "@/components/settings/daily-summary-settings";
 import { EmailChannelSettings } from "@/components/settings/email-channel-settings";
 import { SmsChannelSettings } from "@/components/settings/sms-channel-settings";
 import { WhatsAppChannelSettings } from "@/components/settings/whatsapp-channel-settings";
@@ -122,7 +121,6 @@ function ChannelSettingsTabs() {
         {tab === "call" ? <CallChannelSettings /> : null}
       </div>
 
-      <DailySummarySettings />
     </PageShell>
   );
 }
