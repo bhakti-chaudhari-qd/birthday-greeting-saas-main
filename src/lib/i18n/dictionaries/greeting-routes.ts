@@ -21,7 +21,9 @@ export type GreetingRoutesDict = {
     channels: { sms: string; whatsapp: string; email: string; call: string };
     chooseTemplate: string;
     allGroupsSuffix: string;
-    callComingSoon: string;
+    chooseRecording: string;
+    callHint: string;
+    manageRecordings: string;
     sendAt: string;
     notSetChooseTime: string;
     custom: string;
@@ -256,7 +258,9 @@ const GREETING_ROUTES_DICT: Record<Locale, GreetingRoutesDict> = {
       channels: { sms: "SMS", whatsapp: "WhatsApp", email: "Email", call: "Call" },
       chooseTemplate: "Choose a template…",
       allGroupsSuffix: "All groups",
-      callComingSoon: "Delivery coming soon",
+      chooseRecording: "Choose a recording…",
+      callHint: "Plays your recorded message. Calls go out between 9 AM and 9 PM IST only.",
+      manageRecordings: "Manage recordings",
       sendAt: "Send at",
       notSetChooseTime: "Not set — choose time",
       custom: "Custom",
@@ -512,7 +516,9 @@ Supports:
       channels: { sms: "SMS", whatsapp: "WhatsApp", email: "Email", call: "कॉल" },
       chooseTemplate: "टेम्पलेट चुनें…",
       allGroupsSuffix: "सभी श्रेणियाँ",
-      callComingSoon: "डिलीवरी जल्द आ रही है",
+      chooseRecording: "रिकॉर्डिंग चुनें…",
+      callHint: "आपका रिकॉर्ड किया हुआ संदेश सुनाया जाता है। कॉल केवल सुबह 9 से रात 9 बजे (IST) के बीच जाती हैं।",
+      manageRecordings: "रिकॉर्डिंग मैनेज करें",
       sendAt: "इस समय भेजें",
       notSetChooseTime: "सेट नहीं है — समय चुनें",
       custom: "कस्टम",
@@ -767,7 +773,9 @@ Supports:
       channels: { sms: "SMS", whatsapp: "WhatsApp", email: "Email", call: "कॉल" },
       chooseTemplate: "टेम्पलेट निवडा…",
       allGroupsSuffix: "सर्व श्रेण्या",
-      callComingSoon: "डिलिव्हरी लवकरच येत आहे",
+      chooseRecording: "रेकॉर्डिंग निवडा…",
+      callHint: "तुमचा रेकॉर्ड केलेला संदेश ऐकवला जातो. कॉल फक्त सकाळी 9 ते रात्री 9 (IST) दरम्यान जातात.",
+      manageRecordings: "रेकॉर्डिंग मॅनेज करा",
       sendAt: "या वेळी पाठवा",
       notSetChooseTime: "सेट नाही — वेळ निवडा",
       custom: "कस्टम",

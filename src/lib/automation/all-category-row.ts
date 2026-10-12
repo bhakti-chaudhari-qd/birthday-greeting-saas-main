@@ -10,6 +10,7 @@ export type CategoryAutomationRuleSettings = {
   emailEnabled: boolean;
   emailTemplateId: string | null;
   callEnabled: boolean;
+  callTemplateId: string | null;
 };
 
 export type CategoryAutomationDisplayRow = CategoryAutomationRuleSettings & {
@@ -32,7 +33,8 @@ export function ruleSettingsEqual(
     a.whatsappTemplateId === b.whatsappTemplateId &&
     a.emailEnabled === b.emailEnabled &&
     a.emailTemplateId === b.emailTemplateId &&
-    a.callEnabled === b.callEnabled
+    a.callEnabled === b.callEnabled &&
+    a.callTemplateId === b.callTemplateId
   );
 }
 
@@ -60,6 +62,7 @@ export function buildAllCategoryRow(
     emailEnabled: uniform ? first!.emailEnabled : false,
     emailTemplateId: uniform ? first!.emailTemplateId : null,
     callEnabled: uniform ? first!.callEnabled : false,
+    callTemplateId: uniform ? first!.callTemplateId : null,
   };
 }
 

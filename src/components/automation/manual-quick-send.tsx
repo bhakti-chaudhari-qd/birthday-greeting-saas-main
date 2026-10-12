@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { Channel } from "@prisma/client";
 
 import { useOccasions } from "@/components/occasions/use-occasions";
 import { InlineAlert } from "@/components/ui/feedback";
@@ -19,7 +18,11 @@ import { chunkIds, MANUAL_SEND_API_BATCH_SIZE } from "@/lib/queue/manual-send-ba
 import { isValidQuickListEmail } from "@/lib/validation/manual-send";
 
 import { CategoryMultiSelect } from "./category-multi-select";
-import { CHANNEL_LABEL, type OrgCategory } from "./types";
+import {
+  CHANNEL_LABEL,
+  type MessageChannel as Channel,
+  type OrgCategory,
+} from "./types";
 
 type ContactOption = {
   id: string;

@@ -16,8 +16,10 @@ import {
   assertAndRecordSendVelocity,
   getOrganizationSendVelocityBudget,
 } from "@/lib/abuse/velocity";
+import { AUTOMATION_TIMEZONE } from "@/lib/automation/constants";
 import {
   getAutomationSendInstant,
+  getLocalHourMinute,
   isAtOrAfterAutomationSendTime,
   isAutomationOriginatedIdempotencyKey,
 } from "@/lib/automation/send-time";
@@ -27,6 +29,15 @@ import { prisma } from "@/lib/db";
 import type { DocumentStorage } from "@/lib/storage";
 import { assertTemplateReadyForCustomHttpSend } from "@/lib/templates/sms-setup";
 import { TemplateValidationError } from "@/lib/templates/errors";
+import {
+  CALL_WINDOW_END_HOUR,
+  CALL_WINDOW_START_HOUR,
+} from "@/lib/validation/category-automation";
+import {
+  loadCallRecordingForSend,
+  rememberCallRecordingProviderFile,
+  type CallRecordingForSend,
+} from "@/lib/voice/call-messages";
 
 import { computeNextAttemptAt, type BackoffRandom } from "./backoff";
 import { classifySendFailure } from "./classify";
@@ -109,6 +120,7 @@ async function loadClaimedQueueContext(organizationId: string, queueId: string) 
           dltTemplateId: true,
           dltApprovedContent: true,
           includePersonalizedPdf: true,
+          voiceRecordingId: true,
         },
       },
       whatsappMediaAsset: {
@@ -151,6 +163,8 @@ function ruleMatchesQueueChannel(
     whatsappTemplateId: string | null;
     emailEnabled: boolean;
     emailTemplateId: string | null;
+    callEnabled: boolean;
+    callTemplateId: string | null;
   },
 ): boolean {
   if (queue.channel === Channel.SMS) {
@@ -164,6 +178,9 @@ function ruleMatchesQueueChannel(
   if (queue.channel === Channel.EMAIL) {
     return rule.emailEnabled && rule.emailTemplateId === queue.templateId;
   }
+  if (queue.channel === Channel.CALL) {
+    return rule.callEnabled && rule.callTemplateId === queue.templateId;
+  }
   return false;
 }
 
@@ -176,6 +193,8 @@ const AUTOMATION_RULE_SELECT = {
   whatsappTemplateId: true,
   emailEnabled: true,
   emailTemplateId: true,
+  callEnabled: true,
+  callTemplateId: true,
 } as const;
 
 /**
@@ -262,6 +281,57 @@ async function deferForSendVelocity(
     queue: serializeQueueItem(updated),
     error: message,
     errorCode: SEND_VELOCITY_LIMIT_CODE,
+  };
+}
+
+const OUTSIDE_CALLING_HOURS_CODE = "OUTSIDE_CALLING_HOURS";
+
+/**
+ * Automated calls only go out between 9 AM and 9 PM IST, whatever made the
+ * queue row late (a retry, a delayed worker, a manual retry at night). Before
+ * 9 AM the call waits for 9 AM; from 9 PM on it is not placed at all, since
+ * the next allowed slot would be a day after the occasion.
+ */
+async function holdCallOutsideCallingHours(
+  queue: NonNullable<QueueWithRelations>,
+  now: Date,
+): Promise<SendQueueItemResult | null> {
+  const { hour } = getLocalHourMinute(AUTOMATION_TIMEZONE, now);
+
+  if (hour >= CALL_WINDOW_START_HOUR && hour < CALL_WINDOW_END_HOUR) {
+    return null;
+  }
+
+  const tooEarly = hour < CALL_WINDOW_START_HOUR;
+  const message = tooEarly
+    ? "Waiting until 9 AM IST - calls are not placed earlier"
+    : "Not called: calls are only placed between 9 AM and 9 PM IST";
+
+  const updated = await prisma.sendQueue.update({
+    where: { id: queue.id },
+    data: {
+      status: tooEarly ? QueueStatus.PENDING : QueueStatus.FAILED,
+      nextAttemptAt: tooEarly
+        ? getAutomationSendInstant(CALL_WINDOW_START_HOUR, 0, now)
+        : null,
+      lastErrorCode: OUTSIDE_CALLING_HOURS_CODE,
+      lastError: message,
+      ...clearClaimFields(),
+    },
+    include: {
+      contact: {
+        select: { id: true, name: true, mobile: true, addedByPlatformAdmin: true },
+      },
+      template: { select: { id: true, name: true } },
+    },
+  });
+
+  return {
+    queueId: queue.id,
+    status: tooEarly ? "skipped" : "failed",
+    queue: serializeQueueItem(updated),
+    error: message,
+    errorCode: OUTSIDE_CALLING_HOURS_CODE,
   };
 }
 
@@ -632,6 +702,13 @@ export async function processClaimedQueueItem(
     return finalizeSkippedInactive(organizationId, queue.id);
   }
 
+  if (queue.channel === Channel.CALL) {
+    const held = await holdCallOutsideCallingHours(queue, now);
+    if (held) {
+      return held;
+    }
+  }
+
   const channelConfig = await getEffectiveChannelConfig(
     organizationId,
     queue.channel,
@@ -679,6 +756,16 @@ export async function processClaimedQueueItem(
       }
     }
 
+    let callRecording: CallRecordingForSend | undefined;
+
+    if (queue.channel === Channel.CALL) {
+      callRecording = await loadCallRecordingForSend(
+        organizationId,
+        queue.template.voiceRecordingId,
+        channelConfig,
+      );
+    }
+
     // Throttle before marking provider attempt so velocity never burns attempts.
     try {
       await assertAndRecordSendVelocity(organizationId);
@@ -711,6 +798,7 @@ export async function processClaimedQueueItem(
     let providerResult: {
       providerMessageId: string;
       units?: number;
+      providerFileId?: string;
     };
 
     try {
@@ -809,6 +897,22 @@ export async function processClaimedQueueItem(
           attemptNumber,
           ...(attachment ? { attachments: [attachment] } : {}),
         });
+      } else if (queue.channel === Channel.CALL && callRecording) {
+        providerResult = await provider.send({
+          channel: Channel.CALL,
+          recipient: queueRecipientMobile(queue),
+          audio: {
+            bytes: callRecording.bytes,
+            filename: callRecording.filename,
+          },
+          providerFileId: callRecording.providerFileId,
+          idempotencyKey: queue.idempotencyKey,
+          attemptNumber,
+        });
+        await rememberCallRecordingProviderFile(
+          callRecording,
+          providerResult.providerFileId,
+        );
       } else {
         throw new ProviderSendError(
           "Unsupported messaging channel",

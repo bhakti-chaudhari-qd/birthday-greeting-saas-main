@@ -161,6 +161,7 @@ export async function runDailySummaries(
     where: {
       organizationId: { in: organizations.map((organization) => organization.id) },
       scheduledDate: targetDate,
+      channel: { in: [...SUMMARY_CHANNELS] },
       status: {
         in: [QueueStatus.SENT, QueueStatus.DELIVERED, QueueStatus.FAILED],
       },
@@ -173,7 +174,11 @@ export async function runDailySummaries(
   const countsByOrganization = new Map<string, ChannelCounts>();
   for (const row of grouped) {
     const counts = countsByOrganization.get(row.organizationId) ?? emptyCounts();
-    counts[row.channel][row.status === QueueStatus.FAILED ? "failed" : "sent"] +=
+    const channelCounts = counts[row.channel as keyof ChannelCounts];
+    if (!channelCounts) {
+      continue;
+    }
+    channelCounts[row.status === QueueStatus.FAILED ? "failed" : "sent"] +=
       row._count._all;
     countsByOrganization.set(row.organizationId, counts);
   }

@@ -5,6 +5,7 @@ export type ChannelSettingsDict = {
     title: string;
     loading: string;
     channelTabsLabel: string;
+    callTab: string;
   };
   common: {
     active: string;
@@ -123,6 +124,7 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       title: "Channels",
       loading: "Loading channel settings…",
       channelTabsLabel: "Channel",
+      callTab: "Call",
     },
     common: {
       active: "Active",
@@ -253,6 +255,7 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       title: "चैनल",
       loading: "चैनल सेटिंग्स लोड हो रही हैं…",
       channelTabsLabel: "चैनल",
+      callTab: "कॉल",
     },
     common: {
       active: "एक्टिव",
@@ -384,6 +387,7 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       title: "चॅनेल",
       loading: "चॅनेल सेटिंग्ज लोड होत आहेत…",
       channelTabsLabel: "चॅनेल",
+      callTab: "कॉल",
     },
     common: {
       active: "एक्टिव",

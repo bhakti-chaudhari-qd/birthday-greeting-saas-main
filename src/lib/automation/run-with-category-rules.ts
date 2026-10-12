@@ -155,6 +155,16 @@ async function assertChannelEligible(
 
   const channelConfig = await getEffectiveChannelConfig(organizationId, channel);
 
+  if (channel === Channel.CALL) {
+    if (!channelConfig) {
+      throw new Error("Call channel is not configured");
+    }
+    if (!template.voiceRecordingId) {
+      throw new Error("Call message has no recording");
+    }
+    return;
+  }
+
   if (channel === Channel.WHATSAPP) {
     assertWhatsAppTemplateEligibleForManualSend(template, channelConfig);
     return;
@@ -199,7 +209,12 @@ async function runCategoryRoutedAutomation(input: {
     let processedChannels = 0;
     let failedChannels = 0;
 
-    for (const channel of [Channel.SMS, Channel.WHATSAPP, Channel.EMAIL] as const) {
+    for (const channel of [
+      Channel.SMS,
+      Channel.WHATSAPP,
+      Channel.EMAIL,
+      Channel.CALL,
+    ] as const) {
       const rules = await listActiveCategoryChannelRules(
         organization.id,
         input.occasionType,

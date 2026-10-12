@@ -36,6 +36,7 @@ export type CategoryAutomationRuleView = {
   emailEnabled: boolean;
   emailTemplateId: string | null;
   callEnabled: boolean;
+  callTemplateId: string | null;
   aiAssistEnabled: boolean;
 };
 
@@ -70,6 +71,13 @@ export type CategoryAutomationSettingsView = {
     categoryId: string | null;
     categoryName: string | null;
     subject: string | null;
+  }>;
+  /** Call messages: one recorded voice message each. */
+  eligibleCallTemplates: Array<{
+    id: string;
+    name: string;
+    categoryId: string | null;
+    categoryName: string | null;
   }>;
 };
 
@@ -133,6 +141,17 @@ async function loadEligibleTemplates(organizationId: string, occasionId: string)
         categoryName: template.category?.name ?? null,
         subject: template.emailSubject,
       })),
+    call: templates
+      .filter(
+        (template) =>
+          template.channel === Channel.CALL && template.voiceRecordingId,
+      )
+      .map((template) => ({
+        id: template.id,
+        name: template.name,
+        categoryId: template.categoryId,
+        categoryName: template.category?.name ?? null,
+      })),
   };
 }
 
@@ -154,7 +173,9 @@ export async function assertTemplateForRule(
         ? "Selected WhatsApp template was not found or is inactive"
         : channel === Channel.EMAIL
           ? "Selected Email template was not found or is inactive"
-          : "Selected SMS template was not found or is inactive",
+          : channel === Channel.CALL
+            ? "Selected call recording was not found or is inactive"
+            : "Selected SMS template was not found or is inactive",
     );
   }
 
@@ -194,6 +215,12 @@ export async function assertTemplateForRule(
     throw new CategoryAutomationSettingsError("Email subject is required");
   }
 
+  if (channel === Channel.CALL && !template.voiceRecordingId) {
+    throw new CategoryAutomationSettingsError(
+      "Selected call message has no recording",
+    );
+  }
+
   return template;
 }
 
@@ -218,6 +245,7 @@ function ruleToView(
     emailEnabled: boolean;
     emailTemplateId: string | null;
     callEnabled: boolean;
+    callTemplateId: string | null;
     aiAssistEnabled: boolean;
   } | undefined,
 ): AllContactsAutomationRuleView {
@@ -236,6 +264,7 @@ function ruleToView(
     emailEnabled: rule?.emailEnabled ?? false,
     emailTemplateId: rule?.emailTemplateId ?? null,
     callEnabled: rule?.callEnabled ?? false,
+    callTemplateId: rule?.callTemplateId ?? null,
     aiAssistEnabled: rule?.aiAssistEnabled ?? false,
   };
 }
@@ -280,6 +309,7 @@ export async function getCategoryAutomationSettings(
     eligibleSmsTemplates: eligible.sms,
     eligibleWhatsAppTemplates: eligible.whatsapp,
     eligibleEmailTemplates: eligible.email,
+    eligibleCallTemplates: eligible.call,
   };
 }
 
@@ -325,6 +355,15 @@ export async function updateCategoryAutomationRules(
         organizationId,
         rule.emailTemplateId,
         Channel.EMAIL,
+        occasionId,
+        ruleCategoryId,
+      );
+    }
+    if (rule.callTemplateId) {
+      await assertTemplateForRule(
+        organizationId,
+        rule.callTemplateId,
+        Channel.CALL,
         occasionId,
         ruleCategoryId,
       );
@@ -392,6 +431,7 @@ export async function updateCategoryAutomationRules(
           emailEnabled: rule.emailEnabled ?? false,
           emailTemplateId: rule.emailTemplateId ?? null,
           callEnabled: rule.callEnabled ?? false,
+          callTemplateId: rule.callTemplateId ?? null,
           // AI assist is not a product feature yet - never persist client values.
           aiAssistEnabled: false,
         })),
@@ -428,7 +468,9 @@ export async function listActiveCategoryChannelRules(
       ? { whatsappEnabled: true, whatsappTemplateId: { not: null } as const }
       : channel === Channel.EMAIL
         ? { emailEnabled: true, emailTemplateId: { not: null } as const }
-        : { smsEnabled: true, smsTemplateId: { not: null } as const };
+        : channel === Channel.CALL
+          ? { callEnabled: true, callTemplateId: { not: null } as const }
+          : { smsEnabled: true, smsTemplateId: { not: null } as const };
 
   const rules = await prisma.categoryAutomationRule.findMany({
     where: {
@@ -454,7 +496,9 @@ export async function listActiveCategoryChannelRules(
           ? rule.whatsappTemplateId!
           : channel === Channel.EMAIL
             ? rule.emailTemplateId!
-            : rule.smsTemplateId!,
+            : channel === Channel.CALL
+              ? rule.callTemplateId!
+              : rule.smsTemplateId!,
     }));
 }
 
@@ -470,6 +514,7 @@ export async function organizationHasActiveCategoryRules(
         { smsEnabled: true, smsTemplateId: { not: null } },
         { whatsappEnabled: true, whatsappTemplateId: { not: null } },
         { emailEnabled: true, emailTemplateId: { not: null } },
+        { callEnabled: true, callTemplateId: { not: null } },
       ],
     },
   });

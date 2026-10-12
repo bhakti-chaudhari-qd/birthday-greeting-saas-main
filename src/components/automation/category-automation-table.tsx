@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
 
 import { useOccasions } from "@/components/occasions/use-occasions";
 import { InlineAlert } from "@/components/ui/feedback";
@@ -45,6 +46,7 @@ type OccasionDraft = {
   smsTemplates: TemplateOption[];
   whatsappTemplates: TemplateOption[];
   emailTemplates: TemplateOption[];
+  callTemplates: TemplateOption[];
 };
 
 const timeSelectClass =
@@ -92,6 +94,7 @@ function normalizeRowsForEligibleTemplates(
   sms: TemplateOption[],
   whatsapp: TemplateOption[],
   email: TemplateOption[],
+  call: TemplateOption[],
 ): RuleRow[] {
   return rows.map((row) => {
     const smsTemplateValid = hasEligibleTemplate(
@@ -109,6 +112,11 @@ function normalizeRowsForEligibleTemplates(
       row.emailTemplateId,
       row.categoryId,
     );
+    const callTemplateValid = hasEligibleTemplate(
+      call,
+      row.callTemplateId,
+      row.categoryId,
+    );
 
     return {
       ...row,
@@ -120,6 +128,8 @@ function normalizeRowsForEligibleTemplates(
         : null,
       emailEnabled: row.emailEnabled && emailTemplateValid,
       emailTemplateId: emailTemplateValid ? row.emailTemplateId : null,
+      callEnabled: row.callEnabled && callTemplateValid,
+      callTemplateId: callTemplateValid ? row.callTemplateId : null,
     };
   });
 }
@@ -139,6 +149,7 @@ function emptyAllRow(): RuleRow {
     emailEnabled: false,
     emailTemplateId: null,
     callEnabled: false,
+    callTemplateId: null,
   };
 }
 
@@ -154,6 +165,7 @@ function mapRulesPayload(rows: RuleRow[]) {
     emailEnabled: row.emailEnabled,
     emailTemplateId: row.emailTemplateId,
     callEnabled: row.callEnabled,
+    callTemplateId: row.callTemplateId,
   }));
 }
 
@@ -168,7 +180,8 @@ function withDefaultSendTimeWhenActive(
     patch.callEnabled === true ||
     Boolean(patch.smsTemplateId) ||
     Boolean(patch.whatsappTemplateId) ||
-    Boolean(patch.emailTemplateId);
+    Boolean(patch.emailTemplateId) ||
+    Boolean(patch.callTemplateId);
 
   if (
     !enablingChannel ||
@@ -373,6 +386,8 @@ function ChannelRow({
   onEnabledChange,
   onTemplateChange,
   statusWhenOn,
+  choosePlaceholder,
+  hint,
 }: {
   label: string;
   enabled: boolean;
@@ -381,8 +396,12 @@ function ChannelRow({
   categoryName: string;
   onEnabledChange: (enabled: boolean) => void;
   onTemplateChange?: (templateId: string | null) => void;
-  /** Shown when enabled and there is no template picker (e.g. Email / Call). */
+  /** Shown when enabled and there is no template picker. */
   statusWhenOn?: string;
+  /** Replaces the default "Choose a template" option text. */
+  choosePlaceholder?: string;
+  /** Extra note shown under the row while the channel is enabled. */
+  hint?: ReactNode;
 }) {
   const fullDict = getGreetingRoutesDict(useLocale());
   const dict = fullDict.table;
@@ -410,7 +429,9 @@ function ChannelRow({
             }
             aria-label={dict.channelTemplateAria(label, categoryName)}
           >
-            <option value="">{dict.chooseTemplate}</option>
+            <option value="">
+              {choosePlaceholder ?? dict.chooseTemplate}
+            </option>
             {templates!.map((template) => (
               <option key={template.id} value={template.id}>
                 {templateOptionLabel(template, fullDict)}
@@ -421,6 +442,9 @@ function ChannelRow({
       </div>
       {enabled && !hasTemplates && statusWhenOn ? (
         <p className="text-sm text-stone-500">{statusWhenOn}</p>
+      ) : null}
+      {enabled && hint ? (
+        <p className="text-xs text-stone-500">{hint}</p>
       ) : null}
     </div>
   );
@@ -493,11 +517,13 @@ export function CategoryAutomationTable() {
         const nextWhatsApp =
           data.eligibleWhatsAppTemplates as TemplateOption[];
         const nextEmail = data.eligibleEmailTemplates as TemplateOption[];
+        const nextCall = (data.eligibleCallTemplates ?? []) as TemplateOption[];
         let nextRows = normalizeRowsForEligibleTemplates(
           data.rules as RuleRow[],
           nextSms,
           nextWhatsApp,
           nextEmail,
+          nextCall,
         );
 
         if (!suggestionApplied && suggestedTemplateId) {
@@ -519,6 +545,7 @@ export function CategoryAutomationTable() {
           smsTemplates: nextSms,
           whatsappTemplates: nextWhatsApp,
           emailTemplates: nextEmail,
+          callTemplates: nextCall,
         };
       }
 
@@ -552,6 +579,7 @@ export function CategoryAutomationTable() {
   const smsTemplates = activeDraft?.smsTemplates ?? [];
   const whatsappTemplates = activeDraft?.whatsappTemplates ?? [];
   const emailTemplates = activeDraft?.emailTemplates ?? [];
+  const callTemplates = activeDraft?.callTemplates ?? [];
 
   function updateRow(categoryId: string, patch: Partial<RuleRow>) {
     setDrafts((current) => {
@@ -607,6 +635,7 @@ export function CategoryAutomationTable() {
         draft.smsTemplates,
         draft.whatsappTemplates,
         draft.emailTemplates,
+        draft.callTemplates,
       );
       return [
         {
@@ -642,6 +671,7 @@ export function CategoryAutomationTable() {
         eligibleSmsTemplates: TemplateOption[];
         eligibleWhatsAppTemplates: TemplateOption[];
         eligibleEmailTemplates: TemplateOption[];
+        eligibleCallTemplates?: TemplateOption[];
       };
       const savedOccasions: SavedOccasionPayload[] = Array.isArray(
         body.data?.occasions,
@@ -669,6 +699,8 @@ export function CategoryAutomationTable() {
               [],
             emailTemplates:
               saved.eligibleEmailTemplates ?? existing?.emailTemplates ?? [],
+            callTemplates:
+              saved.eligibleCallTemplates ?? existing?.callTemplates ?? [],
           };
         }
         return next;
@@ -729,7 +761,7 @@ export function CategoryAutomationTable() {
               (row.smsEnabled && row.smsTemplateId) ||
               (row.whatsappEnabled && row.whatsappTemplateId) ||
               (row.emailEnabled && row.emailTemplateId) ||
-              row.callEnabled;
+              (row.callEnabled && row.callTemplateId);
 
             return (
               <li
@@ -846,6 +878,11 @@ export function CategoryAutomationTable() {
                   <ChannelRow
                     label={dict.channels.call}
                     enabled={row.callEnabled}
+                    templateId={row.callTemplateId}
+                    templates={templatesForCategory(
+                      callTemplates,
+                      row.categoryId,
+                    )}
                     categoryName={row.categoryName}
                     onEnabledChange={(callEnabled) =>
                       updateRow(
@@ -853,7 +890,24 @@ export function CategoryAutomationTable() {
                         withDefaultSendTimeWhenActive(row, { callEnabled }),
                       )
                     }
-                    statusWhenOn={dict.callComingSoon}
+                    onTemplateChange={(callTemplateId) =>
+                      updateRow(
+                        row.categoryId,
+                        withDefaultSendTimeWhenActive(row, { callTemplateId }),
+                      )
+                    }
+                    choosePlaceholder={dict.chooseRecording}
+                    hint={
+                      <>
+                        {dict.callHint}{" "}
+                        <Link
+                          href="/dashboard/settings/channels?tab=call"
+                          className="font-medium text-primary underline-offset-2 hover:underline"
+                        >
+                          {dict.manageRecordings}
+                        </Link>
+                      </>
+                    }
                   />
                 </div>
               </li>

@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
+import { CallChannelSettings } from "@/components/settings/call-channel-settings";
 import { ChannelSetupSteps } from "@/components/settings/channel-setup-steps";
 import { DailySummarySettings } from "@/components/settings/daily-summary-settings";
 import { EmailChannelSettings } from "@/components/settings/email-channel-settings";
@@ -17,10 +18,10 @@ import {
 import { getChannelSettingsDict } from "@/lib/i18n/dictionaries/channel-settings";
 import { useLocale } from "@/lib/i18n/use-locale";
 
-export type ChannelSettingsTab = "sms" | "whatsapp" | "email";
+export type ChannelSettingsTab = "sms" | "whatsapp" | "email" | "call";
 
 function parseChannelTab(value: string | null): ChannelSettingsTab {
-  if (value === "whatsapp" || value === "email") {
+  if (value === "whatsapp" || value === "email" || value === "call") {
     return value;
   }
   return "sms";
@@ -30,6 +31,7 @@ const TAB_LABEL: Record<ChannelSettingsTab, string> = {
   sms: "SMS",
   whatsapp: "WhatsApp",
   email: "Email",
+  call: "Call",
 };
 
 function ChannelSettingsTabs() {
@@ -100,14 +102,24 @@ function ChannelSettingsTabs() {
         >
           Email
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "call"}
+          className={tab === "call" ? primaryButtonClass : secondaryButtonClass}
+          onClick={() => selectTab("call")}
+        >
+          {dict.callTab}
+        </button>
       </div>
 
-      <ChannelSetupSteps channel={tab} />
+      {tab === "call" ? null : <ChannelSetupSteps channel={tab} />}
 
       <div role="tabpanel" aria-label={TAB_LABEL[tab]}>
         {tab === "sms" ? <SmsChannelSettings /> : null}
         {tab === "whatsapp" ? <WhatsAppChannelSettings /> : null}
         {tab === "email" ? <EmailChannelSettings /> : null}
+        {tab === "call" ? <CallChannelSettings /> : null}
       </div>
 
       <DailySummarySettings />

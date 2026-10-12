@@ -90,6 +90,7 @@ const CHANNEL_LABEL: Record<Channel, string> = {
   SMS: "SMS",
   WHATSAPP: "WhatsApp",
   EMAIL: "Email",
+  CALL: "Call",
 };
 
 /** Long-form hero date, e.g. "Tuesday, 4 August 2026" (IST calendar day). */
@@ -172,6 +173,7 @@ async function loadAutomationState(organizationId: string): Promise<{
       [rule.smsEnabled, rule.smsTemplateId, Channel.SMS],
       [rule.whatsappEnabled, rule.whatsappTemplateId, Channel.WHATSAPP],
       [rule.emailEnabled, rule.emailTemplateId, Channel.EMAIL],
+      [rule.callEnabled, rule.callTemplateId, Channel.CALL],
     ];
 
     let ruleHasActiveChannel = false;

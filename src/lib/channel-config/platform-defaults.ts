@@ -197,7 +197,8 @@ export async function getPlatformDefaultWhatsAppConfig(
 /**
  * The gateway config to send a channel's messages with: the client's own when
  * it has one (inactive means the client turned the channel off, so no
- * fallback), otherwise the platform default for SMS or WhatsApp.
+ * fallback), otherwise the platform default for SMS or WhatsApp. Call has no
+ * platform default: it only works once the client saves its own gateway.
  */
 export async function getEffectiveChannelConfig(
   organizationId: string,

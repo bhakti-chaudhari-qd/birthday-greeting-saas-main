@@ -3,6 +3,7 @@ import { Channel, ChannelProvider } from "@prisma/client";
 
 import { resolveEmailProviderConfig } from "@/lib/channel-config/email-resolve";
 import { resolveSmsProviderConfig } from "@/lib/channel-config/resolve";
+import { resolveVoiceProviderConfig } from "@/lib/channel-config/voice-resolve";
 import {
   resolveWhatsAppHttpProviderConfig,
   resolveWhatsAppMetaProviderConfig,
@@ -12,6 +13,7 @@ import { createResendEmailProvider } from "./email/resend-email-provider";
 import { createLegacyHttpSmsProvider } from "./sms/legacy-http-sms-provider";
 import { testProvider } from "./test-provider";
 import { ProviderSendError, type MessageProvider } from "./types";
+import { createLegacyHttpVoiceProvider } from "./voice/legacy-http-voice-provider";
 import { createCustomHttpWhatsAppProvider } from "./whatsapp/custom-http-whatsapp-provider";
 import { createKoverageWhatsAppProvider } from "./whatsapp/koverage-whatsapp-provider";
 import { createMetaWhatsAppProvider } from "./whatsapp/meta-whatsapp-provider";
@@ -77,6 +79,37 @@ export function resolveMessageProvider(
 
     throw new ProviderSendError(
       "Configured WhatsApp provider is not supported",
+      "UNKNOWN_PROVIDER",
+    );
+  }
+
+  if (channel === Channel.CALL) {
+    if (!channelConfig || !channelConfig.isActive) {
+      throw new ProviderSendError(
+        "Call channel is not configured",
+        "INVALID_PROVIDER_CONFIG",
+      );
+    }
+
+    if (channelConfig.channel !== Channel.CALL) {
+      throw new ProviderSendError(
+        "Call channel configuration is invalid",
+        "INVALID_PROVIDER_CONFIG",
+      );
+    }
+
+    if (channelConfig.provider === ChannelProvider.TEST) {
+      return testProvider;
+    }
+
+    if (channelConfig.provider === ChannelProvider.CUSTOM_HTTP) {
+      return createLegacyHttpVoiceProvider(
+        resolveVoiceProviderConfig(channelConfig),
+      );
+    }
+
+    throw new ProviderSendError(
+      "Configured call provider is not supported",
       "UNKNOWN_PROVIDER",
     );
   }

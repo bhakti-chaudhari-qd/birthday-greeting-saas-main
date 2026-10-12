@@ -72,6 +72,7 @@ const CHANNEL_LABEL: Record<Channel, string> = {
   SMS: "SMS",
   WHATSAPP: "WhatsApp",
   EMAIL: "Email",
+  CALL: "Call",
 };
 
 function statusFilterLabel(

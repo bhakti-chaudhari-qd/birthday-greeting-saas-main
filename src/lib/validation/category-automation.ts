@@ -3,6 +3,10 @@ import { z } from "zod";
 const hourSchema = z.number().int().min(0).max(23);
 const minuteSchema = z.number().int().min(0).max(59);
 
+/** Automated calls are only placed between 9 AM and 9 PM IST. */
+export const CALL_WINDOW_START_HOUR = 9;
+export const CALL_WINDOW_END_HOUR = 21;
+
 const ruleFieldsSchema = z.object({
   sendHour: hourSchema.nullable(),
   sendMinute: minuteSchema.nullable(),
@@ -13,6 +17,7 @@ const ruleFieldsSchema = z.object({
   emailEnabled: z.boolean().optional().default(false),
   emailTemplateId: z.string().trim().min(1).nullable().optional(),
   callEnabled: z.boolean().optional().default(false),
+  callTemplateId: z.string().trim().min(1).nullable().optional(),
   /** Accepted for backward compatibility; always coerced to false. */
   aiAssistEnabled: z.boolean().optional().default(false),
 });
@@ -61,6 +66,25 @@ function refineRuleFields(
       code: z.ZodIssueCode.custom,
       message: "Email template is required when Email is enabled",
       path: ["emailTemplateId"],
+    });
+  }
+  if (value.callEnabled && !value.callTemplateId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Call recording is required when Call is enabled",
+      path: ["callTemplateId"],
+    });
+  }
+  if (
+    value.callEnabled &&
+    value.sendHour !== null &&
+    (value.sendHour < CALL_WINDOW_START_HOUR ||
+      value.sendHour >= CALL_WINDOW_END_HOUR)
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Calls can only go out between 9 AM and 9 PM. Choose a send time in that window or turn Call off.",
+      path: ["sendHour"],
     });
   }
 }

@@ -1,12 +1,15 @@
 import type { Channel } from "@prisma/client";
 
+/** Channels with a written message. Call plays a recording and is set up under Greeting Routes. */
+export type MessageChannel = Exclude<Channel, "CALL">;
+
 export type OrgCategory = {
   id: string;
   name: string;
 };
 
 export type AutomationChannelConfig = {
-  channel: Channel;
+  channel: MessageChannel;
   channelLabel: string;
   templateId: string;
   templateName: string;
@@ -34,4 +37,5 @@ export const CHANNEL_LABEL: Record<Channel, string> = {
   SMS: "SMS",
   WHATSAPP: "WhatsApp",
   EMAIL: "Email",
+  CALL: "Call",
 };

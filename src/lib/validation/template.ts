@@ -11,12 +11,18 @@ import {
 const templateBodySchema = z.string().trim().min(1).max(5000);
 const emailSubjectSchema = z.string().trim().min(1).max(200);
 const occasionIdSchema = z.string().trim().min(1).max(100);
+/** CALL messages carry a recording and are managed under Channels > Call, not here. */
+const templateChannelSchema = z.enum([
+  Channel.SMS,
+  Channel.WHATSAPP,
+  Channel.EMAIL,
+]);
 
 export const createTemplateSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
     occasionId: occasionIdSchema,
-    channel: z.nativeEnum(Channel),
+    channel: templateChannelSchema,
     body: templateBodySchema,
     emailSubject: emailSubjectSchema.optional(),
     /** Contact group this message is for. Null/omit = All groups. */
@@ -141,7 +147,7 @@ export const updateTemplateSchema = z
   .object({
     name: z.string().trim().min(1).max(100).optional(),
     occasionId: occasionIdSchema.optional(),
-    channel: z.nativeEnum(Channel).optional(),
+    channel: templateChannelSchema.optional(),
     body: templateBodySchema.optional(),
     emailSubject: emailSubjectSchema.nullable().optional(),
     categoryId: z.string().cuid().nullable().optional(),
@@ -175,7 +181,7 @@ export const listTemplatesQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().trim().max(100).optional(),
   occasionId: occasionIdSchema.optional(),
-  channel: z.nativeEnum(Channel).optional(),
+  channel: templateChannelSchema.optional(),
   /** Filter by group. Use "all" for All-groups templates only (categoryId null). */
   categoryId: z.union([z.literal("all"), z.string().cuid()]).optional(),
   isActive: z

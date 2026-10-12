@@ -12,7 +12,7 @@ import { useLocale } from "@/lib/i18n/use-locale";
 import { formatCustomerDateTime } from "@/lib/ui/datetime";
 
 type ChannelLimitInfo = {
-  channel: "SMS" | "WHATSAPP" | "EMAIL";
+  channel: "SMS" | "WHATSAPP" | "EMAIL" | "CALL";
   monthlyLimit: number;
   messagesSentThisMonth: number;
 };

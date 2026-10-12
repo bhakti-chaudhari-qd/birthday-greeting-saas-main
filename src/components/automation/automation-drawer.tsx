@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { Channel } from "@prisma/client";
 
 import { useOccasions } from "@/components/occasions/use-occasions";
 import { Drawer } from "@/components/ui/drawer";
@@ -14,7 +13,12 @@ import { useLocale } from "@/lib/i18n/use-locale";
 
 import { CategoryMultiSelect } from "./category-multi-select";
 import { buildRulePayload, toPayloadRule, type ChannelSelection } from "./rule-utils";
-import { CHANNEL_LABEL, type AutomationCardData, type OrgCategory } from "./types";
+import {
+  CHANNEL_LABEL,
+  type AutomationCardData,
+  type MessageChannel as Channel,
+  type OrgCategory,
+} from "./types";
 
 type SettingsByOccasion = Partial<Record<string, CategoryAutomationSettingsView>>;
 
@@ -283,6 +287,7 @@ export function AutomationDrawer({
             sendMinute,
             channelSelections,
             overallActive,
+            rules.find((rule) => rule.categoryId === selectedCategoryId),
           ),
         );
       }

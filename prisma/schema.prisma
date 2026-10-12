@@ -20,6 +20,7 @@ enum Channel {
   SMS
   WHATSAPP
   EMAIL
+  CALL
 }
 
 enum ChannelProvider {
@@ -142,6 +143,7 @@ model Organization {
   messageTemplates            MessageTemplate[]
   channelConfigs              ChannelConfig[]
   whatsappMediaAssets         WhatsAppMediaAsset[]
+  voiceRecordings             VoiceRecording[]
   sendQueues                  SendQueue[]
   deliveryLogs                DeliveryLog[]
   apiKeys                     ApiKey[]
@@ -464,6 +466,7 @@ model CategoryAutomationRule {
   emailEnabled       Boolean   @default(false)
   emailTemplateId    String?
   callEnabled        Boolean   @default(false)
+  callTemplateId     String?
   aiAssistEnabled    Boolean   @default(false)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -474,6 +477,7 @@ model CategoryAutomationRule {
   smsTemplate      MessageTemplate?          @relation("CategoryRuleSmsTemplate", fields: [smsTemplateId], references: [id], onDelete: SetNull)
   whatsappTemplate MessageTemplate?          @relation("CategoryRuleWhatsAppTemplate", fields: [whatsappTemplateId], references: [id], onDelete: SetNull)
   emailTemplate    MessageTemplate?          @relation("CategoryRuleEmailTemplate", fields: [emailTemplateId], references: [id], onDelete: SetNull)
+  callTemplate     MessageTemplate?          @relation("CategoryRuleCallTemplate", fields: [callTemplateId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, occasionId])
   @@index([categoryId])
@@ -496,6 +500,8 @@ model MessageTemplate {
   whatsappLanguage       String?
   whatsappParameterOrder String[]     @default([])
   whatsappMediaAssetId   String?
+  /// CALL templates only: the recorded message played to the contact.
+  voiceRecordingId       String?
   dltTemplateId          String?
   dltApprovedContent     String?
   isActive               Boolean      @default(true)
@@ -511,10 +517,12 @@ model MessageTemplate {
   occasion             Occasion       @relation(fields: [occasionId], references: [id], onDelete: Restrict)
   category             ContactCategoryDefinition? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   whatsappMediaAsset   WhatsAppMediaAsset? @relation("TemplateWhatsAppMedia", fields: [whatsappMediaAssetId], references: [id], onDelete: SetNull)
+  voiceRecording       VoiceRecording? @relation(fields: [voiceRecordingId], references: [id], onDelete: SetNull)
   documentTemplate     DocumentTemplate? @relation("MessageTemplateDocumentAttachment", fields: [documentTemplateId], references: [id], onDelete: SetNull)
   categoryRuleSmsFor      CategoryAutomationRule[] @relation("CategoryRuleSmsTemplate")
   categoryRuleWhatsAppFor CategoryAutomationRule[] @relation("CategoryRuleWhatsAppTemplate")
   categoryRuleEmailFor    CategoryAutomationRule[] @relation("CategoryRuleEmailTemplate")
+  categoryRuleCallFor     CategoryAutomationRule[] @relation("CategoryRuleCallTemplate")
   sendQueues              SendQueue[]
 
   @@index([organizationId, isActive])
@@ -522,6 +530,7 @@ model MessageTemplate {
   @@index([occasionId])
   @@index([organizationId, categoryId])
   @@index([whatsappMediaAssetId])
+  @@index([voiceRecordingId])
   @@index([categoryId])
   @@index([documentTemplateId])
 }
@@ -542,6 +551,31 @@ model WhatsAppMediaAsset {
 
   @@index([organizationId, createdAt])
   @@index([organizationId, checksum])
+}
+
+/// Recorded voice message (always MP3) played on automated calls. Owned by
+/// one CALL MessageTemplate; created and deleted together with it.
+model VoiceRecording {
+  id              String   @id @default(cuid())
+  organizationId  String
+  bytes           Bytes
+  filename        String
+  contentType     String
+  byteLength      Int
+  durationSeconds Int
+  checksum        String
+  /// File id the voice gateway returned for this audio, reused on later calls
+  /// so the MP3 is not uploaded again for every contact.
+  providerFileId  String?
+  /// Identifies the gateway account providerFileId belongs to; a different
+  /// account means the id is not valid there and the audio is uploaded again.
+  providerFileKey String?
+  createdAt       DateTime @default(now())
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  templates    MessageTemplate[]
+
+  @@index([organizationId, createdAt])
 }
 
 /// Base PDF design uploaded by an org (Phase 1: storage + metadata only).

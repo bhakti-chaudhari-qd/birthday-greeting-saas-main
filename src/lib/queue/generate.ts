@@ -112,7 +112,7 @@ async function processContactsInPages(
 }
 
 function hasChannelDestination(
-  channel: "SMS" | "WHATSAPP" | "EMAIL",
+  channel: Channel,
   contact: { mobile: string; name: string; email?: string | null },
 ): boolean {
   if (!contact.name.trim()) {
@@ -127,7 +127,7 @@ function hasChannelDestination(
     return false;
   }
 
-  return channel === "SMS" || channel === "WHATSAPP";
+  return channel === "SMS" || channel === "WHATSAPP" || channel === "CALL";
 }
 
 function resolveTargetDate(targetDate?: string) {
@@ -172,11 +172,15 @@ async function loadOccasionTemplate(
   if (
     template.channel !== Channel.SMS &&
     template.channel !== Channel.WHATSAPP &&
-    template.channel !== Channel.EMAIL
+    template.channel !== Channel.EMAIL &&
+    template.channel !== Channel.CALL
   ) {
     throw new QueueTemplateRejectedError(
-      "Only SMS, WhatsApp, or Email templates can be used for queue generation",
+      "Only SMS, WhatsApp, Email, or Call templates can be used for queue generation",
     );
+  }
+  if (template.channel === Channel.CALL && !template.voiceRecordingId) {
+    throw new QueueTemplateRejectedError("Call message has no recording");
   }
   if (
     template.channel === Channel.EMAIL &&

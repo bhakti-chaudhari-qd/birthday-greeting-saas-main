@@ -24,15 +24,26 @@ export {
   buildCustomWhatsAppSendUrl,
   createCustomHttpWhatsAppProvider,
 } from "./whatsapp/custom-http-whatsapp-provider";
+export {
+  buildLegacyVoiceForm,
+  createLegacyHttpVoiceProvider,
+  formatIndianVoiceRecipient,
+} from "./voice/legacy-http-voice-provider";
+export {
+  mapLegacyVoiceStatusToError,
+  parseLegacyVoiceResponse,
+} from "./voice/parse-response";
 export { formatIndianWhatsAppRecipient } from "./whatsapp/format-recipient";
 export { parseCustomWhatsAppSendResponse } from "./whatsapp/parse-response";
 export {
   DeliveryStatusLookupError,
   ProviderSendError,
+  isCallSendRequest,
   isDeliveryStatusCapable,
   isEmailSendRequest,
   isSmsSendRequest,
   isWhatsAppSendRequest,
+  type CallMessageSendRequest,
   type DeliveryStatusCapableProvider,
   type DeliveryStatusLookupRequest,
   type EmailMessageSendRequest,

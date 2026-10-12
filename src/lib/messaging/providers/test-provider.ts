@@ -4,6 +4,7 @@ import { TEST_PROVIDER_FAIL_MOBILE_SUFFIX } from "@/lib/queue/constants";
 
 import {
   ProviderSendError,
+  isCallSendRequest,
   isEmailSendRequest,
   isWhatsAppSendRequest,
   type DeliveryStatusCapableProvider,
@@ -18,7 +19,9 @@ function buildProviderMessageId(request: MessageSendRequest): string {
     ? "test-wa"
     : isEmailSendRequest(request)
       ? "test-email"
-      : "test";
+      : isCallSendRequest(request)
+        ? "test-call"
+        : "test";
   return `${prefix}-${request.idempotencyKey}-${request.attemptNumber}`;
 }
 
@@ -137,6 +140,25 @@ export const testProvider: DeliveryStatusCapableProvider = {
       return {
         providerMessageId: buildProviderMessageId(request),
         status: "SENT",
+      };
+    }
+
+    if (isCallSendRequest(request)) {
+      if (request.audio.bytes.length === 0) {
+        throw new ProviderSendError("Call recording is empty", "INVALID_BODY");
+      }
+
+      if (shouldFailDeterministically(request)) {
+        throw new ProviderSendError(
+          "Deterministic test provider failure",
+          "TEST_PROVIDER_FAIL",
+        );
+      }
+
+      return {
+        providerMessageId: buildProviderMessageId(request),
+        status: "SENT",
+        providerFileId: `test-file-${request.audio.bytes.length}`,
       };
     }
 

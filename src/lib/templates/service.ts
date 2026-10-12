@@ -38,6 +38,9 @@ import {
 } from "./variables";
 import { normalizeWhatsAppParameterOrder } from "./whatsapp-metadata";
 
+const CALL_TEMPLATE_MANAGED_ELSEWHERE =
+  "Call messages are managed under Channels > Call";
+
 async function assertTemplateMedia(
   organizationId: string,
   assetId: string | null | undefined,
@@ -427,7 +430,8 @@ export async function dedupeUnusedDuplicateTemplates(
 ) {
   const protectedIds = await collectProtectedTemplateIds(organizationId);
   const templates = await prisma.messageTemplate.findMany({
-    where: { organizationId },
+    // Call messages each own a recording and are never duplicates of each other.
+    where: { organizationId, channel: { not: Channel.CALL } },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     select: {
       id: true,
@@ -607,6 +611,9 @@ export async function updateTemplate(
   input: UpdateTemplateInput,
 ) {
   const existing = await getTemplate(organizationId, templateId);
+  if (existing.channel === Channel.CALL) {
+    throw new TemplateValidationError(CALL_TEMPLATE_MANAGED_ELSEWHERE);
+  }
   const allowedVariables = await allowedTemplateVariablesForOrganization(organizationId);
   const mapped = mapTemplateInput(input, { allowedVariables });
   const nextChannel = mapped.channel ?? existing.channel;
@@ -808,12 +815,17 @@ export async function deleteTemplate(
     where: { id: templateId, organizationId },
     select: {
       id: true,
+      channel: true,
       _count: { select: { sendQueues: true } },
     },
   });
 
   if (!template) {
     throw new TemplateNotFoundError();
+  }
+
+  if (template.channel === Channel.CALL) {
+    throw new TemplateValidationError(CALL_TEMPLATE_MANAGED_ELSEWHERE);
   }
 
   if (template._count.sendQueues > 0) {

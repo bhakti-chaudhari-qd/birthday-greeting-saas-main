@@ -25,11 +25,16 @@ export default async function EditTemplatePage({ params }: PageProps) {
   }
 
   const serialized = serializeTemplate(template);
+  const channel = serialized.channel;
+  // Call messages are managed under Channels > Call.
+  if (channel === "CALL") {
+    notFound();
+  }
 
   return (
     <EditTemplatePageClient
       templateId={serialized.id}
-      channel={serialized.channel}
+      channel={channel}
       initialValues={{
         name: serialized.name,
         occasionId: serialized.occasionId,

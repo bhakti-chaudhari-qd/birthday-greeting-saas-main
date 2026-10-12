@@ -2,7 +2,11 @@ import type { Channel } from "@prisma/client";
 
 import type { CategoryAutomationRuleView } from "@/lib/automation/category-settings";
 
-import { CHANNEL_LABEL, type AutomationCardData } from "./types";
+import {
+  CHANNEL_LABEL,
+  type AutomationCardData,
+  type MessageChannel,
+} from "./types";
 
 export type RulePayload = {
   categoryId: string;
@@ -15,6 +19,7 @@ export type RulePayload = {
   emailEnabled: boolean;
   emailTemplateId: string | null;
   callEnabled: boolean;
+  callTemplateId: string | null;
 };
 
 export type ChannelSelection = {
@@ -36,6 +41,7 @@ export function toPayloadRule(rule: {
   emailEnabled: boolean;
   emailTemplateId: string | null;
   callEnabled?: boolean;
+  callTemplateId?: string | null;
 }): RulePayload {
   return {
     categoryId: rule.categoryId,
@@ -48,6 +54,7 @@ export function toPayloadRule(rule: {
     emailEnabled: rule.emailEnabled,
     emailTemplateId: rule.emailTemplateId,
     callEnabled: rule.callEnabled ?? false,
+    callTemplateId: rule.callTemplateId ?? null,
   };
 }
 
@@ -55,7 +62,8 @@ export function toPayloadRule(rule: {
  * Builds the full payload for one automation (all channels at once) from drawer form state.
  * `active` is the automation's overall Active/Paused status - saving edits to a paused
  * automation must not silently resume it, so `checked` (channel membership) and the actual
- * send-enabled flag are tracked separately.
+ * send-enabled flag are tracked separately. The drawer has no Call controls, so the
+ * existing rule's call settings are carried over unchanged.
  */
 export function buildRulePayload(
   categoryId: string,
@@ -63,6 +71,7 @@ export function buildRulePayload(
   sendMinute: number,
   channels: ChannelSelection[],
   active: boolean,
+  existing?: { callEnabled: boolean; callTemplateId: string | null },
 ): RulePayload {
   const byChannel = new Map(channels.map((c) => [c.channel, c] as const));
   const sms = byChannel.get("SMS");
@@ -79,7 +88,8 @@ export function buildRulePayload(
     whatsappTemplateId: whatsapp?.checked ? (whatsapp.templateId ?? null) : null,
     emailEnabled: Boolean(email?.checked && email.templateId) && active,
     emailTemplateId: email?.checked ? (email.templateId ?? null) : null,
-    callEnabled: false,
+    callEnabled: existing?.callEnabled ?? false,
+    callTemplateId: existing?.callTemplateId ?? null,
   };
 }
 
@@ -93,6 +103,7 @@ export function withAllChannelsToggled(
     smsEnabled: enabled && Boolean(rule.smsTemplateId),
     whatsappEnabled: enabled && Boolean(rule.whatsappTemplateId),
     emailEnabled: enabled && Boolean(rule.emailTemplateId),
+    callEnabled: enabled && Boolean(rule.callTemplateId),
   });
 }
 
@@ -106,6 +117,8 @@ export function withAllChannelsCleared(rule: CategoryAutomationRuleView): RulePa
     whatsappTemplateId: null,
     emailEnabled: false,
     emailTemplateId: null,
+    callEnabled: false,
+    callTemplateId: null,
   });
 }
 
@@ -160,7 +173,7 @@ export function buildAutomationCards(
     }
 
     const channelRows: Array<{
-      channel: Channel;
+      channel: MessageChannel;
       enabled: boolean;
       templateId: string | null;
     }> = [

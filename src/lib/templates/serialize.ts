@@ -1,4 +1,4 @@
-import type { MessageTemplate, Prisma } from "@prisma/client";
+import { Channel, type MessageTemplate, type Prisma } from "@prisma/client";
 
 import {
   previewTemplate,
@@ -134,6 +134,9 @@ export function buildTemplateListWhere(
 
   if (query.channel) {
     where.channel = query.channel;
+  } else {
+    // Call messages have their own screen (Channels > Call).
+    where.channel = { not: Channel.CALL };
   }
 
   if (query.categoryId === "all") {

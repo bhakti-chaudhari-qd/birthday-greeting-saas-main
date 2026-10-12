@@ -45,6 +45,7 @@ export async function runOccasionAutomation(
             { smsEnabled: true, smsTemplateId: { not: null } },
             { whatsappEnabled: true, whatsappTemplateId: { not: null } },
             { emailEnabled: true, emailTemplateId: { not: null } },
+            { callEnabled: true, callTemplateId: { not: null } },
           ],
         },
       },

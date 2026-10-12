@@ -44,10 +44,25 @@ export type EmailMessageSendRequest = {
   attachments?: EmailAttachment[];
 };
 
+/** An automated call that plays a recorded message (always MP3). */
+export type CallMessageSendRequest = {
+  channel: "CALL";
+  recipient: string;
+  audio: {
+    bytes: Buffer;
+    filename: string;
+  };
+  /** Audio id from an earlier upload to this same gateway account, if any. */
+  providerFileId?: string | null;
+  idempotencyKey: string;
+  attemptNumber: number;
+};
+
 export type MessageSendRequest =
   | SmsMessageSendRequest
   | WhatsAppMessageSendRequest
-  | EmailMessageSendRequest;
+  | EmailMessageSendRequest
+  | CallMessageSendRequest;
 
 export function isWhatsAppSendRequest(
   request: MessageSendRequest,
@@ -67,10 +82,18 @@ export function isEmailSendRequest(
   return request.channel === "EMAIL";
 }
 
+export function isCallSendRequest(
+  request: MessageSendRequest,
+): request is CallMessageSendRequest {
+  return request.channel === "CALL";
+}
+
 export type MessageSendResult = {
   providerMessageId: string;
   status: "SENT";
   units?: number;
+  /** CALL only: the gateway's id for the uploaded audio. */
+  providerFileId?: string;
 };
 
 export type DeliveryStatusLookupRequest = {

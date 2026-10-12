@@ -17,6 +17,7 @@ export class TemplateDuplicateError extends TemplateValidationError {
 function channelLabel(channel: string) {
   if (channel === "WHATSAPP") return "WhatsApp";
   if (channel === "EMAIL") return "Email";
+  if (channel === "CALL") return "Call";
   return "SMS";
 }
 
