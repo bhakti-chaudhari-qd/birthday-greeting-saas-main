@@ -1,4 +1,5 @@
 import { AdminClientsListClient } from "@/components/admin/admin-clients-list-client";
+import { requirePlatformAdmin } from "@/lib/auth/platform-admin-guard";
 import { listOrganizationsForPlatformAdmin } from "@/lib/admin/organizations";
 import { listPlanCatalogueEntriesForPlatformAdmin } from "@/lib/admin/plan-catalogue-ops";
 import type { PlanLabelMap } from "@/lib/billing/catalogue";
@@ -6,6 +7,8 @@ import type { PlanLabelMap } from "@/lib/billing/catalogue";
 export const dynamic = "force-dynamic";
 
 export default async function AdminOrganizationsPage() {
+  await requirePlatformAdmin();
+
   const [organizations, catalogueEntries] = await Promise.all([
     listOrganizationsForPlatformAdmin(),
     listPlanCatalogueEntriesForPlatformAdmin(),

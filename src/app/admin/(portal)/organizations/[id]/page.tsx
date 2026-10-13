@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { requirePlatformAdmin } from "@/lib/auth/platform-admin-guard";
 import { AdminClientDetailClient } from "@/components/admin/admin-client-detail-client";
 import { listPlatformAdminAuditEventsForOrganization } from "@/lib/admin/audit";
 import { getChannelStatusesForPlatformAdmin } from "@/lib/admin/channel-status";
@@ -17,6 +18,8 @@ type PageProps = {
 export default async function AdminOrganizationDetailPage({
   params,
 }: PageProps) {
+  await requirePlatformAdmin();
+
   const { id } = await params;
   const organization = await getOrganizationForPlatformAdmin(id);
 

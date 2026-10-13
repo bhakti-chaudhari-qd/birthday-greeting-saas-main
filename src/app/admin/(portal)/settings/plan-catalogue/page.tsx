@@ -1,3 +1,4 @@
+import { requirePlatformAdmin } from "@/lib/auth/platform-admin-guard";
 import { AdminPlanCatalogueClient } from "@/components/admin/admin-plan-catalogue-client";
 import { DailySummaryConfigPanel } from "@/components/admin/daily-summary-config-panel";
 import { PageShell } from "@/components/ui/page";
@@ -7,6 +8,8 @@ import { getPlatformDailySummarySettings } from "@/lib/daily-summary/platform-co
 export const dynamic = "force-dynamic";
 
 export default async function AdminPlanCataloguePage() {
+  await requirePlatformAdmin();
+
   const [entries, dailySummary] = await Promise.all([
     listPlanCatalogueEntriesForPlatformAdmin(),
     getPlatformDailySummarySettings(),

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { requirePlatformAdmin } from "@/lib/auth/platform-admin-guard";
 import { AdminVendorDetailClient } from "@/components/admin/admin-vendor-detail-client";
 import { listPlatformAdminAuditEventsForVendor } from "@/lib/admin/audit";
 import { getVendorForPlatformAdmin } from "@/lib/admin/vendors";
@@ -18,6 +19,8 @@ export default async function AdminVendorDetailPage({
   params,
   searchParams,
 }: PageProps) {
+  await requirePlatformAdmin();
+
   const { id } = await params;
   const { inviteIssue } = await searchParams;
   const [vendor, auditEvents] = await Promise.all([
