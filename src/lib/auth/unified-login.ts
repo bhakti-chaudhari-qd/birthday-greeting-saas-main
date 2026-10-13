@@ -5,7 +5,7 @@
   INVALID_CREDENTIALS_MESSAGE,
   VENDOR_LANDING_PATH,
 } from "@/lib/auth/constants";
-import { verifyPassword } from "@/lib/auth/password";
+import { equalizeFailedLoginTiming, verifyPassword } from "@/lib/auth/password";
 import { createPlatformAdminSession } from "@/lib/auth/platform-admin-session";
 import { createSession } from "@/lib/auth/session";
 import {
@@ -96,7 +96,16 @@ export async function authenticateUnifiedUser(
     }),
   ]);
 
-  if (user && (await passwordMatches(input.password, user.passwordHash))) {
+  // Track whether any real password comparison ran, so the "no account
+  // matched" path can spend the same bcrypt time instead of returning early
+  // and leaking which identifiers exist.
+  let comparedPassword = false;
+  const matches = (passwordHash: string): Promise<boolean> => {
+    comparedPassword = true;
+    return passwordMatches(input.password, passwordHash);
+  };
+
+  if (user && (await matches(user.passwordHash))) {
     if (!user.isActive || !user.organization.isActive) {
       throw new UnifiedLoginError(ACCOUNT_DEACTIVATED_MESSAGE);
     }
@@ -116,7 +125,7 @@ export async function authenticateUnifiedUser(
 
   if (
     platformAdmin &&
-    (await passwordMatches(input.password, platformAdmin.passwordHash))
+    (await matches(platformAdmin.passwordHash))
   ) {
     if (!platformAdmin.isActive) {
       throw new UnifiedLoginError(ACCOUNT_DEACTIVATED_MESSAGE);
@@ -136,7 +145,7 @@ export async function authenticateUnifiedUser(
   if (
     vendorUser &&
     vendorUser.vendor.onboardingStatus === "APPROVED" &&
-    (await passwordMatches(input.password, vendorUser.passwordHash))
+    (await matches(vendorUser.passwordHash))
   ) {
     if (!vendorUser.isActive || !vendorUser.vendor.isActive) {
       throw new UnifiedLoginError(ACCOUNT_DEACTIVATED_MESSAGE);
@@ -153,6 +162,10 @@ export async function authenticateUnifiedUser(
         vendorName: vendorUser.vendor.name,
       },
     };
+  }
+
+  if (!comparedPassword) {
+    await equalizeFailedLoginTiming(input.password);
   }
 
   throw new UnifiedLoginError();

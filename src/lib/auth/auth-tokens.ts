@@ -50,22 +50,28 @@ export async function consumeAuthToken(input: {
   purpose: AuthTokenPurpose;
 }): Promise<{ userId: string } | null> {
   const tokenHash = hashAuthToken(input.rawToken);
+  const now = new Date();
+
+  // Atomically claim the token: only the first caller flips usedAt from null,
+  // so two requests racing the same reset link cannot both succeed.
+  const claimed = await prisma.authToken.updateMany({
+    where: {
+      tokenHash,
+      purpose: input.purpose,
+      usedAt: null,
+      expiresAt: { gt: now },
+    },
+    data: { usedAt: now },
+  });
+
+  if (claimed.count !== 1) {
+    return null;
+  }
+
   const record = await prisma.authToken.findUnique({
     where: { tokenHash },
+    select: { userId: true },
   });
 
-  if (!record || record.purpose !== input.purpose) {
-    return null;
-  }
-
-  if (record.usedAt || record.expiresAt.getTime() <= Date.now()) {
-    return null;
-  }
-
-  await prisma.authToken.update({
-    where: { id: record.id },
-    data: { usedAt: new Date() },
-  });
-
-  return { userId: record.userId };
+  return record ? { userId: record.userId } : null;
 }

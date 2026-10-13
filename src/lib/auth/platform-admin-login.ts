@@ -1,5 +1,5 @@
 import { INVALID_CREDENTIALS_MESSAGE } from "@/lib/auth/constants";
-import { verifyPassword } from "@/lib/auth/password";
+import { equalizeFailedLoginTiming, verifyPassword } from "@/lib/auth/password";
 import { createPlatformAdminSession } from "@/lib/auth/platform-admin-session";
 import { prisma } from "@/lib/db";
 import type { LoginInput } from "@/lib/validation/auth";
@@ -17,6 +17,9 @@ export async function authenticatePlatformAdmin(input: LoginInput) {
   });
 
   if (!admin || !admin.isActive) {
+    // Match the timing of a real password check so a missing or disabled
+    // admin account is indistinguishable from a wrong password.
+    await equalizeFailedLoginTiming(input.password);
     throw new PlatformAdminLoginError();
   }
 

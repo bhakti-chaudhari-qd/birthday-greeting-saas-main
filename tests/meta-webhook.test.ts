@@ -5,6 +5,7 @@ import {
   describeMetaDeliveryFailure,
   extractMetaStatusUpdates,
   getMetaWebhookConfig,
+  verifyMetaVerifyToken,
   verifyMetaWebhookSignature,
 } from "@/lib/deliveries/meta-webhook";
 
@@ -30,6 +31,17 @@ describe("verifyMetaWebhookSignature", () => {
     expect(verifyMetaWebhookSignature(body, null, secret)).toBe(false);
     expect(verifyMetaWebhookSignature(body, "sha256=zz", secret)).toBe(false);
     expect(verifyMetaWebhookSignature(body, signature.slice(7), secret)).toBe(false);
+  });
+});
+
+describe("verifyMetaVerifyToken", () => {
+  it("accepts the exact token and rejects everything else", () => {
+    expect(verifyMetaVerifyToken("secret-token", "secret-token")).toBe(true);
+    expect(verifyMetaVerifyToken("secret-toke", "secret-token")).toBe(false);
+    expect(verifyMetaVerifyToken("secret-token-extra", "secret-token")).toBe(false);
+    expect(verifyMetaVerifyToken("wrong", "secret-token")).toBe(false);
+    expect(verifyMetaVerifyToken(null, "secret-token")).toBe(false);
+    expect(verifyMetaVerifyToken("", "secret-token")).toBe(false);
   });
 });
 

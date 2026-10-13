@@ -1,7 +1,7 @@
 import { VendorOnboardingStatus } from "@prisma/client";
 
 import { INVALID_CREDENTIALS_MESSAGE } from "@/lib/auth/constants";
-import { verifyPassword } from "@/lib/auth/password";
+import { equalizeFailedLoginTiming, verifyPassword } from "@/lib/auth/password";
 import {
   VendorSessionCreationError,
   createVendorSession,
@@ -41,6 +41,9 @@ export async function authenticateVendorUser(
     !vendorUser.vendor.isActive ||
     vendorUser.vendor.onboardingStatus !== VendorOnboardingStatus.APPROVED
   ) {
+    // Spend the same bcrypt time as a real check so an unknown, inactive, or
+    // unapproved vendor is indistinguishable from a wrong password.
+    await equalizeFailedLoginTiming(input.password);
     throw new VendorLoginError();
   }
 

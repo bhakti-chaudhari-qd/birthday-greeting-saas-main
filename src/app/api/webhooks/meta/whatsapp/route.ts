@@ -5,6 +5,7 @@ import {
   applyMetaStatusUpdate,
   extractMetaStatusUpdates,
   getMetaWebhookConfig,
+  verifyMetaVerifyToken,
   verifyMetaWebhookSignature,
 } from "@/lib/deliveries/meta-webhook";
 
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   if (
     params.get("hub.mode") !== "subscribe" ||
-    params.get("hub.verify_token") !== config.verifyToken
+    !verifyMetaVerifyToken(params.get("hub.verify_token"), config.verifyToken)
   ) {
     return jsonError("Webhook verification failed", 403);
   }

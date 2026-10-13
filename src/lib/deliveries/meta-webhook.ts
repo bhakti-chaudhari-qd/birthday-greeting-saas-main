@@ -26,6 +26,25 @@ export function getMetaWebhookConfig(
   return { verifyToken, appSecret };
 }
 
+/**
+ * Constant-time check of Meta's handshake verify token, so the GET challenge
+ * cannot be brute-forced character by character through response timing.
+ */
+export function verifyMetaVerifyToken(
+  provided: string | null,
+  expected: string,
+): boolean {
+  if (!provided) {
+    return false;
+  }
+  const providedBuffer = Buffer.from(provided);
+  const expectedBuffer = Buffer.from(expected);
+  return (
+    providedBuffer.length === expectedBuffer.length &&
+    timingSafeEqual(providedBuffer, expectedBuffer)
+  );
+}
+
 /** Meta signs the raw body: `X-Hub-Signature-256: sha256=<hex hmac>`. */
 export function verifyMetaWebhookSignature(
   rawBody: string,
