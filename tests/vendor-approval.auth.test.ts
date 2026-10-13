@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   vendorFindFirst: vi.fn(),
   vendorSessionFindUnique: vi.fn(),
   verifyPassword: vi.fn(),
+  equalizeFailedLoginTiming: vi.fn(),
   cookieGet: vi.fn(),
 }));
 
@@ -29,6 +30,7 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/lib/auth/password", () => ({
   verifyPassword: mocks.verifyPassword,
+  equalizeFailedLoginTiming: mocks.equalizeFailedLoginTiming,
 }));
 
 import { INVALID_CREDENTIALS_MESSAGE } from "@/lib/auth/constants";
