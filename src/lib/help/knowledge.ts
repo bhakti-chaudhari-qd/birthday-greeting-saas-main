@@ -61,11 +61,11 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     leadInHi: "Email भेजना कॉन्फ़िगर करने के लिए:",
     leadInMr: "Email पाठवणे कॉन्फिगर करण्यासाठी:",
     answer:
-      "1. Open Settings → Channels → Email.\n2. Choose your provider (Resend) and enter the API key plus the From email address greetings should send from.\n3. Save - the key is encrypted and never shown again in full.\n4. Email is now selectable in Send Messages, and per category under Automatic Greetings.\nOwners only. Email must be configured before you can pick it as a channel.",
+      "Email works without any setup: greetings go out through the platform's email service, and Settings → Channels → Email shows \"Using the platform email service\".\nTo send from your own address instead:\n1. Open Settings → Channels → Email.\n2. Enter your Resend API key and the From email address (on a domain verified in Resend).\n3. Save - the key is encrypted and never shown again in full.\nOwners only.",
     answerHi:
-      "1. Settings → Channels → Email खोलें।\n2. प्रोवाइडर चुनें (Resend) और API key के साथ From ईमेल पता भरें।\n3. Save करें - कुंजी एन्क्रिप्टेड रहती है, पूरी दोबारा नहीं दिखती।\n4. अब Email को Send Messages में, और Automatic Greetings में हर श्रेणी के लिए चुना जा सकता है।\nकेवल Owners। चैनल चुनने से पहले Email सेट होना चाहिए।",
+      "Email बिना किसी सेटअप के काम करता है: ग्रीटिंग प्लेटफ़ॉर्म की Email सेवा से जाती हैं, और Settings → Channels → Email पर \"Using the platform email service\" दिखता है।\nअपने पते से भेजने के लिए:\n1. Settings → Channels → Email खोलें।\n2. अपनी Resend API key और From ईमेल पता भरें (Resend में verified डोमेन का)।\n3. Save करें - कुंजी एन्क्रिप्टेड रहती है, पूरी दोबारा नहीं दिखती।\nकेवल Owners।",
     answerMr:
-      "1. Settings → Channels → Email उघडा.\n2. प्रोव्हायडर निवडा (Resend) आणि API key सोबत From ईमेल पत्ता भरा.\n3. Save करा - की एन्क्रिप्टेड राहते, पूर्ण पुन्हा दिसत नाही.\n4. आता Email Send Messages मध्ये, आणि Automatic Greetings मध्ये प्रत्येक श्रेणीसाठी निवडता येते.\nफक्त Owners. चॅनेल निवडण्याआधी Email सेट असावे लागते.",
+      "Email कोणत्याही सेटअपशिवाय चालते: ग्रीटिंग प्लॅटफॉर्मच्या Email सेवेतून जातात, आणि Settings → Channels → Email वर \"Using the platform email service\" दिसते.\nतुमच्या पत्त्यावरून पाठवण्यासाठी:\n1. Settings → Channels → Email उघडा.\n2. तुमची Resend API key आणि From ईमेल पत्ता भरा (Resend मध्ये verified डोमेनचा).\n3. Save करा - की एन्क्रिप्टेड राहते, पूर्ण पुन्हा दिसत नाही.\nफक्त Owners.",
     hrefs: [
       { label: "Channels (Email)", href: "/dashboard/settings/channels?tab=email" },
     ],
@@ -87,11 +87,11 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     leadInHi: "SMS भेजना कॉन्फ़िगर करने के लिए:",
     leadInMr: "SMS पाठवणे कॉन्फिगर करण्यासाठी:",
     answer:
-      "1. Open Settings → Channels → SMS.\n2. Pick TEST for a safe trial, or Custom HTTP for your real gateway.\n3. Enter your provider's credentials (URL, keys) - these are encrypted at rest.\n4. Save, then send a test message to confirm delivery.\nLive Custom HTTP sending needs a verified email plus an ACTIVE paid plan or platform approval, and SMS often needs a DLT-approved template id.",
+      "If Settings → Channels → SMS shows \"Using the platform SMS service\", SMS already works and there is nothing to set up.\nTo use your own SMS gateway instead:\n1. Open Settings → Channels → SMS.\n2. Enter the details from your SMS provider: Base URL, send path, username, password, route and sender ID.\n3. Tick Active and Save, then use Verify Connection.\nYour own gateway needs an ACTIVE paid plan or platform approval. SMS templates usually need a DLT-approved template ID. Owners only.",
     answerHi:
-      "1. Settings → Channels → SMS खोलें।\n2. सुरक्षित ट्रायल के लिए TEST चुनें, या अपने असली गेटवे के लिए Custom HTTP।\n3. प्रोवाइडर विवरण (URL, keys) भरें - ये एन्क्रिप्टेड रहते हैं।\n4. Save करें, फिर एक टेस्ट मेसेज भेजकर डिलीवरी जाँचें।\nलाइव Custom HTTP को verified email और ACTIVE पेड प्लान या प्लेटफ़ॉर्म अनुमति चाहिए; SMS को अक्सर DLT-approved टेम्पलेट id चाहिए।",
+      "अगर Settings → Channels → SMS पर \"Using the platform SMS service\" दिखता है, तो SMS पहले से चालू है और कुछ सेट करने की ज़रूरत नहीं।\nअपना SMS गेटवे इस्तेमाल करने के लिए:\n1. Settings → Channels → SMS खोलें।\n2. अपने SMS प्रोवाइडर के विवरण भरें: Base URL, send path, username, password, route और sender ID।\n3. Active टिक करके Save करें, फिर Verify Connection दबाएँ।\nअपने गेटवे के लिए ACTIVE पेड प्लान या प्लेटफ़ॉर्म की मंज़ूरी चाहिए। SMS टेम्पलेट को आमतौर पर DLT-approved टेम्पलेट ID चाहिए। केवल Owners।",
     answerMr:
-      "1. Settings → Channels → SMS उघडा.\n2. सुरक्षित ट्रायलसाठी TEST निवडा, किंवा तुमच्या खऱ्या गेटवेसाठी Custom HTTP.\n3. प्रोव्हायडर तपशील (URL, keys) भरा - हे एन्क्रिप्टेड राहतात.\n4. Save करा, नंतर टेस्ट मेसेज पाठवून डिलिव्हरी तपासा.\nलाइव्ह Custom HTTP ला verified email आणि ACTIVE पेड प्लान किंवा प्लॅटफॉर्म परवानगी हवी; SMS ला अनेकदा DLT-approved टेम्पलेट id लागतो.",
+      "Settings → Channels → SMS वर \"Using the platform SMS service\" दिसत असेल, तर SMS आधीच चालू आहे आणि काहीही सेट करण्याची गरज नाही.\nतुमचे स्वतःचे SMS गेटवे वापरण्यासाठी:\n1. Settings → Channels → SMS उघडा.\n2. तुमच्या SMS प्रोव्हायडरचे तपशील भरा: Base URL, send path, username, password, route आणि sender ID.\n3. Active टिक करून Save करा, नंतर Verify Connection दाबा.\nस्वतःच्या गेटवेसाठी ACTIVE पेड प्लान किंवा प्लॅटफॉर्मची मंजुरी लागते. SMS टेम्पलेटला सहसा DLT-approved टेम्पलेट ID लागतो. फक्त Owners.",
     hrefs: [{ label: "Channels (SMS)", href: "/dashboard/settings/channels" }],
   },
   {
@@ -110,11 +110,11 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     leadInHi: "WhatsApp भेजना कॉन्फ़िगर करने के लिए:",
     leadInMr: "WhatsApp पाठवणे कॉन्फिगर करण्यासाठी:",
     answer:
-      "1. Open Settings → Channels → WhatsApp.\n2. Pick TEST for a safe trial, or Custom HTTP for your real gateway.\n3. Enter your provider's credentials - encrypted at rest, same as SMS.\n4. Save, then use WhatsApp templates in Send Messages or Automatic Greetings.\nLive Custom HTTP sending is gated the same way as SMS (verified email plus ACTIVE paid plan or platform approval).",
+      "If Settings → Channels → WhatsApp shows \"Using the platform WhatsApp service\", WhatsApp already works with text-only approved templates.\nTo send from your own number:\n1. Open Settings → Channels → WhatsApp and choose a gateway.\n2. Meta Cloud API: enter the Phone number ID and a permanent access token from your Meta app. Koverage: enter your Vendor UID and API token. Custom HTTP: enter your provider's URL and credentials.\n3. Tick Active and Save.\n4. Under Settings → Manage Templates, create a WhatsApp template whose approved name and language exactly match a template approved on that WhatsApp account.\nYour own gateway needs an ACTIVE paid plan or platform approval. Owners only.",
     answerHi:
-      "1. Settings → Channels → WhatsApp खोलें।\n2. सुरक्षित ट्रायल के लिए TEST चुनें, या असली गेटवे के लिए Custom HTTP।\n3. प्रोवाइडर विवरण भरें - SMS की तरह एन्क्रिप्टेड रहते हैं।\n4. Save करें, फिर Send Messages या Automatic Greetings में WhatsApp टेम्पलेट इस्तेमाल करें।\nलाइव Custom HTTP भी SMS जैसे गेटेड है (verified email और ACTIVE पेड प्लान या प्लेटफ़ॉर्म अनुमति)।",
+      "अगर Settings → Channels → WhatsApp पर \"Using the platform WhatsApp service\" दिखता है, तो WhatsApp पहले से केवल टेक्स्ट वाले approved टेम्पलेट के साथ चालू है।\nअपने नंबर से भेजने के लिए:\n1. Settings → Channels → WhatsApp खोलें और गेटवे चुनें।\n2. Meta Cloud API: अपने Meta app से Phone number ID और permanent access token भरें। Koverage: अपना Vendor UID और API token भरें। Custom HTTP: अपने प्रोवाइडर का URL और credentials भरें।\n3. Active टिक करके Save करें।\n4. Settings → Manage Templates में ऐसा WhatsApp टेम्पलेट बनाएँ जिसका approved नाम और भाषा उस WhatsApp अकाउंट पर approved टेम्पलेट से बिल्कुल मेल खाए।\nअपने गेटवे के लिए ACTIVE पेड प्लान या प्लेटफ़ॉर्म की मंज़ूरी चाहिए। केवल Owners।",
     answerMr:
-      "1. Settings → Channels → WhatsApp उघडा.\n2. सुरक्षित ट्रायलसाठी TEST निवडा, किंवा खऱ्या गेटवेसाठी Custom HTTP.\n3. प्रोव्हायडर तपशील भरा - SMS प्रमाणे एन्क्रिप्टेड राहतात.\n4. Save करा, नंतर Send Messages किंवा Automatic Greetings मध्ये WhatsApp टेम्पलेट वापरा.\nलाइव्ह Custom HTTP देखील SMS सारखे गेटेड आहे (verified email आणि ACTIVE पेड प्लान किंवा प्लॅटफॉर्म परवानगी).",
+      "Settings → Channels → WhatsApp वर \"Using the platform WhatsApp service\" दिसत असेल, तर WhatsApp आधीच फक्त टेक्स्ट असलेल्या approved टेम्पलेटसह चालू आहे.\nतुमच्या नंबरवरून पाठवण्यासाठी:\n1. Settings → Channels → WhatsApp उघडा आणि गेटवे निवडा.\n2. Meta Cloud API: तुमच्या Meta app मधून Phone number ID आणि permanent access token भरा. Koverage: तुमचा Vendor UID आणि API token भरा. Custom HTTP: तुमच्या प्रोव्हायडरचा URL आणि credentials भरा.\n3. Active टिक करून Save करा.\n4. Settings → Manage Templates मध्ये असा WhatsApp टेम्पलेट तयार करा ज्याचे approved नाव आणि भाषा त्या WhatsApp अकाउंटवरील approved टेम्पलेटशी अगदी जुळते.\nस्वतःच्या गेटवेसाठी ACTIVE पेड प्लान किंवा प्लॅटफॉर्मची मंजुरी लागते. फक्त Owners.",
     hrefs: [
       {
         label: "Channels (WhatsApp)",
@@ -147,16 +147,13 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     leadInHi: "ऑटोमेशन बनाने के लिए:",
     leadInMr: "ऑटोमेशन तयार करण्यासाठी:",
     answer:
-      "1. Open Settings → Automatic Greetings.\n2. Pick the occasion tab (Birthday, Anniversary, or Custom).\n3. Choose a contact category and turn on the channels you want (SMS, WhatsApp, Email), picking a template for each.\n4. Set the send time (IST) and save - the row goes Active once a valid template and time are set.\nOwners only. Check today's people on Home, and review upcoming/submitted/failed sends in Activity.",
+      "1. Open Send Messages and stay on the Scheduled tab.\n2. Click + Create Automation.\n3. Pick the occasion (Birthday, Anniversary, or a custom one) and the contact categories.\n4. Turn on the channels you want (WhatsApp, Email, SMS) and pick a template for each.\n5. Set the send time (IST) and save - it then runs every day for contacts whose occasion falls on that day.\nThese are your Automatic Greetings. Owners only. Check today's people on Home, and the results in Activity.",
     answerHi:
-      "1. Settings → Automatic Greetings खोलें।\n2. अवसर टैब चुनें (Birthday, Anniversary, या Custom)।\n3. कॉन्टैक्ट श्रेणी चुनें और जो चैनल चाहिए (SMS, WhatsApp, Email) चालू करें, हर एक के लिए टेम्पलेट चुनें।\n4. भेजने का समय (IST) सेट करके Save करें - वैध टेम्पलेट और समय मिलते ही पंक्ति Active हो जाती है।\nकेवल Owners। आज के लोग Home पर देखें; upcoming/submitted/failed Activity में देखें।",
+      "1. Send Messages खोलें और Scheduled टैब पर रहें।\n2. + Create Automation पर क्लिक करें।\n3. अवसर (Birthday, Anniversary, या कोई कस्टम) और कॉन्टैक्ट श्रेणियाँ चुनें।\n4. जो चैनल चाहिए (WhatsApp, Email, SMS) चालू करें और हर एक के लिए टेम्पलेट चुनें।\n5. भेजने का समय (IST) सेट करके Save करें - फिर यह हर दिन उन कॉन्टैक्ट के लिए चलता है जिनका अवसर उस दिन है।\nयही आपके Automatic Greetings हैं। केवल Owners। आज के लोग Home पर और नतीजे Activity में देखें।",
     answerMr:
-      "1. Settings → Automatic Greetings उघडा.\n2. प्रसंग टॅब निवडा (Birthday, Anniversary, किंवा Custom).\n3. कॉन्टॅक्ट श्रेणी निवडा आणि हवे असलेले चॅनेल (SMS, WhatsApp, Email) चालू करा, प्रत्येकासाठी टेम्पलेट निवडा.\n4. पाठवण्याची वेळ (IST) सेट करून Save करा - वैध टेम्पलेट आणि वेळ मिळताच पंक्ती Active होते.\nफक्त Owners. आजचे लोक Home वर पाहा; upcoming/submitted/failed Activity मध्ये पाहा.",
+      "1. Send Messages उघडा आणि Scheduled टॅबवर राहा.\n2. + Create Automation वर क्लिक करा.\n3. प्रसंग (Birthday, Anniversary, किंवा कस्टम) आणि कॉन्टॅक्ट श्रेणी निवडा.\n4. हवे असलेले चॅनेल (WhatsApp, Email, SMS) चालू करा आणि प्रत्येकासाठी टेम्पलेट निवडा.\n5. पाठवण्याची वेळ (IST) सेट करून Save करा - नंतर हे दररोज त्या कॉन्टॅक्टसाठी चालते ज्यांचा प्रसंग (उदा. वाढदिवस) त्या दिवशी आहे.\nहेच तुमचे Automatic Greetings आहेत. फक्त Owners. आजचे लोक Home वर आणि निकाल Activity मध्ये पाहा.",
     hrefs: [
-      {
-        label: "Automatic Greetings",
-        href: "/dashboard/settings/greeting-routes",
-      },
+      { label: "Send Messages", href: "/dashboard/messages" },
       { label: "Home", href: "/dashboard" },
     ],
   },
@@ -179,11 +176,11 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     leadInHi: "अभी मेसेज भेजने के लिए:",
     leadInMr: "आत्ताच मेसेज पाठवण्यासाठी:",
     answer:
-      "1. Open Send Messages.\n2. Choose a channel (SMS, WhatsApp, or Email) and pick or create a template.\n3. Select contacts individually, or by filter/category.\n4. Review the preview, then queue the send - large audiences go out in batches.\nOwners only. Your subscription must be ACTIVE and the channel must be configured first.",
+      "1. Open Send Messages and choose the Send Now tab.\n2. Pick recipients: Saved Contacts (tick them from the list), Categories, or a Quick List of pasted numbers.\n3. Choose the occasion, turn on a channel (WhatsApp, Email or SMS) and pick a template.\n4. Preview, then click Send Now.\nMessages are queued and sent in the background - open Activity to see whether each one was submitted, delivered or failed. Owners only.",
     answerHi:
-      "1. Send Messages खोलें।\n2. चैनल चुनें (SMS, WhatsApp, या Email) और टेम्पलेट चुनें या बनाएँ।\n3. कॉन्टैक्ट अलग-अलग, या फ़िल्टर/श्रेणी से चुनें।\n4. प्रीव्यू देखें, फिर भेजने की कतार लगाएँ - बड़ी सूची बैच में जाती है।\nकेवल Owners। सब्सक्रिप्शन ACTIVE और चैनल पहले से सेट होना चाहिए।",
+      "1. Send Messages खोलें और Send Now टैब चुनें।\n2. प्राप्तकर्ता चुनें: Saved Contacts (सूची से टिक करें), Categories, या पेस्ट किए गए नंबरों की Quick List।\n3. अवसर चुनें, कोई चैनल (WhatsApp, Email या SMS) चालू करें और टेम्पलेट चुनें।\n4. प्रीव्यू देखें, फिर Send Now पर क्लिक करें।\nमेसेज कतार में जाकर बैकग्राउंड में भेजे जाते हैं - हर मेसेज submitted, delivered या failed हुआ, यह Activity में देखें। केवल Owners।",
     answerMr:
-      "1. Send Messages उघडा.\n2. चॅनेल निवडा (SMS, WhatsApp, किंवा Email) आणि टेम्पलेट निवडा किंवा तयार करा.\n3. कॉन्टॅक्ट वेगवेगळे, किंवा फिल्टर/श्रेणीने निवडा.\n4. प्रीव्ह्यू पाहा, नंतर पाठवण्याची रांग लावा - मोठी यादी बॅचमध्ये जाते.\nफक्त Owners. सब्सक्रिप्शन ACTIVE आणि चॅनेल आधीच सेट असावे.",
+      "1. Send Messages उघडा आणि Send Now टॅब निवडा.\n2. प्राप्तकर्ते निवडा: Saved Contacts (यादीतून टिक करा), Categories, किंवा पेस्ट केलेल्या नंबरांची Quick List.\n3. प्रसंग निवडा, एखादे चॅनेल (WhatsApp, Email किंवा SMS) चालू करा आणि टेम्पलेट निवडा.\n4. प्रीव्ह्यू पाहा, नंतर Send Now वर क्लिक करा.\nमेसेज रांगेत जाऊन बॅकग्राउंडमध्ये पाठवले जातात - प्रत्येक मेसेज submitted, delivered की failed झाला ते Activity मध्ये पाहा. फक्त Owners.",
     hrefs: [{ label: "Send Messages", href: "/dashboard/messages/send" }],
   },
   {
@@ -339,13 +336,13 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     leadInHi: "ग्रीटिंग टेम्पलेट बनाने के लिए:",
     leadInMr: "ग्रीटिंग टेम्पलेट तयार करण्यासाठी:",
     answer:
-      "Open Send Messages and create or pick a saved message for Email or WhatsApp. For SMS, use provider-approved templates via Advanced SMS Setup under Channels. Use {{name}} so each recipient gets their own name.",
+      "Open Settings → Manage Templates and create a template for WhatsApp, Email or SMS. Use {{name}} so each recipient gets their own name. For WhatsApp, also enter the approved template name and language exactly as approved on your WhatsApp account. For SMS, enter the DLT-approved template ID and text from your provider.",
     answerHi:
-      "Send Messages खोलें और Email/WhatsApp के लिए मेसेज बनाएँ या चुनें। SMS के लिए Channels में Advanced SMS Setup से प्रोवाइडर-approved टेम्पलेट इस्तेमाल करें। {{name}} इस्तेमाल करें ताकि हर प्राप्तकर्ता का नाम आए।",
+      "Settings → Manage Templates खोलें और WhatsApp, Email या SMS के लिए टेम्पलेट बनाएँ। {{name}} इस्तेमाल करें ताकि हर प्राप्तकर्ता का नाम आए। WhatsApp के लिए approved टेम्पलेट नाम और भाषा ठीक वैसी भरें जैसी आपके WhatsApp अकाउंट पर approved है। SMS के लिए अपने प्रोवाइडर का DLT-approved टेम्पलेट ID और टेक्स्ट भरें।",
     answerMr:
-      "Send Messages उघडा आणि Email/WhatsApp साठी मेसेज तयार करा किंवा निवडा. SMS साठी Channels मधील Advanced SMS Setup ने प्रोव्हायडर-approved टेम्पलेट वापरा. {{name}} वापरा जेणेकरून प्रत्येक प्राप्तकर्त्याचे नाव येईल.",
+      "Settings → Manage Templates उघडा आणि WhatsApp, Email किंवा SMS साठी टेम्पलेट तयार करा. {{name}} वापरा जेणेकरून प्रत्येक प्राप्तकर्त्याचे नाव येईल. WhatsApp साठी approved टेम्पलेटचे नाव आणि भाषा तुमच्या WhatsApp अकाउंटवर approved आहे तशीच भरा. SMS साठी तुमच्या प्रोव्हायडरचा DLT-approved टेम्पलेट ID आणि टेक्स्ट भरा.",
     hrefs: [
-      { label: "Send Messages", href: "/dashboard/messages/send" },
+      { label: "Manage Templates", href: "/dashboard/templates" },
       { label: "Channels", href: "/dashboard/settings/channels" },
     ],
   },
@@ -414,11 +411,11 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     leadInHi: "शेड्यूल्ड और भेजे गए मेसेज देखने के लिए:",
     leadInMr: "शेड्युल्ड आणि पाठवलेले मेसेज तपासण्यासाठी:",
     answer:
-      "Activity → Upcoming lists people due on the selected date for automatic greetings, including Scheduled before the send time. After queueing you also see Pending / Sending. Activity → Submitted shows messages the provider accepted for that greeting day - that is not the same as delivered to the phone. Use the Date filter to review other days. Failed items may be retryable by Owners depending on status and plan gates.",
+      "Open Activity. Each message shows its status: Pending (waiting to go out), Submitted (the provider accepted it), Delivered (confirmed on the phone, where the provider reports this), or Failed with the reason. Submitted is not the same as delivered. Use the date range and filters to review other days, and Export CSV to download the list. Owners can retry failed messages.",
     answerHi:
-      "Activity → Upcoming में चुनी गई तिथि के स्वचालित ग्रीटिंग वाले लोग दिखते हैं, भेजने के समय से पहले Scheduled सहित। कतार में आने के बाद Pending / Sending भी दिखता है। Activity → Submitted में उस दिन प्रोवाइडर द्वारा स्वीकार किए गए मेसेज दिखते हैं - यह फ़ोन पर डिलीवर होने की पुष्टि नहीं है। अन्य दिन देखने के लिए Date फ़िल्टर इस्तेमाल करें। असफल आइटम स्थिति और प्लान के अनुसार Owners दोबारा कोशिश कर सकते हैं।",
+      "Activity खोलें। हर मेसेज की स्थिति दिखती है: Pending (भेजे जाने का इंतज़ार), Submitted (प्रोवाइडर ने स्वीकार किया), Delivered (फ़ोन पर पहुँचने की पुष्टि, जहाँ प्रोवाइडर यह बताता है), या कारण के साथ Failed। Submitted का मतलब delivered नहीं है। अन्य दिन देखने के लिए तारीख और फ़िल्टर इस्तेमाल करें, और सूची डाउनलोड करने के लिए Export CSV। Owners असफल मेसेज दोबारा भेज सकते हैं।",
     answerMr:
-      "Activity → Upcoming मध्ये निवडलेल्या दिवसासाठी स्वयंचलित ग्रीटिंगचे लोक दिसतात, पाठवण्याच्या वेळेपूर्वी Scheduled सह. रांगेत आल्यानंतर Pending / Sendingही दिसते. Activity → Submitted मध्ये त्या ग्रीटिंग दिवसासाठी प्रोव्हायडरने स्वीकारलेले मेसेज दिसतात - हे फोनवर डिलिव्हर झाल्याची खात्री नाही. इतर दिवस पाहण्यासाठी Date फिल्टर वापरा. अयशस्वी आयटम स्थिती आणि प्लाननुसार Owners पुन्हा प्रयत्न करू शकतात.",
+      "Activity उघडा. प्रत्येक मेसेजची स्थिती दिसते: Pending (पाठवण्याच्या प्रतीक्षेत), Submitted (प्रोव्हायडरने स्वीकारला), Delivered (फोनवर पोहोचल्याची खात्री, जिथे प्रोव्हायडर हे कळवतो), किंवा कारणासह Failed. Submitted म्हणजे delivered नाही. इतर दिवस पाहण्यासाठी तारीख आणि फिल्टर वापरा, आणि यादी डाउनलोड करण्यासाठी Export CSV. Owners अयशस्वी मेसेज पुन्हा पाठवू शकतात.",
     hrefs: [
       { label: "Upcoming", href: "/dashboard/activity?tab=upcoming" },
       { label: "Submitted", href: "/dashboard/activity?tab=sent" },
@@ -444,11 +441,11 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     leadInHi: "मेसेज क्यों नहीं भेज पा रहे:",
     leadInMr: "मेसेज का पाठवता येत नाही:",
     answer:
-      "Common reasons: (1) you are Staff - only Owners can send, (2) subscription is not ACTIVE (unpaid/cancelled blocks send), (3) SMS/WhatsApp is not configured for that channel, (4) live Custom HTTP needs a verified email plus a paid ACTIVE plan or platform approval, (5) the queue worker is not draining pending items. Check Billing, channel settings, and Scheduled activity.",
+      "Common reasons: (1) you are Staff - only Owners can send; (2) your subscription is not ACTIVE; (3) the channel is switched off or has no gateway - check Settings → Channels; (4) for WhatsApp, the template's approved name or language does not match a template approved on the WhatsApp account; (5) the monthly message limit is used up. If a message shows Failed in Activity, the reason is shown on that row. A WhatsApp message can also be accepted and then not delivered by WhatsApp, for example when the recipient has already received too many promotional messages.",
     answerHi:
-      "आम कारण: (1) आप Staff हैं-केवल Owners भेज सकते हैं, (2) सब्सक्रिप्शन ACTIVE नहीं (अवैतनिक/रद्द भेजना रोकता है), (3) उस चैनल के लिए SMS/WhatsApp सेट नहीं, (4) लाइव Custom HTTP को verified email और ACTIVE पेड प्लान या प्लेटफ़ॉर्म अनुमति चाहिए, (5) कतार वर्कर पेंडिंग आइटम नहीं भेज रहा। Billing, चैनल सेटिंग और Scheduled जाँचें।",
+      "आम कारण: (1) आप Staff हैं - केवल Owners भेज सकते हैं; (2) सब्सक्रिप्शन ACTIVE नहीं है; (3) चैनल बंद है या उसका कोई गेटवे नहीं - Settings → Channels जाँचें; (4) WhatsApp के लिए टेम्पलेट का approved नाम या भाषा WhatsApp अकाउंट पर approved टेम्पलेट से मेल नहीं खाती; (5) महीने की मेसेज सीमा पूरी हो गई। अगर Activity में मेसेज Failed दिखे, तो कारण उसी पंक्ति में दिखता है। WhatsApp मेसेज स्वीकार होने के बाद भी WhatsApp द्वारा डिलीवर न किया जा सकता है, जैसे जब प्राप्तकर्ता को पहले ही बहुत ज़्यादा प्रमोशनल मेसेज मिल चुके हों।",
     answerMr:
-      "सामान्य कारणे: (1) तुम्ही Staff आहात-फक्त Owners पाठवू शकतात, (2) सब्सक्रिप्शन ACTIVE नाही (न भरलेले/रद्द पाठवणे थांबवते), (3) त्या चॅनेलसाठी SMS/WhatsApp सेट नाही, (4) लाइव्ह Custom HTTP ला verified email आणि ACTIVE पेड प्लान किंवा प्लॅटफॉर्म परवानगी हवी, (5) रांगेचा वर्कर पेंडिंग आयटम पाठवत नाही. Billing, चॅनेल सेटिंग आणि Scheduled तपासा.",
+      "सामान्य कारणे: (1) तुम्ही Staff आहात - फक्त Owners पाठवू शकतात; (2) सब्सक्रिप्शन ACTIVE नाही; (3) चॅनेल बंद आहे किंवा त्याला गेटवे नाही - Settings → Channels तपासा; (4) WhatsApp साठी टेम्पलेटचे approved नाव किंवा भाषा WhatsApp अकाउंटवरील approved टेम्पलेटशी जुळत नाही; (5) महिन्याची मेसेज मर्यादा संपली आहे. Activity मध्ये मेसेज Failed दिसल्यास कारण त्याच ओळीत दिसते. WhatsApp मेसेज स्वीकारल्यानंतरही WhatsApp कडून डिलिव्हर न होऊ शकतो, उदा. प्राप्तकर्त्याला आधीच खूप प्रमोशनल मेसेज मिळाले असतील तर.",
     hrefs: [
       { label: "Billing", href: "/dashboard/settings/billing" },
       { label: "Send Messages", href: "/dashboard/messages/send" },

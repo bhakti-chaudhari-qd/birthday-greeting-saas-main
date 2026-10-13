@@ -40,6 +40,33 @@ export function SendMessagesPageClient() {
   const { occasions } = useOccasions();
 
   const [tab, setTab] = useState<"scheduled" | "manual">("scheduled");
+
+  // The tab lives in the address (?tab=manual) so a reload or a shared link
+  // opens the same view. Read on mount: the URL is not available during SSR.
+  useEffect(() => {
+    function restoreTabFromUrl() {
+      if (new URLSearchParams(window.location.search).get("tab") === "manual") {
+        setTab("manual");
+      }
+    }
+    restoreTabFromUrl();
+  }, []);
+
+  function selectTab(next: "scheduled" | "manual") {
+    setTab(next);
+    const params = new URLSearchParams(window.location.search);
+    if (next === "manual") {
+      params.set("tab", "manual");
+    } else {
+      params.delete("tab");
+    }
+    const query = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      query ? `${window.location.pathname}?${query}` : window.location.pathname,
+    );
+  }
   const [categories, setCategories] = useState<OrgCategory[]>([]);
   const [settingsByOccasion, setSettingsByOccasion] = useState<SettingsByOccasion>({});
   const [loading, setLoading] = useState(true);
@@ -210,9 +237,11 @@ export function SendMessagesPageClient() {
         title={dict.title}
         description={dict.description}
         actions={
-          <button type="button" className={primaryButtonClass} onClick={openCreateDrawer}>
-            {dict.createAutomation}
-          </button>
+          tab === "scheduled" ? (
+            <button type="button" className={primaryButtonClass} onClick={openCreateDrawer}>
+              {dict.createAutomation}
+            </button>
+          ) : undefined
         }
       />
 
@@ -222,7 +251,7 @@ export function SendMessagesPageClient() {
           className={`${tabButtonBase} ${
             tab === "scheduled" ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100"
           }`}
-          onClick={() => setTab("scheduled")}
+          onClick={() => selectTab("scheduled")}
         >
           {dict.tabScheduled}
         </button>
@@ -231,7 +260,7 @@ export function SendMessagesPageClient() {
           className={`${tabButtonBase} ${
             tab === "manual" ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100"
           }`}
-          onClick={() => setTab("manual")}
+          onClick={() => selectTab("manual")}
         >
           {dict.tabManual}
         </button>

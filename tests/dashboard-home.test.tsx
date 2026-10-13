@@ -27,7 +27,7 @@ const readySummary: DashboardHomeSummary = {
   automation: { running: true, nextRunLabel: "6:15 PM" },
   scheduledTodayCount: 12,
   activeContactsCount: 528,
-  channels: { whatsappConnected: true, smsConnected: true },
+  channels: { whatsappConnected: true, smsConnected: true, emailConnected: true },
   alerts: [],
   runningAutomations: [
     {

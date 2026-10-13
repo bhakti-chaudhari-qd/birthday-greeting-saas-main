@@ -5,6 +5,9 @@ export type ActivityDict = {
     title: string;
     subtitle: string;
     exportCsv: string;
+    exportSubmitted: string;
+    exportFailed: string;
+    exportUpcoming: string;
     refreshAria: string;
   };
   summary: {
@@ -84,6 +87,9 @@ const ACTIVITY_DICT: Record<Locale, ActivityDict> = {
       title: "Activity",
       subtitle: "Track greeting deliveries and message history.",
       exportCsv: "Export CSV",
+      exportSubmitted: "Submitted and delivered",
+      exportFailed: "Failed",
+      exportUpcoming: "Upcoming and pending",
       refreshAria: "Refresh activity",
     },
     summary: {
@@ -164,6 +170,9 @@ const ACTIVITY_DICT: Record<Locale, ActivityDict> = {
       title: "एक्टिविटी",
       subtitle: "ग्रीटिंग डिलीवरी और मेसेज इतिहास देखें।",
       exportCsv: "CSV एक्सपोर्ट करें",
+      exportSubmitted: "सबमिटेड और डिलीवर हुए",
+      exportFailed: "असफल",
+      exportUpcoming: "आने वाले और पेंडिंग",
       refreshAria: "एक्टिविटी रीफ़्रेश करें",
     },
     summary: {
@@ -245,6 +254,9 @@ const ACTIVITY_DICT: Record<Locale, ActivityDict> = {
       title: "अ‍ॅक्टिव्हिटी",
       subtitle: "ग्रीटिंग डिलिव्हरी आणि मेसेज इतिहास पाहा.",
       exportCsv: "CSV एक्सपोर्ट करा",
+      exportSubmitted: "सबमिट आणि डिलिव्हर झालेले",
+      exportFailed: "अयशस्वी",
+      exportUpcoming: "येणारे आणि पेंडिंग",
       refreshAria: "अ‍ॅक्टिव्हिटी रिफ्रेश करा",
     },
     summary: {

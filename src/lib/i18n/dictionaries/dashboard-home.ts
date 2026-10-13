@@ -31,6 +31,7 @@ export type DashboardHomeDict = {
     channels: string;
     whatsapp: string;
     sms: string;
+    email: string;
     connected: string;
     notConnected: string;
   };
@@ -106,6 +107,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       channels: "Channels",
       whatsapp: "WhatsApp",
       sms: "SMS",
+      email: "Email",
       connected: "Connected",
       notConnected: "Not connected",
     },
@@ -188,6 +190,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       channels: "चैनल",
       whatsapp: "WhatsApp",
       sms: "SMS",
+      email: "Email",
       connected: "कनेक्टेड",
       notConnected: "कनेक्टेड नहीं",
     },
@@ -270,6 +273,7 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       channels: "चॅनेल्स",
       whatsapp: "WhatsApp",
       sms: "SMS",
+      email: "Email",
       connected: "कनेक्टेड",
       notConnected: "कनेक्टेड नाही",
     },

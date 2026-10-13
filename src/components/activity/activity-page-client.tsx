@@ -626,6 +626,16 @@ export function ActivityPageClient({
       endDate !== todayDate,
   );
 
+  /** Export link for one kind of row, carrying every filter the page is showing. */
+  function exportHref(exportTab: "sent" | "failed" | "upcoming"): string {
+    const params = new URLSearchParams({ tab: exportTab, startDate, endDate });
+    if (searchInput.trim()) params.set("search", searchInput.trim());
+    if (channel) params.set("channel", channel);
+    if (occasionId) params.set("occasionId", occasionId);
+    if (categoryId) params.set("categoryId", categoryId);
+    return `/api/v1/activity/export?${params.toString()}`;
+  }
+
   const chips: Array<{ key: string; label: string; onRemove: () => void }> = [];
   if (status !== "all") {
     chips.push({
@@ -668,12 +678,41 @@ export function ActivityPageClient({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {canManage ? (
-            <a
-              href={`/api/v1/activity/export?tab=${status === "failed" ? "failed" : status === "pending" ? "upcoming" : "sent"}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`}
-              className={secondaryButtonClass}
-            >
-              {dict.header.exportCsv}
-            </a>
+status === "all" ? (
+              // The three kinds of row have different columns, so "All" offers
+              // each file instead of silently exporting only one of them.
+              <details className="relative">
+                <summary className={`${secondaryButtonClass} cursor-pointer list-none`}>
+                  {dict.header.exportCsv}
+                </summary>
+                <div className="absolute right-0 z-10 mt-1 flex w-56 flex-col rounded-lg border border-stone-200 bg-white py-1 shadow-lg">
+                  {(
+                    [
+                      ["sent", dict.header.exportSubmitted],
+                      ["failed", dict.header.exportFailed],
+                      ["upcoming", dict.header.exportUpcoming],
+                    ] as const
+                  ).map(([exportTab, label]) => (
+                    <a
+                      key={exportTab}
+                      href={exportHref(exportTab)}
+                      className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                    >
+                      {label}
+                    </a>
+                  ))}
+                </div>
+              </details>
+            ) : (
+              <a
+                href={exportHref(
+                  status === "failed" ? "failed" : status === "pending" ? "upcoming" : "sent",
+                )}
+                className={secondaryButtonClass}
+              >
+                {dict.header.exportCsv}
+              </a>
+            )
           ) : null}
           <button
             type="button"

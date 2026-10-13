@@ -100,7 +100,7 @@ describe("answerHelpChat", () => {
     expect(result.articleIds).toContain("automations");
     expect(result.answer.toLowerCase()).toMatch(/greeting|birthday|ist|category/);
     expect(
-      result.links.some((link) => link.href.includes("greeting-routes")),
+      result.links.some((link) => link.href === "/dashboard/messages"),
     ).toBe(true);
   });
 

@@ -6,6 +6,7 @@ import {
   formatAutomationSendTimeLabel,
   getLocalHourMinute,
 } from "@/lib/automation/send-time";
+import { getEmailChannelConfig } from "@/lib/channel-config/email-service";
 import { getSmsChannelConfig } from "@/lib/channel-config/service";
 import { getWhatsAppChannelConfig } from "@/lib/channel-config/whatsapp-service";
 import { prisma } from "@/lib/db";
@@ -47,6 +48,7 @@ export type RunningAutomationRow = {
 export type DashboardChannelStatus = {
   whatsappConnected: boolean;
   smsConnected: boolean;
+  emailConnected: boolean;
 };
 
 export type UpcomingTodayItem = {
@@ -304,6 +306,12 @@ export async function getDashboardHomeSummary(
 
   const { rows: runningAutomations, nextRunLabel } = automationState;
 
+  const emailChannel = isAdmin ? await getEmailChannelConfig(organizationId) : null;
+  const emailConnected = Boolean(
+    (emailChannel?.configured && emailChannel.isActive) ||
+    emailChannel?.platformDefaultFrom,
+  );
+
   const smsConnected = Boolean(
     (smsChannel?.configured && smsChannel.isActive) ||
     smsChannel?.usingPlatformDefault,
@@ -394,7 +402,7 @@ export async function getDashboardHomeSummary(
     },
     scheduledTodayCount: occasionsToday.summary.total,
     activeContactsCount,
-    channels: isAdmin ? { whatsappConnected, smsConnected } : null,
+    channels: isAdmin ? { whatsappConnected, smsConnected, emailConnected } : null,
     alerts,
     runningAutomations,
     missedQueue:

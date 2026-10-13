@@ -424,7 +424,7 @@ export function DashboardHome({
             </p>
           </StatusCard>
 
-          <StatusCard label={dict.systemStatus.contacts}>
+          <StatusCard label={dict.systemStatus.contacts} href="/dashboard/contacts">
             <p className="mt-3 text-2xl font-semibold text-stone-900">
               {summary.activeContactsCount}
             </p>
@@ -443,6 +443,10 @@ export function DashboardHome({
                 <ChannelStatusRow
                   label={dict.systemStatus.sms}
                   connected={summary.channels.smsConnected}
+                />
+                <ChannelStatusRow
+                  label={dict.systemStatus.email}
+                  connected={summary.channels.emailConnected}
                 />
               </div>
             </StatusCard>
