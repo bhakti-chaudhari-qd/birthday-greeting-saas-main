@@ -354,6 +354,7 @@ export function LandingContent() {
             <a href="#how-it-works">{t.nav.howItWorks}</a>
             <a href="#use-cases">{t.nav.useCases}</a>
             <a href="#contact">{t.nav.contact}</a>
+            <a href="/privacy">Privacy Policy</a>
           </nav>
           <p className="copyright">{t.footer.copyright}</p>
         </div>
