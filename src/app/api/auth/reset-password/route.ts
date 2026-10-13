@@ -8,10 +8,9 @@ import {
 } from "@/lib/auth/email-flows";
 import {
   RateLimitError,
-  assertLoginAllowed,
-  clearLoginFailures,
+  clearThrottledAttempts,
+  consumeThrottledAttempt,
   getClientIp,
-  recordLoginFailure,
   resetPasswordThrottleKey,
 } from "@/lib/auth/rate-limit";
 import { resetPasswordSchema } from "@/lib/validation/auth";
@@ -23,17 +22,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const input = resetPasswordSchema.parse(body);
 
-    await assertLoginAllowed(throttleKey);
-
-    try {
-      await resetPasswordWithToken(input);
-      await clearLoginFailures(throttleKey);
-    } catch (error) {
-      if (error instanceof PasswordResetError) {
-        await recordLoginFailure(throttleKey);
-      }
-      throw error;
-    }
+    // Counted up front; a successful reset clears it again.
+    await consumeThrottledAttempt(throttleKey);
+    await resetPasswordWithToken(input);
+    await clearThrottledAttempts(throttleKey);
 
     return NextResponse.json({
       data: { message: "Password updated. You can sign in now." },

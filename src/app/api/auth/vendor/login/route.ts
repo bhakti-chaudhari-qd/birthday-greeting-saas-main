@@ -4,11 +4,10 @@ import { ZodError } from "zod";
 import { jsonError } from "@/lib/api/response";
 import {
   RateLimitError,
-  assertLoginAllowed,
-  clearLoginFailures,
+  clearLoginAttempts,
+  consumeLoginAttempt,
   getClientIp,
-  loginThrottleKey,
-  recordLoginFailure,
+  loginThrottleKeys,
 } from "@/lib/auth/rate-limit";
 import { VendorLoginError, loginVendorUser } from "@/lib/auth/vendor-login";
 import { unifiedLoginSchema } from "@/lib/validation/auth";
@@ -18,17 +17,17 @@ export async function POST(request: Request) {
     const body = await request.json();
     const input = unifiedLoginSchema.parse(body);
     const ip = getClientIp(request);
-    const throttleKey = loginThrottleKey("vendor", ip, input.identifier);
+    const throttleKeys = loginThrottleKeys("vendor", ip, input.identifier);
 
-    await assertLoginAllowed(throttleKey);
+    // Counted up front; a successful sign-in clears it again.
+    await consumeLoginAttempt(throttleKeys);
 
     try {
       const result = await loginVendorUser(input);
-      await clearLoginFailures(throttleKey);
+      await clearLoginAttempts(throttleKeys);
       return NextResponse.json({ data: result });
     } catch (error) {
       if (error instanceof VendorLoginError) {
-        await recordLoginFailure(throttleKey);
         return jsonError(error.message, 401);
       }
       throw error;

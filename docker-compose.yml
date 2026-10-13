@@ -10,6 +10,11 @@ services:
     network_mode: host
     env_file:
       - .env
+    # Host networking would otherwise publish :3001 on every interface.
+    # Listen on loopback only, so the app is reachable through nginx alone
+    # (TLS, body limits, and the X-Forwarded-For the rate limiter relies on).
+    environment:
+      HOSTNAME: 127.0.0.1
     logging:
       driver: json-file
       options:

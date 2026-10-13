@@ -4,11 +4,10 @@ import { ZodError } from "zod";
 import { jsonError } from "@/lib/api/response";
 import {
   RateLimitError,
-  assertLoginAllowed,
-  clearLoginFailures,
+  clearLoginAttempts,
+  consumeLoginAttempt,
   getClientIp,
-  loginThrottleKey,
-  recordLoginFailure,
+  loginThrottleKeys,
 } from "@/lib/auth/rate-limit";
 import {
   UnifiedLoginError,
@@ -17,23 +16,21 @@ import {
 import { unifiedLoginSchema } from "@/lib/validation/auth";
 
 export async function POST(request: Request) {
-  let throttleKey: string | null = null;
-
   try {
     const body = await request.json();
     const input = unifiedLoginSchema.parse(body);
     const ip = getClientIp(request);
-    throttleKey = loginThrottleKey("unified", ip, input.identifier);
+    const throttleKeys = loginThrottleKeys("unified", ip, input.identifier);
 
-    await assertLoginAllowed(throttleKey);
+    // Counted up front; a successful sign-in clears it again.
+    await consumeLoginAttempt(throttleKeys);
 
     try {
       const result = await loginUnifiedUser(input);
-      await clearLoginFailures(throttleKey);
+      await clearLoginAttempts(throttleKeys);
       return NextResponse.json({ data: result });
     } catch (error) {
       if (error instanceof UnifiedLoginError) {
-        await recordLoginFailure(throttleKey);
         return jsonError(error.message, 401);
       }
       throw error;

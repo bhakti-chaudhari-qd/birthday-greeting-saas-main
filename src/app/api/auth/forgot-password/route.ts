@@ -5,10 +5,9 @@ import { jsonError } from "@/lib/api/response";
 import { requestPasswordReset } from "@/lib/auth/email-flows";
 import {
   RateLimitError,
-  assertLoginAllowed,
+  consumeLoginAttempt,
   getClientIp,
-  loginThrottleKey,
-  recordLoginFailure,
+  loginThrottleKeys,
 } from "@/lib/auth/rate-limit";
 import { forgotPasswordSchema } from "@/lib/validation/auth";
 
@@ -20,12 +19,11 @@ export async function POST(request: Request) {
     const body = await request.json();
     const input = forgotPasswordSchema.parse(body);
     const ip = getClientIp(request);
-    const throttleKey = loginThrottleKey("forgot", ip, input.email);
+    const throttleKeys = loginThrottleKeys("forgot", ip, input.email);
 
-    await assertLoginAllowed(throttleKey);
+    // Every request counts, so this endpoint cannot be spammed without lockout.
+    await consumeLoginAttempt(throttleKeys);
     await requestPasswordReset(input);
-    // Count as a hit so this endpoint cannot be spammed without lockout.
-    await recordLoginFailure(throttleKey);
 
     return NextResponse.json({ data: { message: GENERIC_MESSAGE } });
   } catch (error) {

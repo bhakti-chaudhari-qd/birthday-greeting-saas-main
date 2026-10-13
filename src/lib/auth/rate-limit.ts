@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import type { Prisma } from "@prisma/client";
 
+import { normalizeMobile } from "@/lib/contacts/mobile";
 import { prisma } from "@/lib/db";
 
 export class RateLimitError extends Error {
@@ -13,6 +14,8 @@ export class RateLimitError extends Error {
 
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_FAILURES = 5;
+/** Per-account ceiling that holds whatever address the attempts come from. */
+const LOGIN_ACCOUNT_MAX_FAILURES = 10;
 const LOGIN_LOCKOUT_MS = 15 * 60 * 1000;
 
 const REGISTER_WINDOW_MS = 60 * 60 * 1000;
@@ -25,12 +28,27 @@ const VENDOR_REGISTER_WINDOW_MS = 60 * 60 * 1000;
 const VENDOR_REGISTER_MAX_PER_IP = 10;
 const VENDOR_REGISTER_MAX_PER_TOKEN = 5;
 
+/**
+ * Number of trusted reverse proxies in front of the app (nginx = 1). Each one
+ * appends the address it saw to X-Forwarded-For, so the client address is that
+ * many entries from the right - anything further left was sent by the caller
+ * and can be forged.
+ */
+function trustedProxyHops(): number {
+  const parsed = Number.parseInt(process.env.TRUSTED_PROXY_HOPS ?? "", 10);
+  return Number.isInteger(parsed) && parsed >= 1 ? parsed : 1;
+}
+
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) {
-      return first.slice(0, 128);
+    const entries = forwarded
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+    const fromProxy = entries[entries.length - trustedProxyHops()] ?? entries[0];
+    if (fromProxy) {
+      return fromProxy.slice(0, 128);
     }
   }
 
@@ -42,12 +60,37 @@ export function getClientIp(request: Request): string {
   return "unknown";
 }
 
-function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
+/** One spelling per account, so formatting variants share a bucket. */
+function normalizeLoginIdentifier(identifier: string): string {
+  const trimmed = identifier.trim().toLowerCase();
+  if (trimmed.includes("@")) {
+    return trimmed;
+  }
+
+  try {
+    return normalizeMobile(trimmed);
+  } catch {
+    return trimmed;
+  }
 }
 
-export function loginThrottleKey(portal: string, ip: string, email: string): string {
-  return `login:${portal}:${ip}:${normalizeEmail(email)}`;
+export type LoginThrottleKeys = {
+  /** Attempts on this account from one address. */
+  ipKey: string;
+  /** Attempts on this account from anywhere. */
+  accountKey: string;
+};
+
+export function loginThrottleKeys(
+  portal: string,
+  ip: string,
+  identifier: string,
+): LoginThrottleKeys {
+  const account = normalizeLoginIdentifier(identifier);
+  return {
+    ipKey: `login:${portal}:${ip}:${account}`,
+    accountKey: `login:${portal}:account:${account}`,
+  };
 }
 
 export function registerThrottleKey(ip: string): string {
@@ -101,47 +144,87 @@ async function getOrCreateBucket(bucketKey: string, windowMs: number) {
   return existing;
 }
 
-/** Throws RateLimitError if the login bucket is locked or over limit. */
-export async function assertLoginAllowed(bucketKey: string): Promise<void> {
-  await getOrCreateBucket(bucketKey, LOGIN_WINDOW_MS);
-  const row = await prisma.authRateLimit.findUnique({ where: { bucketKey } });
-  if (!row) {
-    return;
-  }
-
+/**
+ * Atomically claims one attempt from a bucket, or throws RateLimitError. The
+ * attempt is counted before the caller checks the password, so parallel
+ * requests cannot all slip through ahead of the first recorded failure.
+ * Reaching the limit locks the bucket for LOGIN_LOCKOUT_MS.
+ */
+export async function consumeThrottledAttempt(
+  bucketKey: string,
+  maxAttempts = LOGIN_MAX_FAILURES,
+): Promise<void> {
   const now = new Date();
-  if (row.lockedUntil && row.lockedUntil > now) {
-    throw new RateLimitError();
-  }
+  const windowCutoff = new Date(now.getTime() - LOGIN_WINDOW_MS);
+  const notLocked = {
+    OR: [{ lockedUntil: null }, { lockedUntil: { lte: now } }],
+  };
 
-  if (row.hitCount >= LOGIN_MAX_FAILURES) {
-    await prisma.authRateLimit.update({
-      where: { bucketKey },
-      data: { lockedUntil: new Date(now.getTime() + LOGIN_LOCKOUT_MS) },
-    });
-    throw new RateLimitError();
-  }
-}
-
-export async function recordLoginFailure(bucketKey: string): Promise<void> {
-  const row = await getOrCreateBucket(bucketKey, LOGIN_WINDOW_MS);
-  const nextCount = row.hitCount + 1;
-  const now = new Date();
-
-  await prisma.authRateLimit.update({
+  await prisma.authRateLimit.upsert({
     where: { bucketKey },
-    data: {
-      hitCount: nextCount,
-      lockedUntil:
-        nextCount >= LOGIN_MAX_FAILURES
-          ? new Date(now.getTime() + LOGIN_LOCKOUT_MS)
-          : row.lockedUntil,
+    create: {
+      bucketKey,
+      hitCount: 0,
+      windowStart: now,
     },
+    update: {},
+  });
+
+  await prisma.authRateLimit.updateMany({
+    where: {
+      bucketKey,
+      windowStart: { lt: windowCutoff },
+      ...notLocked,
+    },
+    data: {
+      hitCount: 0,
+      windowStart: now,
+      lockedUntil: null,
+    },
+  });
+
+  const claimed = await prisma.authRateLimit.updateMany({
+    where: {
+      bucketKey,
+      hitCount: { lt: maxAttempts },
+      ...notLocked,
+    },
+    data: { hitCount: { increment: 1 } },
+  });
+
+  if (claimed.count !== 1) {
+    throw new RateLimitError();
+  }
+
+  await prisma.authRateLimit.updateMany({
+    where: {
+      bucketKey,
+      hitCount: { gte: maxAttempts },
+      lockedUntil: null,
+    },
+    data: { lockedUntil: new Date(now.getTime() + LOGIN_LOCKOUT_MS) },
   });
 }
 
-export async function clearLoginFailures(bucketKey: string): Promise<void> {
+export async function clearThrottledAttempts(bucketKey: string): Promise<void> {
   await prisma.authRateLimit.deleteMany({ where: { bucketKey } });
+}
+
+/** Claims an attempt from both login buckets; call before checking credentials. */
+export async function consumeLoginAttempt(
+  keys: LoginThrottleKeys,
+): Promise<void> {
+  await consumeThrottledAttempt(keys.ipKey, LOGIN_MAX_FAILURES);
+  await consumeThrottledAttempt(keys.accountKey, LOGIN_ACCOUNT_MAX_FAILURES);
+}
+
+/** Resets both login buckets after a successful sign-in. */
+export async function clearLoginAttempts(
+  keys: LoginThrottleKeys,
+): Promise<void> {
+  await prisma.authRateLimit.deleteMany({
+    where: { bucketKey: { in: [keys.ipKey, keys.accountKey] } },
+  });
 }
 
 export async function assertRegistrationAllowed(bucketKey: string): Promise<void> {

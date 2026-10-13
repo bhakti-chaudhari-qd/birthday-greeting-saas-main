@@ -8,11 +8,10 @@ import {
 } from "@/lib/auth/platform-admin-login";
 import {
   RateLimitError,
-  assertLoginAllowed,
-  clearLoginFailures,
+  clearLoginAttempts,
+  consumeLoginAttempt,
   getClientIp,
-  loginThrottleKey,
-  recordLoginFailure,
+  loginThrottleKeys,
 } from "@/lib/auth/rate-limit";
 import { loginSchema } from "@/lib/validation/auth";
 
@@ -21,17 +20,17 @@ export async function POST(request: Request) {
     const body = await request.json();
     const input = loginSchema.parse(body);
     const ip = getClientIp(request);
-    const throttleKey = loginThrottleKey("platform", ip, input.email);
+    const throttleKeys = loginThrottleKeys("platform", ip, input.email);
 
-    await assertLoginAllowed(throttleKey);
+    // Counted up front; a successful sign-in clears it again.
+    await consumeLoginAttempt(throttleKeys);
 
     try {
       const result = await loginPlatformAdmin(input);
-      await clearLoginFailures(throttleKey);
+      await clearLoginAttempts(throttleKeys);
       return NextResponse.json({ data: result });
     } catch (error) {
       if (error instanceof PlatformAdminLoginError) {
-        await recordLoginFailure(throttleKey);
         return jsonError(error.message, 401);
       }
       throw error;
