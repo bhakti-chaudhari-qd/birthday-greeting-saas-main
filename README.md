@@ -164,7 +164,7 @@ Sidebar and settings pages hide or redirect Staff away from Owner-only areas. Ac
 - Vendor referral: each Vendor has one referral code (Platform Admin → Vendors). Register form includes an optional referral field; attributed orgs appear in the Vendor portal under Referred clients.
 - New orgs stay on **TEST** messaging by default. Enabling **Custom HTTP** needs Owner + (paid ACTIVE plan STARTER/PRO/CUSTOM **or** Platform Admin **Approve live Custom HTTP**).
 - Unpaid subscription statuses `PAST_DUE` / `CANCELLED` block queue generate, manual send, and worker send (**402**).
-- Per-org send velocity: `SEND_VELOCITY_PER_MINUTE` (default 60) and `SEND_VELOCITY_PER_DAY` (default 5000). The worker paces claims to remaining capacity and soft-defers overflow (retryable) instead of permanently failing.
+- Per-org send velocity: `SEND_VELOCITY_PER_MINUTE` (default 60) and `SEND_VELOCITY_PER_DAY` (default 10000). The worker paces claims to remaining capacity and soft-defers overflow (retryable) instead of permanently failing.
 - WhatsApp `tlsInsecure` is rejected in production (config save + outbound HTTP).
 
 ### Billing (REQ-BILL) - Razorpay

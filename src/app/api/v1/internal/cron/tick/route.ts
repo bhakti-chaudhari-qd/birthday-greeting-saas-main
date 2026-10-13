@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 
 import { CronAuthError, requireCronSecret } from "@/lib/api/cron-auth";
 import { jsonError } from "@/lib/api/response";
-import { runOccasionAutomation } from "@/lib/automation/run-occasion";
+import {
+  listOccasionsWithEnabledAutomation,
+  runOccasionAutomation,
+} from "@/lib/automation/run-occasion";
+import { withCronTickLock } from "@/lib/automation/tick-lock";
 import { runContactImportWorker } from "@/lib/contacts/import-worker";
 import { runDailySummaries } from "@/lib/daily-summary/service";
-import { prisma } from "@/lib/db";
-import { runMessageWorker } from "@/lib/queue/worker";
+import { drainMessageWorker } from "@/lib/queue/worker";
 import { expireOverduePaidSubscriptions } from "@/lib/billing/apply-plan";
 
 export const dynamic = "force-dynamic";
@@ -49,29 +52,41 @@ export async function POST(request: Request) {
       }
     }
 
-    const occasions = await prisma.occasion.findMany({
-      select: { id: true, name: true },
+    // The scheduler fires every minute; never stack a tick on a running one.
+    const tick = await withCronTickLock(async () => {
+      const occasions = await listOccasionsWithEnabledAutomation();
+
+      const occasionSteps: Record<string, StepResult> = {};
+      for (const occasion of occasions) {
+        occasionSteps[occasion.id] = await runStep(
+          `occasion-automation:${occasion.name}`,
+          () => runOccasionAutomation(occasion.id),
+        );
+      }
+
+      const contactImport = await runStep("contact-import", () =>
+        runContactImportWorker(),
+      );
+      const drain = await runStep("worker-drain", () => drainMessageWorker());
+      const billingExpiry = await runStep("billing-expiry", () =>
+        expireOverduePaidSubscriptions(),
+      );
+
+      const dailySummary = await runStep("daily-summary", () =>
+        runDailySummaries(),
+      );
+
+      return { occasionSteps, contactImport, drain, billingExpiry, dailySummary };
     });
 
-    const occasionSteps: Record<string, StepResult> = {};
-    for (const occasion of occasions) {
-      occasionSteps[occasion.id] = await runStep(
-        `occasion-automation:${occasion.name}`,
-        () => runOccasionAutomation(occasion.id),
-      );
+    if (!tick.acquired) {
+      return NextResponse.json({
+        data: { skipped: "A previous cron tick is still running" },
+      });
     }
 
-    const contactImport = await runStep("contact-import", () =>
-      runContactImportWorker(),
-    );
-    const drain = await runStep("worker-drain", () => runMessageWorker());
-    const billingExpiry = await runStep("billing-expiry", () =>
-      expireOverduePaidSubscriptions(),
-    );
-
-    const dailySummary = await runStep("daily-summary", () =>
-      runDailySummaries(),
-    );
+    const { occasionSteps, contactImport, drain, billingExpiry, dailySummary } =
+      tick.value;
 
     const steps = {
       occasions: occasionSteps,

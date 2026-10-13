@@ -26,8 +26,37 @@ export const WORKER_GLOBAL_SEND_CONCURRENCY = Number.parseInt(
   10,
 ) || 25;
 
+/**
+ * How many organizations one worker invocation claims and sends for at the
+ * same time. Provider calls across all of them still share
+ * WORKER_GLOBAL_SEND_CONCURRENCY.
+ */
+export const WORKER_TENANT_CONCURRENCY = Number.parseInt(
+  process.env.WORKER_TENANT_CONCURRENCY ?? "4",
+  10,
+) || 4;
+
+/**
+ * How long a scheduler tick keeps starting new worker passes. Each pass takes
+ * at most one claim batch per organization, so one pass a minute would cap
+ * every organization at one batch a minute. Kept under the 30s request
+ * timeout common to external cron services.
+ */
+export const WORKER_DRAIN_TIME_BUDGET_MS = Number.parseInt(
+  process.env.WORKER_DRAIN_TIME_BUDGET_MS ?? "25000",
+  10,
+) || 25_000;
+
 /** How long a claimed SENDING row may be held before lease recovery. */
 export const QUEUE_LEASE_DURATION_MS = 5 * 60 * 1000;
+
+/**
+ * A claimed row is not started once this much of its lease is used up; lease
+ * recovery returns it to the queue untouched. Leaves room for the slowest
+ * provider timeout (90s) so a send never outlives its own lease.
+ */
+export const WORKER_LEASE_START_CUTOFF_MS =
+  QUEUE_LEASE_DURATION_MS - 2 * 60 * 1000;
 
 /** Base delay for exponential backoff after a safely retryable failure. */
 export const RETRY_BACKOFF_BASE_MS = 30_000;

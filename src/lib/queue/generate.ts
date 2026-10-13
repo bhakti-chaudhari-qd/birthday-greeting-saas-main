@@ -76,6 +76,7 @@ async function processContactsInPages(
     attributes: Prisma.JsonValue;
     categoryId: string | null;
   }) => Promise<void>,
+  onPage?: (contactIds: string[]) => Promise<void>,
 ) {
   let skip = 0;
 
@@ -99,6 +100,8 @@ async function processContactsInPages(
     if (page.length === 0) {
       return;
     }
+
+    await onPage?.(page.map((contact) => contact.id));
 
     for (const contact of page) {
       await onContact(contact);
@@ -311,6 +314,26 @@ export async function generateOccasionQueue(
   const referenceDate = options.referenceDate ?? new Date();
   const skipSendTimeGate = options.skipSendTimeGate === true;
 
+  // Before the earliest rule's send time nothing can be queued: every contact
+  // would be skipped one by one. Schedulers call this every minute, so answer
+  // without scanning contacts or locking the subscription.
+  if (
+    usingCategoryRules &&
+    !skipSendTimeGate &&
+    maxCreates > 0 &&
+    categoryRules.every(
+      (rule) =>
+        !isAtOrAfterAutomationSendTime(
+          rule.sendHour,
+          rule.sendMinute,
+          referenceDate,
+        ),
+    )
+  ) {
+    summary.skippedIneligible = eligible;
+    return summary;
+  }
+
   // Collected while creating rows, prepared AFTER the transaction commits -
   // PDF generation and the B2 upload it triggers must never hold the queue
   // transaction open (see prepareQueueDocument).
@@ -333,6 +356,13 @@ export async function generateOccasionQueue(
     );
     let remaining = getRemainingMonthlySendCapacity(subscription);
 
+    // Queue rows that already exist for the current page of contacts, keyed
+    // by contact + channel. One lookup per page instead of one per contact:
+    // once a day's rows are queued, later runs only confirm that.
+    const queuedKey = (contactId: string, channel: Channel) =>
+      `${contactId}:${channel}`;
+    let alreadyQueued = new Set<string>();
+
     await processContactsInPages(tx, eligibleWhere, async (contact) => {
       const logSkip = (reason: string, extra: Record<string, unknown> = {}) => {
         console.info("Queue generation: contact skipped", {
@@ -347,7 +377,6 @@ export async function generateOccasionQueue(
 
       if (createsRemaining <= 0) {
         summary.unprocessedByBound += 1;
-        logSkip("unprocessed_by_bound", { maxCreates });
         return;
       }
 
@@ -371,10 +400,6 @@ export async function generateOccasionQueue(
           )
         ) {
           summary.skippedIneligible += 1;
-          logSkip("before_send_time_window", {
-            sendHour: rule.sendHour,
-            sendMinute: rule.sendMinute,
-          });
           return;
         }
         const resolved = templatesById.get(rule.templateId);
@@ -415,20 +440,8 @@ export async function generateOccasionQueue(
         targetDate: target.isoDate,
       });
 
-      const existing = await tx.sendQueue.findFirst({
-        where: {
-          organizationId,
-          contactId: contact.id,
-          channel: contactTemplate.channel,
-          occasionId,
-          scheduledDate: target.date,
-        },
-        select: { id: true },
-      });
-
-      if (existing) {
+      if (alreadyQueued.has(queuedKey(contact.id, contactTemplate.channel))) {
         summary.skippedDuplicate += 1;
-        logSkip("duplicate_existing_queue_row", { existingQueueId: existing.id });
         return;
       }
 
@@ -540,6 +553,21 @@ export async function generateOccasionQueue(
 
         throw error;
       }
+    }, async (contactIds) => {
+      const queued = await tx.sendQueue.findMany({
+        where: {
+          organizationId,
+          occasionId,
+          scheduledDate: target.date,
+          contactId: { in: contactIds },
+        },
+        select: { contactId: true, channel: true },
+      });
+      alreadyQueued = new Set(
+        queued.flatMap((row) =>
+          row.contactId ? [queuedKey(row.contactId, row.channel)] : [],
+        ),
+      );
     });
   }, { maxWait: 60_000, timeout: 300_000 });
 

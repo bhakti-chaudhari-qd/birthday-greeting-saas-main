@@ -62,7 +62,7 @@ async function main() {
   }
 
   const { prisma } = await import("@/lib/db");
-  const { runOccasionAutomation } = await import(
+  const { listOccasionsWithEnabledAutomation, runOccasionAutomation } = await import(
     "@/lib/automation/run-occasion"
   );
   const { formatMessageWorkerSummary } = await import(
@@ -103,9 +103,7 @@ async function main() {
       );
     }
 
-    const occasions = await prisma.occasion.findMany({
-      select: { id: true, name: true },
-    });
+    const occasions = await listOccasionsWithEnabledAutomation();
 
     for (const occasion of occasions) {
       const summary = await runOccasionAutomation(occasion.id);

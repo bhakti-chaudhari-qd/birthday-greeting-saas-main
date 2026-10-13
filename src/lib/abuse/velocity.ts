@@ -1,7 +1,8 @@
-import { Prisma } from "@prisma/client";
+import { randomUUID } from "node:crypto";
 
 import { prisma } from "@/lib/db";
 import { getEffectiveMonthlyMessageLimit } from "@/lib/queue/limits";
+import { utcTimestampSql } from "@/lib/queue/sql-time";
 
 export class SendVelocityError extends Error {
   constructor(message: string) {
@@ -56,61 +57,37 @@ async function bumpBucket(
   overLimitMessage: string,
 ): Promise<void> {
   const now = new Date();
-  const existing = await prisma.authRateLimit.findUnique({
-    where: { bucketKey },
-  });
+  const nowSql = utcTimestampSql(now);
+  const windowCutoffSql = utcTimestampSql(new Date(now.getTime() - windowMs));
 
-  if (!existing) {
-    try {
-      await prisma.authRateLimit.create({
-        data: {
-          bucketKey,
-          hitCount: 1,
-          windowStart: now,
-        },
-      });
-      return;
-    } catch (error) {
-      if (
-        !(
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === "P2002"
-        )
-      ) {
-        throw error;
-      }
-      // Concurrent first-hit race - fall through to update path.
-    }
-  }
+  // One atomic statement: concurrent sends each take a row lock in turn, so
+  // no hit is lost and the limit cannot be overshot. No row back = over limit.
+  const bumped = await prisma.$queryRaw<Array<{ hitCount: number }>>`
+    INSERT INTO "AuthRateLimit" AS rl
+      ("id", "bucketKey", "hitCount", "windowStart", "updatedAt")
+    VALUES (${randomUUID()}, ${bucketKey}, 1, ${nowSql}, ${nowSql})
+    ON CONFLICT ("bucketKey") DO UPDATE SET
+      "hitCount" = CASE
+        WHEN rl."windowStart" < ${windowCutoffSql} THEN 1
+        ELSE rl."hitCount" + 1
+      END,
+      "windowStart" = CASE
+        WHEN rl."windowStart" < ${windowCutoffSql} THEN ${nowSql}
+        ELSE rl."windowStart"
+      END,
+      "lockedUntil" = CASE
+        WHEN rl."windowStart" < ${windowCutoffSql} THEN NULL
+        ELSE rl."lockedUntil"
+      END,
+      "updatedAt" = ${nowSql}
+    WHERE rl."windowStart" < ${windowCutoffSql}
+      OR rl."hitCount" < ${maxHits}
+    RETURNING rl."hitCount"
+  `;
 
-  const current = await prisma.authRateLimit.findUnique({
-    where: { bucketKey },
-  });
-  if (!current) {
+  if (bumped.length === 0) {
     throw new SendVelocityError(overLimitMessage);
   }
-
-  const age = now.getTime() - current.windowStart.getTime();
-  if (age > windowMs) {
-    await prisma.authRateLimit.update({
-      where: { bucketKey },
-      data: {
-        hitCount: 1,
-        windowStart: now,
-        lockedUntil: null,
-      },
-    });
-    return;
-  }
-
-  if (current.hitCount >= maxHits) {
-    throw new SendVelocityError(overLimitMessage);
-  }
-
-  await prisma.authRateLimit.update({
-    where: { bucketKey },
-    data: { hitCount: current.hitCount + 1 },
-  });
 }
 
 function resolvePlatformVelocityCeilings() {
@@ -119,7 +96,7 @@ function resolvePlatformVelocityCeilings() {
     10,
   );
   const configuredDay = Number.parseInt(
-    process.env.SEND_VELOCITY_PER_DAY ?? "5000",
+    process.env.SEND_VELOCITY_PER_DAY ?? "10000",
     10,
   );
 
@@ -129,7 +106,7 @@ function resolvePlatformVelocityCeilings() {
         ? configuredMinute
         : 60,
     perDay:
-      Number.isFinite(configuredDay) && configuredDay > 0 ? configuredDay : 5000,
+      Number.isFinite(configuredDay) && configuredDay > 0 ? configuredDay : 10000,
   };
 }
 
@@ -143,16 +120,13 @@ async function resolveOrganizationVelocityLimits(organizationId: string) {
   const monthlyMessageLimit = subscription
     ? getEffectiveMonthlyMessageLimit(subscription)
     : 500;
-  const subscriptionPerMinute = Math.max(
-    60,
-    Math.ceil(monthlyMessageLimit / 1440),
-  );
   const subscriptionPerDay = monthlyMessageLimit;
 
-  // Env vars are the platform ceiling (raise in prod for large tenants).
-  // Effective monthly capacity (plan + bonus) sets the tenant's own cap beneath that.
+  // Per minute is pure pacing, the same for every tenant: SEND_VELOCITY_PER_MINUTE.
+  // Per day is the platform ceiling with the tenant's effective monthly
+  // capacity (plan + bonus) as its own cap beneath that.
   return {
-    perMinute: Math.min(ceilings.perMinute, subscriptionPerMinute),
+    perMinute: ceilings.perMinute,
     perDay: Math.min(ceilings.perDay, subscriptionPerDay),
   };
 }

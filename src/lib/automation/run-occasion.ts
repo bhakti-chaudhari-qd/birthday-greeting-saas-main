@@ -1,4 +1,4 @@
-import { Channel } from "@prisma/client";
+import { Channel, type Prisma } from "@prisma/client";
 
 import {
   assertTemplateForRule,
@@ -21,6 +21,32 @@ function resolveAutomationTargetDate(referenceDate?: Date) {
   return parseTargetDate(isoDate);
 }
 
+/** A rule that can actually queue something: a channel switched on with a template. */
+const ENABLED_AUTOMATION_RULE_WHERE: Prisma.CategoryAutomationRuleWhereInput = {
+  OR: [
+    { smsEnabled: true, smsTemplateId: { not: null } },
+    { whatsappEnabled: true, whatsappTemplateId: { not: null } },
+    { emailEnabled: true, emailTemplateId: { not: null } },
+    { callEnabled: true, callTemplateId: { not: null } },
+  ],
+};
+
+/**
+ * Occasions worth running automation for: active organization and at least
+ * one enabled rule. Schedulers iterate this instead of every occasion row,
+ * so an idle pass does not cost a round of queries per tenant.
+ */
+export async function listOccasionsWithEnabledAutomation() {
+  return prisma.occasion.findMany({
+    where: {
+      organization: { isActive: true },
+      automationRules: { some: ENABLED_AUTOMATION_RULE_WHERE },
+    },
+    orderBy: [{ organizationId: "asc" }, { id: "asc" }],
+    select: { id: true, name: true },
+  });
+}
+
 /**
  * Occasion automation is generation-only. Workers deliver queued messages.
  * Every organization's contacts route through category-specific rules (or
@@ -41,12 +67,7 @@ export async function runOccasionAutomation(
       categoryAutomationRules: {
         some: {
           occasionId,
-          OR: [
-            { smsEnabled: true, smsTemplateId: { not: null } },
-            { whatsappEnabled: true, whatsappTemplateId: { not: null } },
-            { emailEnabled: true, emailTemplateId: { not: null } },
-            { callEnabled: true, callTemplateId: { not: null } },
-          ],
+          ...ENABLED_AUTOMATION_RULE_WHERE,
         },
       },
     },
