@@ -5,7 +5,13 @@ export const ADMIN_NAV: readonly DashboardNavItem[] = [
   { label: "Usage", href: "/admin/usage" },
   { label: "Clients", href: "/admin/organizations" },
   { label: "Vendors", href: "/admin/vendors" },
-  { label: "Settings", href: "/admin/settings/plan-catalogue" },
+  {
+    label: "Settings",
+    children: [
+      { label: "Plan Catalogue", href: "/admin/settings/plan-catalogue" },
+      { label: "Daily Summary", href: "/admin/settings/daily-summary" },
+    ],
+  },
 ] as const;
 
 export const ADMIN_HOME_HREF = "/admin";

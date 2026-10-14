@@ -8,7 +8,7 @@ export type ShellDict = {
   platformAdminPortalLabel: string;
   /** Keyed by nav href (stable), for items that link somewhere. */
   navLabelsByHref: Record<string, string>;
-  /** Keyed by the group's English label (there's only one group, "Settings"). */
+  /** Keyed by the group's English label (both portals use one group, "Settings"). */
   navGroupLabelsByEnglishLabel: Record<string, string>;
   signOut: {
     signOut: string;
@@ -43,7 +43,8 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/admin/usage": "Usage",
       "/admin/organizations": "Clients",
       "/admin/vendors": "Vendors",
-      "/admin/settings/plan-catalogue": "Settings",
+      "/admin/settings/plan-catalogue": "Plan Catalogue",
+      "/admin/settings/daily-summary": "Daily Summary",
     },
     navGroupLabelsByEnglishLabel: {
       Settings: "Settings",
@@ -80,7 +81,8 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/admin/usage": "उपयोग",
       "/admin/organizations": "क्लायंट",
       "/admin/vendors": "वेंडर",
-      "/admin/settings/plan-catalogue": "सेटिंग्स",
+      "/admin/settings/plan-catalogue": "प्लान कैटलॉग",
+      "/admin/settings/daily-summary": "रोज़ का सारांश",
     },
     navGroupLabelsByEnglishLabel: {
       Settings: "सेटिंग्स",
@@ -117,7 +119,8 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/admin/usage": "वापर",
       "/admin/organizations": "क्लायंट",
       "/admin/vendors": "व्हेंडर",
-      "/admin/settings/plan-catalogue": "सेटिंग्ज",
+      "/admin/settings/plan-catalogue": "प्लॅन कॅटलॉग",
+      "/admin/settings/daily-summary": "रोजचा सारांश",
     },
     navGroupLabelsByEnglishLabel: {
       Settings: "सेटिंग्ज",

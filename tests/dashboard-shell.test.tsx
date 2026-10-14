@@ -35,14 +35,14 @@ vi.mock("next/link", () => ({
 }));
 
 import { AppShell } from "@/components/dashboard/app-shell";
-import { collectNavHrefs } from "@/lib/dashboard/navigation";
+import { DASHBOARD_NAV, collectNavHrefs } from "@/lib/dashboard/navigation";
 
 describe("authenticated app shell navigation", () => {
   beforeEach(() => {
     pathnameRef.current = "/dashboard";
   });
 
-  it("renders brand, grouped labels, nested destinations, and a single top-bar sign out", () => {
+  it("renders brand, grouped labels, nested destinations, and the top-bar user menu", () => {
     const html = renderToStaticMarkup(
       <AppShell user={{ name: "Ada Lovelace", email: "ada@example.com" }}>
         <div>Page body</div>
@@ -70,17 +70,19 @@ describe("authenticated app shell navigation", () => {
     expect(html).not.toContain(">Birthdays<");
     expect(html).not.toContain(">Delivery results<");
 
-    // Sign out lives in the sticky top bar only (not the mobile menu drawer)
-    expect(html.match(/Sign out/g)?.length).toBe(1);
+    // Sign out lives in the user menu on the far right of the top bar, which
+    // only renders its items once opened - so a static render shows the
+    // trigger (the user's name) and no Sign out item anywhere, including the
+    // mobile menu drawer.
+    expect(html).toContain("Ada Lovelace");
+    expect(html).not.toContain("Sign out");
 
     // Collapsed Settings: top-level hrefs render; nested Settings children do not.
-    const settingsChildHrefs = new Set([
-      "/dashboard/settings/channels",
-      "/dashboard/templates",
-      "/dashboard/settings/occasions",
-      "/dashboard/settings/contact-fields",
-      "/dashboard/settings/billing",
-    ]);
+    const settingsChildHrefs = new Set(
+      DASHBOARD_NAV.flatMap((item) =>
+        item.children ? item.children.map((child) => child.href) : [],
+      ),
+    );
     for (const href of collectNavHrefs()) {
       if (settingsChildHrefs.has(href)) {
         expect(html).not.toContain(`href="${href}"`);

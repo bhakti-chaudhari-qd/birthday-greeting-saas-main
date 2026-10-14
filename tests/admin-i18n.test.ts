@@ -27,6 +27,7 @@ describe("admin i18n: shell nav", () => {
       "/admin/organizations",
       "/admin/vendors",
       "/admin/settings/plan-catalogue",
+      "/admin/settings/daily-summary",
     ];
 
     for (const locale of ["hi", "mr"] as const) {
