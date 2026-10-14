@@ -1,11 +1,13 @@
 import path from "node:path";
 
 import { Prisma } from "@prisma/client";
+import { PageSizes, PDFDocument } from "pdf-lib";
 
 import { prisma } from "@/lib/db";
 import { resolveOccasionId } from "@/lib/occasions/queries";
 import { OccasionValidationError } from "@/lib/occasions/service";
 import type {
+  CreateBlankDocumentTemplateInput,
   CreateDocumentTemplateMetadataInput,
   ListDocumentTemplatesQuery,
   UpdateDocumentTemplateInput,
@@ -129,6 +131,55 @@ export async function createDocumentTemplate(
       fileName: pdf.fileName,
       contentType: "application/pdf",
       byteLength: pdf.bytes.length,
+      createdByUserId,
+    },
+    select: LIST_SELECT,
+  });
+}
+
+const BLANK_PAGE_DIMENSIONS: Record<
+  CreateBlankDocumentTemplateInput["pageSize"],
+  [number, number]
+> = {
+  A4: PageSizes.A4,
+  LETTER: PageSizes.Letter,
+};
+
+/** Single white page - the editor only lays out page 1. */
+export async function buildBlankTemplatePdf(
+  pageSize: CreateBlankDocumentTemplateInput["pageSize"],
+  orientation: CreateBlankDocumentTemplateInput["orientation"],
+): Promise<Buffer> {
+  const [shortSide, longSide] = BLANK_PAGE_DIMENSIONS[pageSize];
+  const pdfDoc = await PDFDocument.create();
+  pdfDoc.addPage(
+    orientation === "landscape" ? [longSide, shortSide] : [shortSide, longSide],
+  );
+  return Buffer.from(await pdfDoc.save());
+}
+
+/** Creates a template from a blank page, to be designed in the editor. */
+export async function createBlankDocumentTemplate(
+  organizationId: string,
+  createdByUserId: string,
+  input: CreateBlankDocumentTemplateInput,
+): Promise<DocumentTemplateWithOccasion> {
+  const occasionId = await assertOccasionForOrganization(
+    organizationId,
+    input.occasionId,
+  );
+  const name = input.name.trim();
+  const bytes = await buildBlankTemplatePdf(input.pageSize, input.orientation);
+
+  return prisma.documentTemplate.create({
+    data: {
+      organizationId,
+      name,
+      occasionId,
+      bytes: Uint8Array.from(bytes),
+      fileName: `${name.replace(/[\\/\0]/g, "-")}.pdf`,
+      contentType: "application/pdf",
+      byteLength: bytes.length,
       createdByUserId,
     },
     select: LIST_SELECT,

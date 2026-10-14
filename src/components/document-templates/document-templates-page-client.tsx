@@ -1,6 +1,7 @@
 "use client";
 
 import { useConfirm } from "@/components/ui/confirm";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { InlineAlert, StatusBadge } from "@/components/ui/feedback";
@@ -36,6 +37,15 @@ type OccasionOption = {
 
 const emptyUploadForm = { name: "", occasionId: "" };
 
+type CreateMode = "upload" | "blank";
+
+const BLANK_PAGE_OPTIONS = [
+  { value: "A4:portrait", labelKey: "pageA4Portrait" },
+  { value: "A4:landscape", labelKey: "pageA4Landscape" },
+  { value: "LETTER:portrait", labelKey: "pageLetterPortrait" },
+  { value: "LETTER:landscape", labelKey: "pageLetterLandscape" },
+] as const;
+
 function formatBytes(byteLength: number): string {
   if (byteLength < 1024) {
     return `${byteLength} B`;
@@ -60,7 +70,10 @@ export function DocumentTemplatesManager() {
   const [uploadForm, setUploadForm] = useState(emptyUploadForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [createMode, setCreateMode] = useState<CreateMode>("upload");
+  const [blankPage, setBlankPage] = useState<string>(BLANK_PAGE_OPTIONS[0].value);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   async function loadTemplates() {
     setLoading(true);
@@ -99,8 +112,41 @@ export function DocumentTemplatesManager() {
     void loadOccasionOptions();
   }, []);
 
+  async function handleCreateBlank() {
+    const [pageSize, orientation] = blankPage.split(":");
+    setUploading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/v1/document-templates/blank", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: uploadForm.name,
+          occasionId: uploadForm.occasionId || undefined,
+          pageSize,
+          orientation,
+        }),
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        setError(body.error?.message ?? dict.couldNotCreate);
+        setUploading(false);
+        return;
+      }
+      // Straight into the editor - a blank page is only useful once designed.
+      router.push(`/dashboard/document-templates/${body.data.id}/edit`);
+    } catch {
+      setError(dict.couldNotCreateConn);
+      setUploading(false);
+    }
+  }
+
   async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (createMode === "blank") {
+      await handleCreateBlank();
+      return;
+    }
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
       setError(dict.chooseFile);
@@ -198,6 +244,29 @@ export function DocumentTemplatesManager() {
       {error ? <InlineAlert tone="error">{error}</InlineAlert> : null}
 
       <Panel className="p-4">
+        <div
+          role="radiogroup"
+          aria-label={dict.startFromLabel}
+          className="mb-3 flex items-center gap-2 text-sm"
+        >
+          <span className="font-medium text-stone-800">{dict.startFromLabel}</span>
+          {(["upload", "blank"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              role="radio"
+              aria-checked={createMode === mode}
+              onClick={() => setCreateMode(mode)}
+              className={`rounded-full border px-3 py-1 transition-colors ${
+                createMode === mode
+                  ? "border-stone-900 bg-stone-900 text-white"
+                  : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50"
+              }`}
+            >
+              {mode === "upload" ? dict.modeUpload : dict.modeBlank}
+            </button>
+          ))}
+        </div>
         <form
           className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto]"
           onSubmit={handleUpload}
@@ -237,19 +306,42 @@ export function DocumentTemplatesManager() {
               ))}
             </select>
           </label>
-          <label className="block text-sm">
-            <span className="font-medium text-stone-800">{dict.pdfFileLabel}</span>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              className={`${inputClass} mt-1 file:mr-3 file:rounded-full file:border-0 file:bg-stone-100 file:px-3 file:py-1.5 file:text-sm file:font-medium`}
-              required
-            />
-          </label>
+          {createMode === "blank" ? (
+            <label className="block text-sm">
+              <span className="font-medium text-stone-800">{dict.pageSizeLabel}</span>
+              <select
+                className={`${inputClass} mt-1`}
+                value={blankPage}
+                onChange={(event) => setBlankPage(event.target.value)}
+              >
+                {BLANK_PAGE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {dict[option.labelKey]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <label className="block text-sm">
+              <span className="font-medium text-stone-800">{dict.pdfFileLabel}</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                className={`${inputClass} mt-1 file:mr-3 file:rounded-full file:border-0 file:bg-stone-100 file:px-3 file:py-1.5 file:text-sm file:font-medium`}
+                required
+              />
+            </label>
+          )}
           <div className="flex items-end">
             <button type="submit" className={primaryButtonClass} disabled={uploading}>
-              {uploading ? dict.uploading : dict.upload}
+              {createMode === "blank"
+                ? uploading
+                  ? dict.creatingBlank
+                  : dict.createBlank
+                : uploading
+                  ? dict.uploading
+                  : dict.upload}
             </button>
           </div>
         </form>

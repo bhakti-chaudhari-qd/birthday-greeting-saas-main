@@ -20,6 +20,18 @@ export type DocumentTemplatesDict = {
     occasionLabel: string;
     noneOption: string;
     pdfFileLabel: string;
+    startFromLabel: string;
+    modeUpload: string;
+    modeBlank: string;
+    pageSizeLabel: string;
+    pageA4Portrait: string;
+    pageA4Landscape: string;
+    pageLetterPortrait: string;
+    pageLetterLandscape: string;
+    createBlank: string;
+    creatingBlank: string;
+    couldNotCreate: string;
+    couldNotCreateConn: string;
     uploading: string;
     upload: string;
     loading: string;
@@ -101,7 +113,7 @@ const DOCUMENT_TEMPLATES_DICT: Record<Locale, DocumentTemplatesDict> = {
     pageList: {
       title: "Document Templates",
       description:
-        "Upload a base PDF or Word design, lay out text and variables in the editor, then generate personalized PDFs.",
+        "Upload a base PDF or Word design (or start from a blank page), lay out text and variables in the editor, then generate personalized PDFs.",
       generatedDocuments: "Generated Documents",
       couldNotLoad: "Could not load document templates.",
       couldNotLoadConn:
@@ -122,6 +134,18 @@ const DOCUMENT_TEMPLATES_DICT: Record<Locale, DocumentTemplatesDict> = {
       occasionLabel: "Occasion (optional)",
       noneOption: "None",
       pdfFileLabel: "PDF or Word file",
+      startFromLabel: "Start from",
+      modeUpload: "Upload a file",
+      modeBlank: "Blank page",
+      pageSizeLabel: "Page size",
+      pageA4Portrait: "A4 · Portrait",
+      pageA4Landscape: "A4 · Landscape",
+      pageLetterPortrait: "Letter · Portrait",
+      pageLetterLandscape: "Letter · Landscape",
+      createBlank: "Create & edit",
+      creatingBlank: "Creating...",
+      couldNotCreate: "Could not create blank template.",
+      couldNotCreateConn: "Could not create blank template. Check your connection and try again.",
       uploading: "Uploading...",
       upload: "Upload",
       loading: "Loading document templates...",
@@ -226,6 +250,18 @@ const DOCUMENT_TEMPLATES_DICT: Record<Locale, DocumentTemplatesDict> = {
       occasionLabel: "अवसर (वैकल्पिक)",
       noneOption: "कोई नहीं",
       pdfFileLabel: "पीडीएफ या वर्ड फ़ाइल",
+      startFromLabel: "शुरुआत करें",
+      modeUpload: "फ़ाइल अपलोड करें",
+      modeBlank: "खाली पेज",
+      pageSizeLabel: "पेज साइज़",
+      pageA4Portrait: "A4 · पोर्ट्रेट",
+      pageA4Landscape: "A4 · लैंडस्केप",
+      pageLetterPortrait: "लेटर · पोर्ट्रेट",
+      pageLetterLandscape: "लेटर · लैंडस्केप",
+      createBlank: "बनाएँ और एडिट करें",
+      creatingBlank: "बन रहा है...",
+      couldNotCreate: "खाली टेम्पलेट नहीं बन सका।",
+      couldNotCreateConn: "खाली टेम्पलेट नहीं बन सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
       uploading: "अपलोड हो रहा है...",
       upload: "अपलोड करें",
       loading: "डॉक्यूमेंट टेम्पलेट लोड हो रहे हैं...",
@@ -329,6 +365,18 @@ const DOCUMENT_TEMPLATES_DICT: Record<Locale, DocumentTemplatesDict> = {
       occasionLabel: "प्रसंग (ऐच्छिक)",
       noneOption: "काहीही नाही",
       pdfFileLabel: "पीडीएफ किंवा वर्ड फाइल",
+      startFromLabel: "सुरुवात करा",
+      modeUpload: "फाइल अपलोड करा",
+      modeBlank: "रिकामे पेज",
+      pageSizeLabel: "पेज आकार",
+      pageA4Portrait: "A4 · पोर्ट्रेट",
+      pageA4Landscape: "A4 · लँडस्केप",
+      pageLetterPortrait: "लेटर · पोर्ट्रेट",
+      pageLetterLandscape: "लेटर · लँडस्केप",
+      createBlank: "तयार करा आणि एडिट करा",
+      creatingBlank: "तयार होत आहे...",
+      couldNotCreate: "रिकामे टेम्पलेट तयार होऊ शकले नाही.",
+      couldNotCreateConn: "रिकामे टेम्पलेट तयार होऊ शकले नाही. तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.",
       uploading: "अपलोड होत आहे...",
       upload: "अपलोड करा",
       loading: "डॉक्युमेंट टेम्पलेट लोड होत आहेत...",

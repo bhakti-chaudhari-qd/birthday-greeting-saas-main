@@ -8,6 +8,18 @@ export const createDocumentTemplateMetadataSchema = z.object({
   occasionId: occasionIdSchema.optional(),
 });
 
+export const BLANK_PAGE_SIZES = ["A4", "LETTER"] as const;
+export const BLANK_PAGE_ORIENTATIONS = ["portrait", "landscape"] as const;
+
+export const createBlankDocumentTemplateSchema = z
+  .object({
+    name: documentTemplateNameSchema,
+    occasionId: occasionIdSchema.optional(),
+    pageSize: z.enum(BLANK_PAGE_SIZES).default("A4"),
+    orientation: z.enum(BLANK_PAGE_ORIENTATIONS).default("portrait"),
+  })
+  .strict();
+
 export const updateDocumentTemplateSchema = z
   .object({
     name: documentTemplateNameSchema.optional(),
@@ -26,6 +38,9 @@ export const listDocumentTemplatesQuerySchema = z.object({
 
 export type CreateDocumentTemplateMetadataInput = z.infer<
   typeof createDocumentTemplateMetadataSchema
+>;
+export type CreateBlankDocumentTemplateInput = z.infer<
+  typeof createBlankDocumentTemplateSchema
 >;
 export type UpdateDocumentTemplateInput = z.infer<
   typeof updateDocumentTemplateSchema
