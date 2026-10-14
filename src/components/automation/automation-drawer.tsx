@@ -1,5 +1,6 @@
 "use client";
 
+import type { Channel } from "@prisma/client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -13,12 +14,7 @@ import { useLocale } from "@/lib/i18n/use-locale";
 
 import { CategoryMultiSelect } from "./category-multi-select";
 import { buildRulePayload, toPayloadRule, type ChannelSelection } from "./rule-utils";
-import {
-  CHANNEL_LABEL,
-  type AutomationCardData,
-  type MessageChannel as Channel,
-  type OrgCategory,
-} from "./types";
+import { CHANNEL_LABEL, type AutomationCardData, type OrgCategory } from "./types";
 
 type SettingsByOccasion = Partial<Record<string, CategoryAutomationSettingsView>>;
 
@@ -37,13 +33,14 @@ type ChannelFormState = { enabled: boolean; templateId: string };
 
 type PreviewState = { body: string; previewMessage: string; emailSubject: string | null };
 
-const CHANNELS: Channel[] = ["WHATSAPP", "EMAIL", "SMS"];
+const CHANNELS: Channel[] = ["WHATSAPP", "EMAIL", "SMS", "CALL"];
 
 function emptyChannelForm(): Record<Channel, ChannelFormState> {
   return {
     WHATSAPP: { enabled: false, templateId: "" },
     EMAIL: { enabled: false, templateId: "" },
     SMS: { enabled: false, templateId: "" },
+    CALL: { enabled: false, templateId: "" },
   };
 }
 
@@ -69,7 +66,8 @@ export function AutomationDrawer({
   settingsByOccasion,
   onSaved,
 }: AutomationDrawerProps) {
-  const dict = getGreetingRoutesDict(useLocale()).drawer;
+  const routesDict = getGreetingRoutesDict(useLocale());
+  const dict = routesDict.drawer;
   const isEdit = automation !== null;
 
   const { occasions } = useOccasions();
@@ -88,7 +86,8 @@ export function AutomationDrawer({
   const [channelStatus, setChannelStatus] = useState<{
     sms: ChannelStatus;
     whatsapp: ChannelStatus;
-  }>({ sms: null, whatsapp: null });
+    call: ChannelStatus;
+  }>({ sms: null, whatsapp: null, call: null });
 
   useEffect(() => {
     function resetForm() {
@@ -122,11 +121,16 @@ export function AutomationDrawer({
     }
     async function loadChannelStatus() {
       try {
-        const [smsRes, waRes] = await Promise.all([
+        const [smsRes, waRes, callRes] = await Promise.all([
           fetch("/api/v1/channel-config/sms"),
           fetch("/api/v1/channel-config/whatsapp"),
+          fetch("/api/v1/channel-config/call"),
         ]);
-        const [smsBody, waBody] = await Promise.all([smsRes.json(), waRes.json()]);
+        const [smsBody, waBody, callBody] = await Promise.all([
+          smsRes.json(),
+          waRes.json(),
+          callRes.json(),
+        ]);
         setChannelStatus({
           sms: smsRes.ok
             ? smsBody.data?.usingPlatformDefault
@@ -137,6 +141,9 @@ export function AutomationDrawer({
             ? waBody.data?.usingPlatformDefault
               ? { configured: true, isActive: true }
               : { configured: waBody.data?.configured, isActive: waBody.data?.isActive }
+            : null,
+          call: callRes.ok
+            ? { configured: callBody.data?.configured, isActive: callBody.data?.isActive }
             : null,
         });
       } catch {
@@ -183,7 +190,12 @@ export function AutomationDrawer({
   const alreadyConfigured =
     !isEdit &&
     existingRules.some((rule) =>
-      Boolean(rule.smsTemplateId || rule.whatsappTemplateId || rule.emailTemplateId),
+      Boolean(
+        rule.smsTemplateId ||
+          rule.whatsappTemplateId ||
+          rule.emailTemplateId ||
+          rule.callTemplateId,
+      ),
     );
 
   function eligibleTemplatesFor(channel: Channel) {
@@ -193,7 +205,9 @@ export function AutomationDrawer({
         ? settings.eligibleSmsTemplates
         : channel === "WHATSAPP"
           ? settings.eligibleWhatsAppTemplates
-          : settings.eligibleEmailTemplates;
+          : channel === "CALL"
+            ? (settings.eligibleCallTemplates ?? [])
+            : settings.eligibleEmailTemplates;
     if (categoryIds.length === 0) {
       return [];
     }
@@ -206,7 +220,8 @@ export function AutomationDrawer({
   }
 
   function loadPreview(channel: Channel, templateId: string) {
-    if (!templateId) {
+    // A call plays a recording - there is no text body to preview.
+    if (!templateId || channel === "CALL") {
       setPreviews((current) => ({ ...current, [channel]: undefined }));
       return;
     }
@@ -395,7 +410,14 @@ export function AutomationDrawer({
           {CHANNELS.map((channel) => {
             const state = channelForm[channel];
             const providerStatus =
-              channel === "SMS" ? channelStatus.sms : channel === "WHATSAPP" ? channelStatus.whatsapp : null;
+              channel === "SMS"
+                ? channelStatus.sms
+                : channel === "WHATSAPP"
+                  ? channelStatus.whatsapp
+                  : channel === "CALL"
+                    ? channelStatus.call
+                    : null;
+            const isCall = channel === "CALL";
             const providerConnected = providerStatus ? providerStatus.configured && providerStatus.isActive : null;
             const templates = eligibleTemplatesFor(channel);
             const preview = previews[channel];
@@ -423,7 +445,12 @@ export function AutomationDrawer({
                       </p>
                     ) : (
                       <p className="text-xs text-stone-500">
-                        {channel === "WHATSAPP" ? dict.businessAccount : dict.smsProvider}:{" "}
+                        {channel === "WHATSAPP"
+                          ? dict.businessAccount
+                          : isCall
+                            ? dict.callProvider
+                            : dict.smsProvider}
+                        :{" "}
                         {providerConnected === null ? (
                           dict.checking
                         ) : providerConnected ? (
@@ -432,7 +459,11 @@ export function AutomationDrawer({
                           <>
                             <span className="font-medium text-amber-700">{dict.notConnected}</span> -{" "}
                             <Link
-                              href="/dashboard/settings/channels"
+                              href={
+                                isCall
+                                  ? "/dashboard/settings/channels?tab=call"
+                                  : "/dashboard/settings/channels"
+                              }
                               className="font-medium text-primary hover:underline"
                             >
                               {dict.setUpInSettings}
@@ -443,13 +474,17 @@ export function AutomationDrawer({
                     )}
 
                     <label className="block text-sm">
-                      <span className="text-xs font-medium text-stone-700">{dict.approvedTemplate}</span>
+                      <span className="text-xs font-medium text-stone-700">
+                        {isCall ? dict.recording : dict.approvedTemplate}
+                      </span>
                       <select
                         className={`${inputClass} mt-1`}
                         value={state.templateId}
                         onChange={(event) => setChannelTemplate(channel, event.target.value)}
                       >
-                        <option value="">{dict.chooseTemplate}</option>
+                        <option value="">
+                          {isCall ? routesDict.table.chooseRecording : dict.chooseTemplate}
+                        </option>
                         {templates.map((template) => (
                           <option key={template.id} value={template.id}>
                             {template.name}
@@ -462,6 +497,18 @@ export function AutomationDrawer({
                         </span>
                       ) : null}
                     </label>
+
+                    {isCall ? (
+                      <p className="text-xs text-stone-500">
+                        {routesDict.table.callHint}{" "}
+                        <Link
+                          href="/dashboard/settings/channels?tab=call"
+                          className="font-medium text-primary hover:underline"
+                        >
+                          {routesDict.table.manageRecordings}
+                        </Link>
+                      </p>
+                    ) : null}
 
                     {previewLoading === channel ? (
                       <p className="text-xs text-stone-500">{dict.loadingPreview}</p>

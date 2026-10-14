@@ -153,6 +153,7 @@ export function OccasionsListClient({
         automationEnabled: false,
         whatsappAutomationEnabled: false,
         emailAutomationEnabled: false,
+        callAutomationEnabled: false,
         sendTimeLabel: dict.notConfigured,
         contacts: [],
       }
@@ -263,7 +264,10 @@ export function OccasionsListClient({
               {categoryId !== "all" ? ` · ${selectedCategoryName}` : ""}
             </h2>
             <p className="mt-1 text-xs text-stone-500">
-              {section.automationEnabled || section.whatsappAutomationEnabled
+              {section.automationEnabled ||
+              section.whatsappAutomationEnabled ||
+              section.emailAutomationEnabled ||
+              section.callAutomationEnabled
                 ? formatScheduledSendDetail(date, section.sendTimeLabel)
                 : dict.automaticSendingOff}
             </p>
@@ -283,6 +287,10 @@ export function OccasionsListClient({
                     contact.deliveryStatus,
                     contact.whatsappAutomationEnabled,
                     contact.whatsappDeliveryStatus,
+                    Boolean(contact.emailAutomationEnabled),
+                    contact.emailDeliveryStatus ?? "not_scheduled",
+                    Boolean(contact.callAutomationEnabled),
+                    contact.callDeliveryStatus ?? "not_scheduled",
                   );
                   return (
                     <div

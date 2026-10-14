@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 const groupedQuerySchema = z.object({
   search: z.string().trim().max(100).optional(),
   status: z.enum(["all", "sent", "failed", "pending"]).optional(),
-  channel: z.enum(["SMS", "WHATSAPP", "EMAIL"]).optional(),
+  channel: z.enum(["SMS", "WHATSAPP", "EMAIL", "CALL"]).optional(),
   occasionId: z.string().trim().min(1).max(100).optional(),
   categoryId: z.string().trim().min(1).max(100).optional(),
   cursor: z.string().trim().min(1).max(500).optional(),
@@ -48,7 +48,8 @@ export async function GET(request: Request) {
       channel:
         channelParam === "SMS" ||
         channelParam === "WHATSAPP" ||
-        channelParam === "EMAIL"
+        channelParam === "EMAIL" ||
+        channelParam === "CALL"
           ? channelParam
           : undefined,
       occasionId: searchParams.get("occasionId") ?? undefined,

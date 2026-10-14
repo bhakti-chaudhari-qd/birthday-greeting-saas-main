@@ -276,7 +276,9 @@ export function MessagePreviewDialog({
                     </p>
                   ) : (
                     <p className="mt-3 text-sm text-stone-500">
-                      No message text for this channel.
+                      {part.channel === "CALL"
+                        ? "Plays the recorded voice message."
+                        : "No message text for this channel."}
                     </p>
                   )}
                 </section>

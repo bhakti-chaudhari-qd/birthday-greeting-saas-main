@@ -101,13 +101,13 @@ export function createLegacyHttpVoiceProvider(
         if (response.status >= 500) {
           // The call may already be placed; HTTP 5xx alone does not prove otherwise.
           throw new ProviderSendError(
-            "Call provider returned a server error",
+            `Call provider returned a server error (HTTP ${response.status})`,
             "PROVIDER_HTTP_5XX",
           );
         }
 
         throw new ProviderSendError(
-          "Call provider rejected the request",
+          `Call provider rejected the request (HTTP ${response.status})`,
           "PROVIDER_HTTP_4XX",
         );
       }

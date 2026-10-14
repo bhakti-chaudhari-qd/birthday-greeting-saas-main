@@ -2,11 +2,7 @@ import type { Channel } from "@prisma/client";
 
 import type { CategoryAutomationRuleView } from "@/lib/automation/category-settings";
 
-import {
-  CHANNEL_LABEL,
-  type AutomationCardData,
-  type MessageChannel,
-} from "./types";
+import { CHANNEL_LABEL, type AutomationCardData } from "./types";
 
 export type RulePayload = {
   categoryId: string;
@@ -62,7 +58,7 @@ export function toPayloadRule(rule: {
  * Builds the full payload for one automation (all channels at once) from drawer form state.
  * `active` is the automation's overall Active/Paused status - saving edits to a paused
  * automation must not silently resume it, so `checked` (channel membership) and the actual
- * send-enabled flag are tracked separately. The drawer has no Call controls, so the
+ * send-enabled flag are tracked separately. When `channels` has no Call entry, the
  * existing rule's call settings are carried over unchanged.
  */
 export function buildRulePayload(
@@ -77,6 +73,7 @@ export function buildRulePayload(
   const sms = byChannel.get("SMS");
   const whatsapp = byChannel.get("WHATSAPP");
   const email = byChannel.get("EMAIL");
+  const call = byChannel.get("CALL");
 
   return {
     categoryId,
@@ -88,8 +85,14 @@ export function buildRulePayload(
     whatsappTemplateId: whatsapp?.checked ? (whatsapp.templateId ?? null) : null,
     emailEnabled: Boolean(email?.checked && email.templateId) && active,
     emailTemplateId: email?.checked ? (email.templateId ?? null) : null,
-    callEnabled: existing?.callEnabled ?? false,
-    callTemplateId: existing?.callTemplateId ?? null,
+    callEnabled: call
+      ? Boolean(call.checked && call.templateId) && active
+      : (existing?.callEnabled ?? false),
+    callTemplateId: call
+      ? call.checked
+        ? (call.templateId ?? null)
+        : null
+      : (existing?.callTemplateId ?? null),
   };
 }
 
@@ -135,6 +138,7 @@ function templateNameFor(
     eligibleSmsTemplates: Array<{ id: string; name: string }>;
     eligibleWhatsAppTemplates: Array<{ id: string; name: string }>;
     eligibleEmailTemplates: Array<{ id: string; name: string }>;
+    eligibleCallTemplates?: Array<{ id: string; name: string }>;
   },
 ): string {
   const list =
@@ -142,7 +146,9 @@ function templateNameFor(
       ? settings.eligibleSmsTemplates
       : channel === "WHATSAPP"
         ? settings.eligibleWhatsAppTemplates
-        : settings.eligibleEmailTemplates;
+        : channel === "CALL"
+          ? (settings.eligibleCallTemplates ?? [])
+          : settings.eligibleEmailTemplates;
   return list.find((template) => template.id === templateId)?.name ?? "Template unavailable";
 }
 
@@ -163,6 +169,7 @@ export function buildAutomationCards(
     eligibleSmsTemplates: Array<{ id: string; name: string }>;
     eligibleWhatsAppTemplates: Array<{ id: string; name: string }>;
     eligibleEmailTemplates: Array<{ id: string; name: string }>;
+    eligibleCallTemplates?: Array<{ id: string; name: string }>;
   },
 ): AutomationCardData[] {
   const cards: AutomationCardData[] = [];
@@ -173,13 +180,14 @@ export function buildAutomationCards(
     }
 
     const channelRows: Array<{
-      channel: MessageChannel;
+      channel: Channel;
       enabled: boolean;
       templateId: string | null;
     }> = [
       { channel: "WHATSAPP", enabled: rule.whatsappEnabled, templateId: rule.whatsappTemplateId },
       { channel: "EMAIL", enabled: rule.emailEnabled, templateId: rule.emailTemplateId },
       { channel: "SMS", enabled: rule.smsEnabled, templateId: rule.smsTemplateId },
+      { channel: "CALL", enabled: rule.callEnabled, templateId: rule.callTemplateId },
     ];
 
     const hasSendTime = rule.sendHour !== null && rule.sendMinute !== null;

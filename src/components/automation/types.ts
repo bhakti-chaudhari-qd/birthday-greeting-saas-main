@@ -1,6 +1,6 @@
 import type { Channel } from "@prisma/client";
 
-/** Channels with a written message. Call plays a recording and is set up under Greeting Routes. */
+/** Channels with a written message. Call plays a recording instead of a text template. */
 export type MessageChannel = Exclude<Channel, "CALL">;
 
 export type OrgCategory = {
@@ -9,7 +9,7 @@ export type OrgCategory = {
 };
 
 export type AutomationChannelConfig = {
-  channel: MessageChannel;
+  channel: Channel;
   channelLabel: string;
   templateId: string;
   templateName: string;
