@@ -79,6 +79,8 @@ export type GreetingRoutesDict = {
     emailServiceNote: string;
     businessAccount: string;
     smsProvider: string;
+    callProvider: string;
+    recording: string;
     checking: string;
     connected: string;
     notConnected: string;
@@ -319,6 +321,8 @@ const GREETING_ROUTES_DICT: Record<Locale, GreetingRoutesDict> = {
         "Email Service: sent automatically through the platform's email provider - no setup needed.",
       businessAccount: "Business Account",
       smsProvider: "SMS Provider",
+      callProvider: "Call Provider",
+      recording: "Recording",
       checking: "Checking…",
       connected: "Connected",
       notConnected: "Not connected",
@@ -577,6 +581,8 @@ Supports:
         "ईमेल सेवा: प्लेटफ़ॉर्म के ईमेल प्रोवाइडर के ज़रिए अपने आप भेजी जाती है - किसी सेटअप की ज़रूरत नहीं।",
       businessAccount: "बिज़नेस अकाउंट",
       smsProvider: "SMS प्रोवाइडर",
+      callProvider: "कॉल प्रोवाइडर",
+      recording: "रिकॉर्डिंग",
       checking: "जांचा जा रहा है…",
       connected: "जुड़ा हुआ",
       notConnected: "जुड़ा नहीं है",
@@ -834,6 +840,8 @@ Supports:
         "ईमेल सेवा: प्लॅटफॉर्मच्या ईमेल प्रोव्हायडरमार्फत आपोआप पाठवली जाते - कोणत्याही सेटअपची गरज नाही.",
       businessAccount: "बिझनेस अकाउंट",
       smsProvider: "SMS प्रोव्हायडर",
+      callProvider: "कॉल प्रोव्हायडर",
+      recording: "रेकॉर्डिंग",
       checking: "तपासत आहे…",
       connected: "कनेक्ट झाले",
       notConnected: "कनेक्ट झालेले नाही",

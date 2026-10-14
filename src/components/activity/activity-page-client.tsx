@@ -785,6 +785,7 @@ status === "all" ? (
               <option value="WHATSAPP">WhatsApp</option>
               <option value="EMAIL">Email</option>
               <option value="SMS">SMS</option>
+              <option value="CALL">Call</option>
             </select>
           </label>
           <div className="flex items-center gap-1.5">

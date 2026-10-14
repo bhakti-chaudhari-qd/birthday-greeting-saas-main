@@ -45,11 +45,14 @@ export function overallHumanStatus(
   waStatus: OccasionChannelStatus,
   emailEnabled = false,
   emailStatus: OccasionChannelStatus = "not_scheduled",
+  callEnabled = false,
+  callStatus: OccasionChannelStatus = "not_scheduled",
 ): OccasionHumanStatus {
   const channels: Array<[enabled: boolean, status: OccasionChannelStatus]> = [
     [smsEnabled, smsStatus],
     [waEnabled, waStatus],
     [emailEnabled, emailStatus],
+    [callEnabled, callStatus],
   ];
 
   if (channels.length === 0 || channels.every(([enabled]) => !enabled)) {

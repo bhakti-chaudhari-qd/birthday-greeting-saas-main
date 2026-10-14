@@ -66,6 +66,12 @@ export type OccasionDayContact = {
   emailDeliveryStatus?: OccasionDeliveryStatus;
   emailSentAt?: string | null;
   emailFailureReason?: string | null;
+  callAutomationEnabled?: boolean;
+  /** Call message (recording) name from the resolved rule. */
+  callTemplateName?: string | null;
+  callDeliveryStatus?: OccasionDeliveryStatus;
+  callSentAt?: string | null;
+  callFailureReason?: string | null;
 };
 
 export type OccasionDaySection = {
@@ -78,6 +84,7 @@ export type OccasionDaySection = {
   automationEnabled: boolean;
   whatsappAutomationEnabled: boolean;
   emailAutomationEnabled: boolean;
+  callAutomationEnabled: boolean;
   sendTimeLabel: string;
   contacts: OccasionDayContact[];
 };
@@ -157,6 +164,8 @@ type CategoryRuleRouting = {
   whatsappTemplateId: string | null;
   emailEnabled: boolean;
   emailTemplateId: string | null;
+  callEnabled: boolean;
+  callTemplateId: string | null;
   sendHour: number | null;
   sendMinute: number | null;
 };
@@ -220,6 +229,14 @@ function buildSectionContacts(
       lastError: string | null;
     }
   >,
+  callQueueByContactId: Map<
+    string,
+    {
+      status: QueueStatus;
+      sentAt: Date | null;
+      lastError: string | null;
+    }
+  >,
   mediaFilenameByAssetId: Map<string, string>,
 ): OccasionDayContact[] {
   const rows: OccasionDayContact[] = [];
@@ -228,6 +245,7 @@ function buildSectionContacts(
     const queueRow = smsQueueByContactId.get(contact.id);
     const whatsappQueueRow = whatsappQueueByContactId.get(contact.id);
     const emailQueueRow = emailQueueByContactId.get(contact.id);
+    const callQueueRow = callQueueByContactId.get(contact.id);
 
     // Category-specific rule wins; otherwise fall back to the "all contacts" rule.
     const rule =
@@ -238,6 +256,7 @@ function buildSectionContacts(
     let smsEnabled = Boolean(rule?.smsEnabled && rule.smsTemplateId);
     let whatsappEnabled = Boolean(rule?.whatsappEnabled && rule.whatsappTemplateId);
     let emailEnabled = Boolean(rule?.emailEnabled && rule.emailTemplateId);
+    let callEnabled = Boolean(rule?.callEnabled && rule.callTemplateId);
     const smsTemplate = rule?.smsTemplateId
       ? (templateById.get(rule.smsTemplateId) ?? null)
       : null;
@@ -246,6 +265,9 @@ function buildSectionContacts(
       : null;
     const emailTemplate = rule?.emailTemplateId
       ? (templateById.get(rule.emailTemplateId) ?? null)
+      : null;
+    const callTemplate = rule?.callTemplateId
+      ? (templateById.get(rule.callTemplateId) ?? null)
       : null;
     const sendTimeLabel =
       rule && rule.sendHour !== null && rule.sendMinute !== null
@@ -256,6 +278,7 @@ function buildSectionContacts(
       smsEnabled = false;
       whatsappEnabled = false;
       emailEnabled = false;
+      callEnabled = false;
     }
 
     if (smsEnabled && !hasSmsDestination(contact)) {
@@ -267,7 +290,10 @@ function buildSectionContacts(
     if (emailEnabled && !hasEmailDestination(contact)) {
       emailEnabled = false;
     }
-    if (!smsEnabled && !whatsappEnabled && !emailEnabled) {
+    if (callEnabled && !hasSmsDestination(contact)) {
+      callEnabled = false;
+    }
+    if (!smsEnabled && !whatsappEnabled && !emailEnabled && !callEnabled) {
       continue;
     }
 
@@ -335,6 +361,13 @@ function buildSectionContacts(
         : "not_scheduled",
       emailSentAt: emailQueueRow?.sentAt?.toISOString() ?? null,
       emailFailureReason: emailQueueRow?.lastError ?? null,
+      callAutomationEnabled: callEnabled,
+      callTemplateName: callTemplate?.name ?? null,
+      callDeliveryStatus: callQueueRow
+        ? mapQueueStatus(callQueueRow.status)
+        : "not_scheduled",
+      callSentAt: callQueueRow?.sentAt?.toISOString() ?? null,
+      callFailureReason: callQueueRow?.lastError ?? null,
     });
   }
 
@@ -364,7 +397,12 @@ export async function getOccasionsDayView(
   const templateIds = [
     ...new Set(
       categoryRules.flatMap((rule) =>
-        [rule.smsTemplateId, rule.whatsappTemplateId, rule.emailTemplateId].filter(
+        [
+          rule.smsTemplateId,
+          rule.whatsappTemplateId,
+          rule.emailTemplateId,
+          rule.callTemplateId,
+        ].filter(
           (id): id is string => Boolean(id),
         ),
       ),
@@ -393,6 +431,8 @@ export async function getOccasionsDayView(
         whatsappTemplateId: rule.whatsappTemplateId,
         emailEnabled: rule.emailEnabled,
         emailTemplateId: rule.emailTemplateId,
+        callEnabled: rule.callEnabled,
+        callTemplateId: rule.callTemplateId,
         sendHour: rule.sendHour,
         sendMinute: rule.sendMinute,
       });
@@ -495,6 +535,8 @@ export async function getOccasionsDayView(
         new Map(),
       queueByOccasionAndChannel.get(`${occasion.id}:${Channel.EMAIL}`) ??
         new Map(),
+      queueByOccasionAndChannel.get(`${occasion.id}:${Channel.CALL}`) ??
+        new Map(),
       mediaFilenameByAssetId,
     );
 
@@ -507,6 +549,7 @@ export async function getOccasionsDayView(
       automationEnabled: anyRule.some((rule) => rule.smsEnabled),
       whatsappAutomationEnabled: anyRule.some((rule) => rule.whatsappEnabled),
       emailAutomationEnabled: anyRule.some((rule) => rule.emailEnabled),
+      callAutomationEnabled: anyRule.some((rule) => rule.callEnabled),
       sendTimeLabel:
         allContactsRule &&
         allContactsRule.sendHour !== null &&

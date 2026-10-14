@@ -14,6 +14,13 @@ import {
 import { previewTemplate } from "@/lib/templates/variables";
 import { getOccasionStatusLabel } from "@/lib/ui/customer-labels";
 
+const CHANNEL_DISPLAY: Record<Channel, string> = {
+  SMS: "SMS",
+  WHATSAPP: "WhatsApp",
+  EMAIL: "Email",
+  CALL: "Call",
+};
+
 const UPCOMING_STATUSES: ReadonlySet<OccasionHumanStatus> = new Set([
   "will_send",
   "pending",
@@ -21,7 +28,7 @@ const UPCOMING_STATUSES: ReadonlySet<OccasionHumanStatus> = new Set([
 ]);
 
 export type ActivityMessagePreviewPart = {
-  channel: "SMS" | "WHATSAPP" | "EMAIL";
+  channel: Channel;
   templateName: string | null;
   messageBody: string | null;
   mediaPreviewUrl: string | null;
@@ -35,7 +42,7 @@ export type ActivityUpcomingItem = {
   contactMobile: string;
   categoryName: string | null;
   occasionLabel: string;
-  channel: "SMS" | "WHATSAPP" | "EMAIL" | "MULTI";
+  channel: Channel | "MULTI";
   templateName: string | null;
   messagePreview: string | null;
   /** Full channel payloads for the Preview dialog. */
@@ -89,10 +96,16 @@ function resolveItemChannel(
   smsEnabled: boolean,
   waEnabled: boolean,
   emailEnabled: boolean,
+  callEnabled: boolean,
 ): ActivityUpcomingItem["channel"] {
-  const enabledCount = [smsEnabled, waEnabled, emailEnabled].filter(Boolean).length;
+  const enabledCount = [smsEnabled, waEnabled, emailEnabled, callEnabled].filter(
+    Boolean,
+  ).length;
   if (enabledCount > 1) {
     return "MULTI";
+  }
+  if (callEnabled) {
+    return "CALL";
   }
   if (emailEnabled) {
     return "EMAIL";
@@ -108,6 +121,7 @@ function buildPreviewParts(
   smsEnabled: boolean,
   waEnabled: boolean,
   emailEnabled: boolean,
+  callEnabled: boolean,
 ): ActivityMessagePreviewPart[] {
   const parts: ActivityMessagePreviewPart[] = [];
 
@@ -141,6 +155,16 @@ function buildPreviewParts(
     });
   }
 
+  if (callEnabled) {
+    parts.push({
+      channel: "CALL",
+      templateName: contact.callTemplateName ?? null,
+      messageBody: null,
+      mediaPreviewUrl: null,
+      mediaFilename: null,
+    });
+  }
+
   return parts;
 }
 
@@ -153,7 +177,7 @@ function resolveTemplateName(parts: ActivityMessagePreviewPart[]): string | null
     return named[0]!.templateName;
   }
   return named
-    .map((part) => `${part.channel === "WHATSAPP" ? "WhatsApp" : part.channel}: ${part.templateName}`)
+    .map((part) => `${CHANNEL_DISPLAY[part.channel]}: ${part.templateName}`)
     .join(" · ");
 }
 
@@ -186,6 +210,8 @@ export function buildUpcomingFromOccasionsDayView(
         contact.whatsappDeliveryStatus,
         Boolean(contact.emailAutomationEnabled),
         contact.emailDeliveryStatus ?? "not_scheduled",
+        Boolean(contact.callAutomationEnabled),
+        contact.callDeliveryStatus ?? "not_scheduled",
       );
 
       if (!UPCOMING_STATUSES.has(status)) {
@@ -195,11 +221,13 @@ export function buildUpcomingFromOccasionsDayView(
       const smsEnabled = contact.smsAutomationEnabled;
       const waEnabled = contact.whatsappAutomationEnabled;
       const emailEnabled = Boolean(contact.emailAutomationEnabled);
+      const callEnabled = Boolean(contact.callAutomationEnabled);
       const previewParts = buildPreviewParts(
         contact,
         smsEnabled,
         waEnabled,
         emailEnabled,
+        callEnabled,
       );
 
       items.push({
@@ -209,7 +237,7 @@ export function buildUpcomingFromOccasionsDayView(
         contactMobile: contact.mobile,
         categoryName: contact.categoryName,
         occasionLabel: section.label,
-        channel: resolveItemChannel(smsEnabled, waEnabled, emailEnabled),
+        channel: resolveItemChannel(smsEnabled, waEnabled, emailEnabled, callEnabled),
         templateName: resolveTemplateName(previewParts),
         messagePreview: resolveMessagePreview(previewParts),
         previewParts,
@@ -285,7 +313,7 @@ export async function getActivityUpcoming(
   const manualItems: ActivityUpcomingItem[] = manualQueue.map((row) => {
     const status: OccasionHumanStatus =
       row.status === QueueStatus.SENDING ? "sending" : "pending";
-    const channel = row.channel as "SMS" | "WHATSAPP" | "EMAIL";
+    const channel = row.channel;
     const previewParts: ActivityMessagePreviewPart[] = [
       {
         channel,

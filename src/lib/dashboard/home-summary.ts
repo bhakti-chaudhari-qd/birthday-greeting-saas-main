@@ -258,7 +258,10 @@ async function countMissedYesterday(
       const emailMissed =
         contact.emailAutomationEnabled &&
         contact.emailDeliveryStatus === "not_scheduled";
-      if (smsMissed || whatsappMissed || emailMissed) {
+      const callMissed =
+        contact.callAutomationEnabled &&
+        contact.callDeliveryStatus === "not_scheduled";
+      if (smsMissed || whatsappMissed || emailMissed || callMissed) {
         missed += 1;
       }
     }
@@ -374,7 +377,8 @@ export async function getDashboardHomeSummary(
       (section) =>
         section.automationEnabled ||
         section.whatsappAutomationEnabled ||
-        section.emailAutomationEnabled,
+        section.emailAutomationEnabled ||
+        section.callAutomationEnabled,
     )
   ) {
     // rawTotal (everyone with an occasion today) drives this alert, not
