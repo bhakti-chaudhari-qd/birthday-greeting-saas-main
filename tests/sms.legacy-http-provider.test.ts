@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildLegacySmsSendUrl,
   createLegacyHttpSmsProvider,
+  resolveUnicodeSendPath,
 } from "@/lib/messaging/providers/sms/legacy-http-sms-provider";
 
 const baseConfig = {
@@ -35,6 +36,34 @@ describe("legacy HTTP SMS provider", () => {
     expect(url.searchParams.get("numbers")).toBe("919876543210");
     expect(url.searchParams.get("message")).toBe("Hello & welcome!");
     expect(url.searchParams.get("templateid")).toBe("DLT123");
+  });
+
+  it("uses /sendunicode.aspx for Marathi text and /send.aspx for English text", () => {
+    const marathi = new URL(
+      buildLegacySmsSendUrl(baseConfig, {
+        numbers: "919876543210",
+        message: "प्रिय,Bhakti वाढदिवसाच्या हार्दिक शुभेच्छा!",
+        templateId: "DLT123",
+      }),
+    );
+    const english = new URL(
+      buildLegacySmsSendUrl(baseConfig, {
+        numbers: "919876543210",
+        message: "Hello",
+        templateId: "DLT123",
+      }),
+    );
+
+    expect(marathi.pathname).toBe("/sendunicode.aspx");
+    expect(marathi.searchParams.get("message")).toBe(
+      "प्रिय,Bhakti वाढदिवसाच्या हार्दिक शुभेच्छा!",
+    );
+    expect(marathi.searchParams.get("templateid")).toBe("DLT123");
+    expect(english.pathname).toBe("/send.aspx");
+  });
+
+  it("leaves non-legacy send paths unchanged for Unicode text", () => {
+    expect(resolveUnicodeSendPath("/api/sms/send")).toBe("/api/sms/send");
   });
 
   it("uses a custom sendPath when configured", () => {

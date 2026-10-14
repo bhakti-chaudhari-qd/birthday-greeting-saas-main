@@ -35,6 +35,20 @@ export type LegacyHttpSmsProviderConfig = ResolvedSmsProviderConfig & {
   fetchFn?: typeof fetch;
 };
 
+/** True when the body has characters outside basic ASCII (e.g. Marathi/Hindi). */
+export function requiresUnicodeSms(message: string): boolean {
+  return /[^\x00-\x7F]/.test(message);
+}
+
+/**
+ * The legacy gateway sends Unicode SMS through a separate endpoint
+ * (`/send.aspx` -> `/sendunicode.aspx`) with the same query params.
+ * Other send paths are left unchanged.
+ */
+export function resolveUnicodeSendPath(sendPath: string): string {
+  return sendPath.replace(/\/send\.aspx$/i, "/sendunicode.aspx");
+}
+
 export function buildLegacySmsSendUrl(
   config: ResolvedSmsProviderConfig,
   params: {
@@ -43,7 +57,10 @@ export function buildLegacySmsSendUrl(
     templateId: string;
   },
 ): string {
-  const url = new URL(config.sendPath, config.baseUrl);
+  const sendPath = requiresUnicodeSms(params.message)
+    ? resolveUnicodeSendPath(config.sendPath)
+    : config.sendPath;
+  const url = new URL(sendPath, config.baseUrl);
   const search = new URLSearchParams({
     username: config.username,
     pass: config.password,
