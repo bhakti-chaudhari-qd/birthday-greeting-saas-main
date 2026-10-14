@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
     const file = formData.get("file");
     if (!(file instanceof File)) {
-      return jsonError("A PDF file is required", 400);
+      return jsonError("A PDF or Word file is required", 400);
     }
 
     const nameRaw = formData.get("name");

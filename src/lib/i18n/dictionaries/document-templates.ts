@@ -101,12 +101,12 @@ const DOCUMENT_TEMPLATES_DICT: Record<Locale, DocumentTemplatesDict> = {
     pageList: {
       title: "Document Templates",
       description:
-        "Upload a base PDF design, lay out text and variables in the editor, then generate personalized PDFs.",
+        "Upload a base PDF or Word design, lay out text and variables in the editor, then generate personalized PDFs.",
       generatedDocuments: "Generated Documents",
       couldNotLoad: "Could not load document templates.",
       couldNotLoadConn:
         "Could not load document templates. Check your connection and try again.",
-      chooseFile: "Choose a PDF file to upload.",
+      chooseFile: "Choose a PDF or Word file to upload.",
       couldNotUpload: "Could not upload PDF template.",
       couldNotUploadConn:
         "Could not upload PDF template. Check your connection and try again.",
@@ -121,11 +121,11 @@ const DOCUMENT_TEMPLATES_DICT: Record<Locale, DocumentTemplatesDict> = {
       namePlaceholder: "Birthday Card",
       occasionLabel: "Occasion (optional)",
       noneOption: "None",
-      pdfFileLabel: "PDF file",
+      pdfFileLabel: "PDF or Word file",
       uploading: "Uploading...",
       upload: "Upload",
       loading: "Loading document templates...",
-      empty: "No document templates yet. Upload a PDF above to get started.",
+      empty: "No document templates yet. Upload a PDF or Word file above to get started.",
       colName: "Name",
       colOccasion: "Occasion",
       colFile: "File",
@@ -210,7 +210,7 @@ const DOCUMENT_TEMPLATES_DICT: Record<Locale, DocumentTemplatesDict> = {
       couldNotLoad: "डॉक्यूमेंट टेम्पलेट लोड नहीं हो सके।",
       couldNotLoadConn:
         "डॉक्यूमेंट टेम्पलेट लोड नहीं हो सके। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
-      chooseFile: "अपलोड करने के लिए एक पीडीएफ फ़ाइल चुनें।",
+      chooseFile: "अपलोड करने के लिए एक पीडीएफ या वर्ड फ़ाइल चुनें।",
       couldNotUpload: "पीडीएफ टेम्पलेट अपलोड नहीं हो सका।",
       couldNotUploadConn:
         "पीडीएफ टेम्पलेट अपलोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
@@ -225,7 +225,7 @@ const DOCUMENT_TEMPLATES_DICT: Record<Locale, DocumentTemplatesDict> = {
       namePlaceholder: "बर्थडे कार्ड",
       occasionLabel: "अवसर (वैकल्पिक)",
       noneOption: "कोई नहीं",
-      pdfFileLabel: "पीडीएफ फ़ाइल",
+      pdfFileLabel: "पीडीएफ या वर्ड फ़ाइल",
       uploading: "अपलोड हो रहा है...",
       upload: "अपलोड करें",
       loading: "डॉक्यूमेंट टेम्पलेट लोड हो रहे हैं...",
@@ -313,7 +313,7 @@ const DOCUMENT_TEMPLATES_DICT: Record<Locale, DocumentTemplatesDict> = {
       couldNotLoad: "डॉक्युमेंट टेम्पलेट लोड होऊ शकले नाहीत.",
       couldNotLoadConn:
         "डॉक्युमेंट टेम्पलेट लोड होऊ शकले नाहीत. तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.",
-      chooseFile: "अपलोड करण्यासाठी एक पीडीएफ फाइल निवडा.",
+      chooseFile: "अपलोड करण्यासाठी एक पीडीएफ किंवा वर्ड फाइल निवडा.",
       couldNotUpload: "पीडीएफ टेम्पलेट अपलोड होऊ शकले नाही.",
       couldNotUploadConn:
         "पीडीएफ टेम्पलेट अपलोड होऊ शकले नाही. तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.",
@@ -328,7 +328,7 @@ const DOCUMENT_TEMPLATES_DICT: Record<Locale, DocumentTemplatesDict> = {
       namePlaceholder: "बर्थडे कार्ड",
       occasionLabel: "प्रसंग (ऐच्छिक)",
       noneOption: "काहीही नाही",
-      pdfFileLabel: "पीडीएफ फाइल",
+      pdfFileLabel: "पीडीएफ किंवा वर्ड फाइल",
       uploading: "अपलोड होत आहे...",
       upload: "अपलोड करा",
       loading: "डॉक्युमेंट टेम्पलेट लोड होत आहेत...",

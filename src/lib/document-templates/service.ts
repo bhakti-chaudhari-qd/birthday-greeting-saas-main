@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
@@ -19,8 +21,12 @@ import {
   type DocumentTemplateWithOccasion,
 } from "./serialize";
 
+import {
+  convertWordToPdf,
+  detectDocumentTemplateSourceKind,
+} from "./word-to-pdf";
+
 export const DOCUMENT_TEMPLATE_MAX_BYTES = 5 * 1024 * 1024;
-const PDF_MAGIC_BYTES = Buffer.from("%PDF-", "utf8");
 
 const LIST_SELECT = {
   id: true,
@@ -45,19 +51,41 @@ function safeFileName(filename: string | undefined): string {
   return value;
 }
 
-function assertPdfFile(bytes: Buffer, contentType: string | undefined) {
-  if (bytes.length === 0) {
-    throw new DocumentTemplateValidationError("PDF file is empty");
+const ALLOWED_TYPES_MESSAGE = "Only PDF or Word (.doc, .docx) files are allowed";
+
+/**
+ * Validates the upload and returns it as a PDF - Word documents are
+ * converted, so the editor and generator only ever see PDFs.
+ */
+async function toPdfTemplateFile(file: {
+  bytes: Buffer;
+  filename: string;
+}): Promise<{ bytes: Buffer; fileName: string }> {
+  if (file.bytes.length === 0) {
+    throw new DocumentTemplateValidationError("File is empty");
   }
-  if (bytes.length > DOCUMENT_TEMPLATE_MAX_BYTES) {
-    throw new DocumentTemplateValidationError("PDF must be 5MB or smaller");
+  if (file.bytes.length > DOCUMENT_TEMPLATE_MAX_BYTES) {
+    throw new DocumentTemplateValidationError("File must be 5MB or smaller");
   }
-  if (contentType && contentType !== "application/pdf") {
-    throw new DocumentTemplateValidationError("Only PDF files are allowed");
+  const fileName = safeFileName(file.filename);
+  const kind = detectDocumentTemplateSourceKind(file.bytes, fileName);
+  if (!kind) {
+    throw new DocumentTemplateValidationError(ALLOWED_TYPES_MESSAGE);
   }
-  if (!bytes.subarray(0, 5).equals(PDF_MAGIC_BYTES)) {
-    throw new DocumentTemplateValidationError("Only PDF files are allowed");
+  if (kind === "pdf") {
+    return { bytes: file.bytes, fileName };
   }
+
+  const pdf = await convertWordToPdf(file.bytes, kind);
+  if (pdf.length > DOCUMENT_TEMPLATE_MAX_BYTES) {
+    throw new DocumentTemplateValidationError(
+      "Converted PDF must be 5MB or smaller",
+    );
+  }
+  return {
+    bytes: pdf,
+    fileName: `${fileName.slice(0, -path.extname(fileName).length)}.pdf`,
+  };
 }
 
 /** Confirms an occasionId belongs to the org; null/undefined clears it. */
@@ -85,22 +113,22 @@ export async function createDocumentTemplate(
     file: { bytes: Buffer; filename: string; contentType: string };
   },
 ): Promise<DocumentTemplateWithOccasion> {
-  assertPdfFile(input.file.bytes, input.file.contentType);
-  const fileName = safeFileName(input.file.filename);
   const occasionId = await assertOccasionForOrganization(
     organizationId,
     input.occasionId,
   );
+  // Convert after the cheap checks so a bad occasion doesn't cost a conversion.
+  const pdf = await toPdfTemplateFile(input.file);
 
   return prisma.documentTemplate.create({
     data: {
       organizationId,
       name: input.name.trim(),
       occasionId,
-      bytes: Uint8Array.from(input.file.bytes),
-      fileName,
+      bytes: Uint8Array.from(pdf.bytes),
+      fileName: pdf.fileName,
       contentType: "application/pdf",
-      byteLength: input.file.bytes.length,
+      byteLength: pdf.bytes.length,
       createdByUserId,
     },
     select: LIST_SELECT,
