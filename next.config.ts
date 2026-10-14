@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@napi-rs/canvas", "ffmpeg-static"],
   // Minimal self-contained server bundle for the Docker image.
   output: "standalone",
+  // Type-check app code only - tests are checked by vitest, and stale test
+  // typings must not block a production build.
+  typescript: { tsconfigPath: "tsconfig.typecheck.json" },
 };
 
 export default nextConfig;

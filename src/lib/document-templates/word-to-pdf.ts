@@ -47,8 +47,9 @@ function sofficeBinary(): string {
 
 function runSoffice(args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
+    // Ignore for tracing: the binary is a system install, not a project file.
     execFile(
-      sofficeBinary(),
+      /*turbopackIgnore: true*/ sofficeBinary(),
       args,
       { timeout: CONVERSION_TIMEOUT_MS, windowsHide: true },
       (error) => (error ? reject(error) : resolve()),
