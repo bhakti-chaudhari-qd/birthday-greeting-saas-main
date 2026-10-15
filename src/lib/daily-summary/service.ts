@@ -132,6 +132,7 @@ export async function runDailySummaries(
       id: true,
       name: true,
       dailySummaryEnabled: true,
+      dailySummaryAllowedByAdmin: true,
       dailySummaryRecipients: { select: { mobile: true } },
       users: {
         where: { role: UserRole.ADMIN, isActive: true },
@@ -201,7 +202,11 @@ export async function runDailySummaries(
             (mobile): mobile is string => Boolean(mobile),
           );
 
-    if (!organization.dailySummaryEnabled || recipients.length === 0) {
+    if (
+      !organization.dailySummaryAllowedByAdmin ||
+      !organization.dailySummaryEnabled ||
+      recipients.length === 0
+    ) {
       result.skipped += 1;
       continue;
     }
@@ -284,6 +289,8 @@ export async function sendDailySummaryTest(mobile: string): Promise<void> {
 
 export type DailySummarySettings = {
   enabled: boolean;
+  /** False when a Platform Admin switched the summary off for this org. */
+  allowedByAdmin: boolean;
   /** Numbers the Owner chose; empty means "use defaultNumber". */
   recipients: string[];
   /** The Owner's own WhatsApp number, used when no recipients are saved. */
@@ -298,6 +305,7 @@ export async function getDailySummarySettings(
     where: { id: organizationId },
     select: {
       dailySummaryEnabled: true,
+      dailySummaryAllowedByAdmin: true,
       dailySummaryRecipients: {
         select: { mobile: true },
         orderBy: { createdAt: "asc" },
@@ -314,6 +322,7 @@ export async function getDailySummarySettings(
 
   return {
     enabled: organization.dailySummaryEnabled,
+    allowedByAdmin: organization.dailySummaryAllowedByAdmin,
     recipients: organization.dailySummaryRecipients.map(
       (recipient) => recipient.mobile,
     ),

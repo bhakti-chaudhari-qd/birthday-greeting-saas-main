@@ -141,3 +141,27 @@ export async function updatePlatformDailySummarySettings(
 
   return getPlatformDailySummarySettings();
 }
+
+export const setPlatformDailySummaryEnabledSchema = z
+  .object({ enabled: z.boolean() })
+  .strict();
+
+/**
+ * The master switch on its own: inactive stops every organization's daily
+ * summary, whatever each client or Owner chose. Needs the account saved first.
+ */
+export async function setPlatformDailySummaryEnabled(
+  enabled: boolean,
+): Promise<PlatformDailySummarySettings> {
+  const updated = await prisma.platformDailySummaryConfig.updateMany({
+    where: { id: CONFIG_ID },
+    data: { isEnabled: enabled },
+  });
+  if (updated.count === 0) {
+    throw new PlatformDailySummaryConfigError(
+      "Save the Meta account settings below first",
+    );
+  }
+
+  return getPlatformDailySummarySettings();
+}

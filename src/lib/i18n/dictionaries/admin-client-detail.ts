@@ -42,6 +42,8 @@ export type AdminClientDetailDict = {
   opsForm: {
     clientActive: string;
     approveLiveCustomHttp: string;
+    dailySummaryActive: string;
+    dailySummaryActiveHint: string;
     timezone: string;
     saving: string;
     saveOpsSettings: string;
@@ -321,6 +323,9 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
     opsForm: {
       clientActive: "Client active",
       approveLiveCustomHttp: "Approve live Custom HTTP (even on FREE)",
+      dailySummaryActive: "Daily summary active",
+      dailySummaryActiveHint:
+        "When off, this client gets no daily WhatsApp summary and their Owner cannot turn it back on.",
       timezone: "Timezone",
       saving: "Saving…",
       saveOpsSettings: "Save ops settings",
@@ -610,6 +615,9 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
     opsForm: {
       clientActive: "क्लायंट एक्टिव",
       approveLiveCustomHttp: "लाइव Custom HTTP मंज़ूर करें (FREE पर भी)",
+      dailySummaryActive: "रोज़ का सारांश एक्टिव",
+      dailySummaryActiveHint:
+        "बंद होने पर इस क्लायंट को रोज़ का WhatsApp सारांश नहीं जाएगा और उनका Owner इसे फिर से चालू नहीं कर सकेगा।",
       timezone: "टाइमज़ोन",
       saving: "सेव हो रहा है…",
       saveOpsSettings: "ऑप्स सेटिंग्स सेव करें",
@@ -897,6 +905,9 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
     opsForm: {
       clientActive: "क्लायंट एक्टिव",
       approveLiveCustomHttp: "लाइव्ह Custom HTTP मंजूर करा (FREE वरही)",
+      dailySummaryActive: "रोजचा सारांश अ‍ॅक्टिव्ह",
+      dailySummaryActiveHint:
+        "बंद असताना या क्लायंटला रोजचा WhatsApp सारांश जाणार नाही आणि त्यांचा Owner तो पुन्हा सुरू करू शकणार नाही.",
       timezone: "टाइमझोन",
       saving: "सेव्ह होत आहे…",
       saveOpsSettings: "ऑप्स सेटिंग्ज सेव्ह करा",

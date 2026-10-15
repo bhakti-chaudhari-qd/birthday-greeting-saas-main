@@ -13,9 +13,10 @@ import {
 import type { PlatformDailySummarySettings } from "@/lib/daily-summary/platform-config";
 
 /**
- * Platform Admin form for the daily summary: the Meta Cloud API account it is
- * sent from, the approved template, and the send hour. The access token is
- * write-only - once saved it is never sent back to the browser.
+ * Platform Admin form for the daily summary: a master Active/Inactive switch
+ * that saves on its own, then the Meta Cloud API account it is sent from, the
+ * approved template, and the send hour. The access token is write-only - once
+ * saved it is never sent back to the browser.
  */
 export function DailySummaryConfigPanel({
   initial,
@@ -27,6 +28,7 @@ export function DailySummaryConfigPanel({
   const [testMobile, setTestMobile] = useState("");
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [toggling, setToggling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -74,6 +76,37 @@ export function DailySummaryConfigPanel({
     }
   }
 
+  async function handleToggle(enabled: boolean) {
+    setToggling(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch("/api/v1/admin/daily-summary", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      const body = await response.json();
+
+      if (!response.ok) {
+        setError(body.error?.message ?? "Failed to save settings");
+        return;
+      }
+
+      setSettings(body.data as PlatformDailySummarySettings);
+      setSuccess(
+        enabled
+          ? "Daily summary is active."
+          : "Daily summary is inactive. No client will get one until it is switched back on.",
+      );
+    } catch {
+      setError("Failed to save settings");
+    } finally {
+      setToggling(false);
+    }
+  }
+
   async function handleTest() {
     setTesting(true);
     setError(null);
@@ -111,15 +144,40 @@ export function DailySummaryConfigPanel({
         failed, SMS sent, SMS failed, Email sent, Email failed.
       </p>
 
-      <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={handleSave}>
-        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+      <div className="mt-4 flex flex-col gap-3 rounded-lg border border-stone-200 bg-stone-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <label className="flex items-start gap-3 text-sm">
           <input
             type="checkbox"
+            className="mt-0.5"
             checked={settings.enabled}
-            onChange={(event) => update("enabled", event.target.checked)}
+            disabled={toggling || !settings.configured}
+            onChange={(event) => void handleToggle(event.target.checked)}
           />
-          <span className="font-medium text-stone-800">Send daily summaries</span>
+          <span>
+            <span className="font-medium text-stone-800">Daily summary active</span>
+            <span className="mt-0.5 block text-xs text-stone-500">
+              {settings.configured
+                ? "Unticking stops the daily summary for every client straight away. Each client can also be switched off on their own page under Clients."
+                : "Save the Meta account settings below before switching the summary on or off."}
+            </span>
+          </span>
         </label>
+        <span
+          className={`inline-flex shrink-0 self-start rounded-full px-2.5 py-0.5 text-xs font-semibold sm:self-center ${
+            settings.configured && settings.enabled
+              ? "bg-emerald-100 text-emerald-800"
+              : "bg-stone-200 text-stone-700"
+          }`}
+        >
+          {toggling
+            ? "Saving…"
+            : settings.configured && settings.enabled
+              ? "Active"
+              : "Inactive"}
+        </span>
+      </div>
+
+      <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={handleSave}>
 
         <div className="sm:col-span-2">
           <MaskedPasswordField

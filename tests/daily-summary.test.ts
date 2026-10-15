@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { addOrganizationUserRequestSchema } from "@/lib/admin/add-organization-user";
+import { updatePlatformOrganizationSchema } from "@/lib/admin/org-ops";
 import { normalizeAccountNumbers } from "@/lib/auth/register";
-import { updatePlatformDailySummarySchema } from "@/lib/daily-summary/platform-config";
+import {
+  setPlatformDailySummaryEnabledSchema,
+  updatePlatformDailySummarySchema,
+} from "@/lib/daily-summary/platform-config";
 import { buildDailySummaryParameters } from "@/lib/daily-summary/service";
 import { signupSchema } from "@/lib/validation/auth";
 
@@ -35,6 +39,29 @@ describe("updatePlatformDailySummarySchema", () => {
         updatePlatformDailySummarySchema.safeParse({ ...valid, ...bad }).success,
       ).toBe(false);
     }
+  });
+});
+
+describe("daily summary on/off switches", () => {
+  it("takes the master switch on its own, and nothing else", () => {
+    expect(
+      setPlatformDailySummaryEnabledSchema.safeParse({ enabled: false }).success,
+    ).toBe(true);
+    expect(setPlatformDailySummaryEnabledSchema.safeParse({}).success).toBe(false);
+    expect(
+      setPlatformDailySummaryEnabledSchema.safeParse({
+        enabled: true,
+        sendHour: 9,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("lets a Platform Admin switch one client's summary off by itself", () => {
+    const parsed = updatePlatformOrganizationSchema.safeParse({
+      dailySummaryAllowedByAdmin: false,
+    });
+    expect(parsed.success).toBe(true);
+    expect(parsed.data).toEqual({ dailySummaryAllowedByAdmin: false });
   });
 });
 

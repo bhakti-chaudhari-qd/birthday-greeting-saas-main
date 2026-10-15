@@ -123,6 +123,9 @@ model Organization {
   staffContactVisibilityOwnerAllowed Boolean  @default(false)
   /// Owner can turn the daily WhatsApp summary of sent/failed messages off.
   dailySummaryEnabled                Boolean  @default(true)
+  /// Platform Admin switch for this org's daily summary. When false no
+  /// summary is sent whatever the Owner chose, and the Owner cannot turn it on.
+  dailySummaryAllowedByAdmin         Boolean  @default(true)
   /// Last greeting day (IST) a summary was handled for - sent, or skipped
   /// because nothing was sent that day. Guards against sending it twice.
   dailySummaryLastSentFor            DateTime? @db.Date

@@ -6,6 +6,8 @@ import { getPlatformAdminContext } from "@/lib/auth/platform-admin-session";
 import {
   PlatformDailySummaryConfigError,
   getPlatformDailySummarySettings,
+  setPlatformDailySummaryEnabled,
+  setPlatformDailySummaryEnabledSchema,
   updatePlatformDailySummarySchema,
   updatePlatformDailySummarySettings,
 } from "@/lib/daily-summary/platform-config";
@@ -50,6 +52,35 @@ export async function PUT(request: Request) {
     }
 
     console.error("Update platform daily summary settings failed", error);
+    return jsonError("Failed to save settings", 500);
+  }
+}
+
+/** Platform Admin only: the master Active/Inactive switch for every daily summary. */
+export async function PATCH(request: Request) {
+  try {
+    const admin = await getPlatformAdminContext();
+    if (!admin) {
+      return jsonError("Authentication required", 401);
+    }
+
+    const { enabled } = setPlatformDailySummaryEnabledSchema.parse(
+      await request.json(),
+    );
+
+    return NextResponse.json({
+      data: await setPlatformDailySummaryEnabled(enabled),
+    });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return jsonError("Invalid settings", 400, error.flatten());
+    }
+
+    if (error instanceof PlatformDailySummaryConfigError) {
+      return jsonError(error.message, 400);
+    }
+
+    console.error("Toggle platform daily summary failed", error);
     return jsonError("Failed to save settings", 500);
   }
 }

@@ -41,6 +41,7 @@ export type PlatformAdminAuditTargetType =
 const ALLOWED_VALUE_KEYS = new Set([
   "isActive",
   "liveChannelsApproved",
+  "dailySummaryAllowedByAdmin",
   "timezone",
   "plan",
   "subscriptionStatus",
@@ -86,6 +87,7 @@ const ALLOWED_METADATA_KEYS = new Set([
 export type PlatformAdminAuditValues = Partial<{
   isActive: boolean;
   liveChannelsApproved: boolean;
+  dailySummaryAllowedByAdmin: boolean;
   timezone: string;
   plan: string | null;
   subscriptionStatus: string | null;

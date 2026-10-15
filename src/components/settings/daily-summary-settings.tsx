@@ -15,6 +15,7 @@ import { useLocale } from "@/lib/i18n/use-locale";
 
 type Settings = {
   enabled: boolean;
+  allowedByAdmin: boolean;
   recipients: string[];
   defaultNumber: string | null;
   maxRecipients: number;
@@ -24,6 +25,7 @@ type Labels = {
   title: string;
   description: string;
   enabled: string;
+  turnedOffByAdmin: string;
   recipients: string;
   usingDefault: (number: string) => string;
   noDefault: string;
@@ -42,6 +44,8 @@ const LABELS: Record<Locale, Labels> = {
     description:
       "Every morning at 9 AM we send a WhatsApp summary of the previous day's messages: how many were sent and how many failed on each channel.",
     enabled: "Send me the daily summary",
+    turnedOffByAdmin:
+      "The daily summary has been turned off for your account by the platform team. Contact support to turn it back on.",
     recipients: "Send it to",
     usingDefault: (number) =>
       `No numbers added, so it goes to your WhatsApp number ${number}.`,
@@ -60,6 +64,8 @@ const LABELS: Record<Locale, Labels> = {
     description:
       "हर सुबह 9 बजे हम पिछले दिन के मेसेज का WhatsApp सारांश भेजते हैं: हर चैनल पर कितने भेजे गए और कितने फ़ेल हुए।",
     enabled: "मुझे रोज़ का सारांश भेजें",
+    turnedOffByAdmin:
+      "प्लेटफ़ॉर्म टीम ने आपके अकाउंट के लिए रोज़ का सारांश बंद कर दिया है। इसे फिर से चालू करने के लिए सपोर्ट से संपर्क करें।",
     recipients: "इन नंबरों पर भेजें",
     usingDefault: (number) =>
       `कोई नंबर नहीं जोड़ा गया, इसलिए यह आपके WhatsApp नंबर ${number} पर जाएगा।`,
@@ -78,6 +84,8 @@ const LABELS: Record<Locale, Labels> = {
     description:
       "दररोज सकाळी 9 वाजता आम्ही आदल्या दिवसाच्या मेसेजचा WhatsApp सारांश पाठवतो: प्रत्येक चॅनेलवर किती पाठवले गेले आणि किती अयशस्वी झाले.",
     enabled: "मला रोजचा सारांश पाठवा",
+    turnedOffByAdmin:
+      "प्लॅटफॉर्म टीमने तुमच्या खात्यासाठी रोजचा सारांश बंद केला आहे. तो पुन्हा सुरू करण्यासाठी सपोर्टशी संपर्क साधा.",
     recipients: "या नंबरवर पाठवा",
     usingDefault: (number) =>
       `कोणताही नंबर जोडलेला नाही, त्यामुळे तो तुमच्या WhatsApp नंबर ${number} वर जाईल.`,
@@ -101,6 +109,7 @@ export function DailySummarySettings() {
   const labels = LABELS[useLocale()];
   const { showToast } = useToast();
   const [enabled, setEnabled] = useState(true);
+  const [allowedByAdmin, setAllowedByAdmin] = useState(true);
   const [recipients, setRecipients] = useState<string[]>([]);
   const [defaultNumber, setDefaultNumber] = useState<string | null>(null);
   const [maxRecipients, setMaxRecipients] = useState(5);
@@ -110,6 +119,7 @@ export function DailySummarySettings() {
 
   function apply(settings: Settings) {
     setEnabled(settings.enabled);
+    setAllowedByAdmin(settings.allowedByAdmin);
     setRecipients(settings.recipients);
     setDefaultNumber(settings.defaultNumber);
     setMaxRecipients(settings.maxRecipients);
@@ -171,10 +181,17 @@ export function DailySummarySettings() {
       <h2 className="text-sm font-semibold text-stone-900">{labels.title}</h2>
       <p className="mt-1 text-sm text-stone-600">{labels.description}</p>
 
+      {!allowedByAdmin ? (
+        <div className="mt-4">
+          <InlineAlert tone="info">{labels.turnedOffByAdmin}</InlineAlert>
+        </div>
+      ) : null}
+
       <label className="mt-4 flex items-center gap-2 text-sm">
         <input
           type="checkbox"
-          checked={enabled}
+          checked={enabled && allowedByAdmin}
+          disabled={!allowedByAdmin}
           onChange={(event) => setEnabled(event.target.checked)}
         />
         <span className="font-medium text-stone-800">{labels.enabled}</span>
