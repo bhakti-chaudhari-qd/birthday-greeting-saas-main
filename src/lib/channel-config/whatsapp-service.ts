@@ -1,9 +1,6 @@
 import { Channel, ChannelProvider, Prisma, type ChannelConfig } from "@prisma/client";
 
-import {
-  assertLiveCustomHttpAllowed,
-  assertWhatsAppTlsAllowed,
-} from "@/lib/abuse/live-channels";
+import { assertWhatsAppTlsAllowed } from "@/lib/abuse/live-channels";
 import {
   decryptCredentials,
   encryptCredentials,
@@ -386,7 +383,6 @@ export async function getWhatsAppChannelConfig(
 export async function upsertWhatsAppChannelConfig(
   organizationId: string,
   input: WhatsAppChannelConfigWriteInput,
-  options: { userId?: string } = {},
 ): Promise<SafeWhatsAppChannelConfigView> {
   if (
     input.provider !== ChannelProvider.TEST &&
@@ -396,17 +392,6 @@ export async function upsertWhatsAppChannelConfig(
     throw new ChannelConfigValidationError(
       "Configured WhatsApp provider is not supported",
     );
-  }
-
-  if (
-    input.provider === ChannelProvider.CUSTOM_HTTP ||
-    input.provider === ChannelProvider.META
-  ) {
-    await assertLiveCustomHttpAllowed({
-      organizationId,
-      userId: options.userId,
-      provider: input.provider,
-    });
   }
 
   if (input.provider === ChannelProvider.CUSTOM_HTTP) {

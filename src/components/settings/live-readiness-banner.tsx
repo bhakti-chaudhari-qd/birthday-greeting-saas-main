@@ -18,9 +18,6 @@ function itemLabel(
   readiness: LiveChannelReadiness,
   dict: LiveReadinessDict,
 ): string {
-  if (item.id === "paid_plan") {
-    return readiness.liveChannelsApproved ? dict.paidPlanApproved : dict.paidPlan;
-  }
   if (item.id === "dlt_templates") {
     return readiness.smsTemplatesReadyForLive + readiness.smsTemplatesNeedingSetup === 0
       ? dict.dltCreate

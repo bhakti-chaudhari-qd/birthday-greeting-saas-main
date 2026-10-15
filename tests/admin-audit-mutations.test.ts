@@ -116,7 +116,7 @@ describe("Platform Admin mutation audit behavior", () => {
     mocks.findOrganization.mockResolvedValue({
       id: "org-1",
       isActive: true,
-      liveChannelsApproved: false,
+      dailySummaryAllowedByAdmin: true,
       timezone: "Asia/Kolkata",
       subscription: {
         plan: SubscriptionPlan.STARTER,
@@ -129,7 +129,7 @@ describe("Platform Admin mutation audit behavior", () => {
 
     await updateOrganizationForPlatformAdmin(
       "org-1",
-      { isActive: false, liveChannelsApproved: true },
+      { isActive: false, dailySummaryAllowedByAdmin: false },
       "admin-from-session",
     );
 
@@ -137,7 +137,7 @@ describe("Platform Admin mutation audit behavior", () => {
       where: { id: "org-1" },
       data: {
         isActive: false,
-        liveChannelsApproved: true,
+        dailySummaryAllowedByAdmin: false,
       },
     });
     expect(mocks.createSubscription).not.toHaveBeenCalled();
@@ -146,7 +146,7 @@ describe("Platform Admin mutation audit behavior", () => {
       expect.objectContaining({
         action: "ORGANIZATION_UPDATED",
         metadata: {
-          changedFields: ["isActive", "liveChannelsApproved"],
+          changedFields: ["isActive", "dailySummaryAllowedByAdmin"],
         },
       }),
       tx,

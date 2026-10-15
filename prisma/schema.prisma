@@ -114,7 +114,9 @@ model Organization {
   slug                               String   @unique
   timezone                           String   @default("Asia/Kolkata")
   isActive                           Boolean  @default(true)
-  /// Platform Admin may approve live CUSTOM_HTTP for FREE/unpaid orgs.
+  /// Unused: live Custom HTTP / Meta gateways are now open on every plan,
+  /// FREE included, so there is no approval to store. Kept only to avoid a
+  /// destructive migration.
   liveChannelsApproved               Boolean  @default(false)
   /// Unused: Contact.addedByPlatformAdmin contacts are now masked for every
   /// client-side viewer, so there is no visibility setting to store. The

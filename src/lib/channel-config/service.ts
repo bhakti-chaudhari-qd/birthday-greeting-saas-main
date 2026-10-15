@@ -1,6 +1,5 @@
 import { Channel, ChannelProvider, Prisma, type ChannelConfig } from "@prisma/client";
 
-import { assertLiveCustomHttpAllowed } from "@/lib/abuse/live-channels";
 import {
   decryptCredentials,
   encryptCredentials,
@@ -179,16 +178,10 @@ export async function getSmsChannelConfig(
 export async function upsertSmsChannelConfig(
   organizationId: string,
   input: SmsChannelConfigWriteInput,
-  options: { userId?: string } = {},
 ): Promise<SafeSmsChannelConfigView> {
   const existing = await getTenantSmsChannelConfig(organizationId);
 
   if (input.provider === ChannelProvider.CUSTOM_HTTP) {
-    await assertLiveCustomHttpAllowed({
-      organizationId,
-      userId: options.userId,
-      provider: input.provider,
-    });
     assertCustomHttpFields(input, {
       requirePassword: !canPreserveExistingPassword(existing),
     });

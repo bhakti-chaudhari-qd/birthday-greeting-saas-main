@@ -78,9 +78,6 @@ describe("admin i18n: client detail", () => {
     const dict = getAdminClientDetailDict("en");
 
     expect(dict.opsForm.clientActive).toBe("Client active");
-    expect(dict.opsForm.approveLiveCustomHttp).toBe(
-      "Approve live Custom HTTP (even on FREE)",
-    );
     expect(dict.billing.activatePlan).toBe("Activate a plan");
     expect(dict.tabs.contacts).toBe("Contacts");
     expect(dict.usersTable.sendPasswordReset).toBe("Send password reset link");

@@ -39,9 +39,7 @@ export async function PUT(request: Request) {
     const auth = await requireSessionAdmin();
     const body = await request.json();
     const input = smsChannelConfigWriteSchema.parse(body);
-    const config = await upsertSmsChannelConfig(auth.organizationId, input, {
-      userId: auth.userId,
-    });
+    const config = await upsertSmsChannelConfig(auth.organizationId, input);
 
     return NextResponse.json({ data: config });
   } catch (error) {

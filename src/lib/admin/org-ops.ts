@@ -128,7 +128,6 @@ export async function getOrganizationForPlatformAdmin(
 export const updatePlatformOrganizationSchema = z
   .object({
     isActive: z.boolean().optional(),
-    liveChannelsApproved: z.boolean().optional(),
     dailySummaryAllowedByAdmin: z.boolean().optional(),
     timezone: z.string().trim().min(1).max(64).optional(),
   })
@@ -322,11 +321,6 @@ export async function updateOrganizationForPlatformAdmin(
 
     recordChange("isActive", existing.isActive, input.isActive);
     recordChange(
-      "liveChannelsApproved",
-      existing.liveChannelsApproved,
-      input.liveChannelsApproved,
-    );
-    recordChange(
       "dailySummaryAllowedByAdmin",
       existing.dailySummaryAllowedByAdmin,
       input.dailySummaryAllowedByAdmin,
@@ -337,7 +331,6 @@ export async function updateOrganizationForPlatformAdmin(
       [
         "isActive",
         "timezone",
-        "liveChannelsApproved",
         "dailySummaryAllowedByAdmin",
       ].includes(field),
     );
@@ -349,9 +342,6 @@ export async function updateOrganizationForPlatformAdmin(
             ? { isActive: after.isActive }
             : {}),
           ...(after.timezone !== undefined ? { timezone: after.timezone } : {}),
-          ...(after.liveChannelsApproved !== undefined
-            ? { liveChannelsApproved: input.liveChannelsApproved }
-            : {}),
           ...(after.dailySummaryAllowedByAdmin !== undefined
             ? { dailySummaryAllowedByAdmin: after.dailySummaryAllowedByAdmin }
             : {}),

@@ -1,9 +1,4 @@
-import {
-  Channel,
-  ChannelProvider,
-  SubscriptionPlan,
-  SubscriptionStatus,
-} from "@prisma/client";
+import { Channel, ChannelProvider } from "@prisma/client";
 
 import {
   readPlatformDefaultSms,
@@ -12,23 +7,14 @@ import {
 import { prisma } from "@/lib/db";
 import { deriveRealSmsReadiness } from "@/lib/templates/readiness";
 
-const PAID_PLANS: ReadonlySet<SubscriptionPlan> = new Set([
-  SubscriptionPlan.STARTER,
-  SubscriptionPlan.PRO,
-  SubscriptionPlan.CUSTOM,
-]);
-
 export type LiveReadinessChecklistItem = {
-  id: "paid_plan" | "dlt_templates" | "live_provider";
+  id: "dlt_templates" | "live_provider";
   label: string;
   done: boolean;
   href: string;
 };
 
 export type LiveChannelReadiness = {
-  paidPlanActive: boolean;
-  liveChannelsApproved: boolean;
-  canEnableLiveCustomHttp: boolean;
   smsProvider: "TEST" | "CUSTOM_HTTP" | null;
   whatsappProvider: "TEST" | "CUSTOM_HTTP" | "META" | null;
   smsTemplatesReadyForLive: number;
@@ -60,31 +46,19 @@ function asWhatsAppProviderMode(
 }
 
 /**
+ * Live gateways (Custom HTTP / Meta) are open on every plan, FREE included.
  * A client that can already send through a platform default route does not
- * need a paid plan or a gateway of its own, so those steps are only listed
- * when no platform route exists. DLT setup is listed whenever the client has
+ * need a gateway of its own, so that step is only listed when no platform
+ * route exists. DLT setup is listed whenever the client has
  * SMS templates that still need it.
  */
 export function buildLiveReadinessChecklist(input: {
-  paidPlanActive: boolean;
-  liveChannelsApproved: boolean;
   liveProviderDone: boolean;
   smsTemplateCount: number;
   smsTemplatesNeedingSetup: number;
   hasPlatformRoute: boolean;
 }): LiveReadinessChecklistItem[] {
   const checklist: LiveReadinessChecklistItem[] = [];
-
-  if (!input.hasPlatformRoute) {
-    checklist.push({
-      id: "paid_plan",
-      label: input.liveChannelsApproved
-        ? "Live messaging approved by platform"
-        : "Activate a paid plan (Starter or Pro)",
-      done: input.paidPlanActive || input.liveChannelsApproved,
-      href: "/dashboard/settings/billing",
-    });
-  }
 
   if (!input.hasPlatformRoute || input.smsTemplatesNeedingSetup > 0) {
     checklist.push({
@@ -110,19 +84,12 @@ export function buildLiveReadinessChecklist(input: {
   return checklist;
 }
 
-/**
- * Checklist for going live with Custom HTTP (mirrors assertLiveCustomHttpAllowed
- * plus DLT readiness and current provider mode).
- */
+/** Checklist for going live: DLT readiness and current provider mode. */
 export async function getLiveChannelReadiness(
   organizationId: string,
   _userId: string,
 ): Promise<LiveChannelReadiness> {
-  const [organization, channelConfigs, smsTemplates] = await Promise.all([
-    prisma.organization.findUniqueOrThrow({
-      where: { id: organizationId },
-      include: { subscription: true },
-    }),
+  const [channelConfigs, smsTemplates] = await Promise.all([
     prisma.channelConfig.findMany({
       where: {
         organizationId,
@@ -146,15 +113,6 @@ export async function getLiveChannelReadiness(
       },
     }),
   ]);
-
-  const liveChannelsApproved = organization.liveChannelsApproved;
-  const subscription = organization.subscription;
-  const paidPlanActive = Boolean(
-    subscription &&
-      subscription.status === SubscriptionStatus.ACTIVE &&
-      PAID_PLANS.has(subscription.plan),
-  );
-  const canEnableLiveCustomHttp = paidPlanActive || liveChannelsApproved;
 
   const smsConfig = channelConfigs.find((row) => row.channel === Channel.SMS);
   const whatsappConfig = channelConfigs.find(
@@ -180,8 +138,6 @@ export async function getLiveChannelReadiness(
     whatsappProvider === "META";
 
   const checklist = buildLiveReadinessChecklist({
-    paidPlanActive,
-    liveChannelsApproved,
     liveProviderDone,
     smsTemplateCount: smsTemplates.length,
     smsTemplatesNeedingSetup,
@@ -195,9 +151,6 @@ export async function getLiveChannelReadiness(
   const showBanner = checklist.some((item) => !item.done);
 
   return {
-    paidPlanActive,
-    liveChannelsApproved,
-    canEnableLiveCustomHttp,
     smsProvider,
     whatsappProvider,
     smsTemplatesReadyForLive,

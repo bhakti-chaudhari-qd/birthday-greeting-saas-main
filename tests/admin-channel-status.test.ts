@@ -70,8 +70,6 @@ describe("summarizeMetaWhatsAppHealth", () => {
 
 describe("buildLiveReadinessChecklist", () => {
   const base = {
-    paidPlanActive: false,
-    liveChannelsApproved: false,
     liveProviderDone: false,
     smsTemplateCount: 0,
     smsTemplatesNeedingSetup: 0,
@@ -93,11 +91,10 @@ describe("buildLiveReadinessChecklist", () => {
     expect(checklist[0]?.done).toBe(false);
   });
 
-  it("lists plan, DLT and gateway steps when there is no platform route", () => {
+  it("lists DLT and gateway steps, but never a paid plan, when there is no platform route", () => {
     const checklist = buildLiveReadinessChecklist({ ...base, hasPlatformRoute: false });
 
     expect(checklist.map((item) => item.id)).toEqual([
-      "paid_plan",
       "dlt_templates",
       "live_provider",
     ]);

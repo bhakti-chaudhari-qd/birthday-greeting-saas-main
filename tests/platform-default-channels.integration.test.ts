@@ -33,8 +33,6 @@ function stubDefaultSms() {
   for (const [key, value] of Object.entries(DEFAULT_SMS_ENV)) {
     vi.stubEnv(key, value);
   }
-  // Enforce the live-send gate (it is skipped under test by default).
-  vi.stubEnv("ABUSE_ENFORCE_LIVE_GATES", "1");
 }
 
 async function createOrg() {
@@ -190,12 +188,7 @@ describe("platform default channels", () => {
     skip,
   }) => {
     if (!databaseAvailable) skip();
-    vi.stubEnv("ABUSE_ENFORCE_LIVE_GATES", "1");
     const organizationId = await createOrg();
-    await prisma.organization.update({
-      where: { id: organizationId },
-      data: { liveChannelsApproved: true },
-    });
 
     expect(await getEffectiveChannelConfig(organizationId, Channel.SMS)).toBeNull();
 
@@ -208,10 +201,6 @@ describe("platform default channels", () => {
     if (!databaseAvailable) skip();
     stubDefaultSms();
     const organizationId = await createOrg();
-    await prisma.organization.update({
-      where: { id: organizationId },
-      data: { liveChannelsApproved: true },
-    });
     const own = await prisma.channelConfig.create({
       data: {
         organizationId,
@@ -239,10 +228,6 @@ describe("platform default channels", () => {
     if (!databaseAvailable) skip();
     stubDefaultSms();
     const organizationId = await createOrg();
-    await prisma.organization.update({
-      where: { id: organizationId },
-      data: { liveChannelsApproved: true },
-    });
 
     expect(await getEffectiveChannelConfig(organizationId, Channel.WHATSAPP)).toBeNull();
 

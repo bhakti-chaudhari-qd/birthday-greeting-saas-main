@@ -15,16 +15,13 @@ type OrganizationOpsFormProps = {
 };
 
 /**
- * Basic account-level flags: active/inactive, live-channel approval, daily
- * summary on/off, timezone. Not billing.
+ * Basic account-level flags: active/inactive, daily summary on/off, timezone.
+ * Not billing.
  */
 export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) {
   const router = useRouter();
   const dict = getAdminClientDetailDict(useLocale()).opsForm;
   const [isActive, setIsActive] = useState(organization.isActive);
-  const [liveChannelsApproved, setLiveChannelsApproved] = useState(
-    organization.liveChannelsApproved,
-  );
   const [dailySummaryAllowedByAdmin, setDailySummaryAllowedByAdmin] = useState(
     organization.dailySummaryAllowedByAdmin,
   );
@@ -56,7 +53,6 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             isActive,
-            liveChannelsApproved,
             dailySummaryAllowedByAdmin,
             timezone,
           }),
@@ -85,15 +81,6 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
           onChange={(event) => setIsActive(event.target.checked)}
         />
         <span className="font-medium">{dict.clientActive}</span>
-      </label>
-
-      <label className="flex items-center gap-2 text-sm text-stone-800">
-        <input
-          type="checkbox"
-          checked={liveChannelsApproved}
-          onChange={(event) => setLiveChannelsApproved(event.target.checked)}
-        />
-        <span className="font-medium">{dict.approveLiveCustomHttp}</span>
       </label>
 
       <label className="flex items-start gap-2 text-sm text-stone-800">

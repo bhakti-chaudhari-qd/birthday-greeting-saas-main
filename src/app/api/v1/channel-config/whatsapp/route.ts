@@ -37,9 +37,7 @@ export async function PUT(request: Request) {
     const auth = await requireSessionAdmin();
     const body = await request.json();
     const input = whatsappChannelConfigWriteSchema.parse(body);
-    const config = await upsertWhatsAppChannelConfig(auth.organizationId, input, {
-      userId: auth.userId,
-    });
+    const config = await upsertWhatsAppChannelConfig(auth.organizationId, input);
 
     return NextResponse.json({ data: config });
   } catch (error) {

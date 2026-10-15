@@ -2,7 +2,6 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   ChannelProvider,
-  SubscriptionPlan,
   SubscriptionStatus,
 } from "@prisma/client";
 
@@ -41,7 +40,6 @@ async function mockSessionCookie(rawToken: string) {
 describe("anti-abuse (REQ-ABUSE)", () => {
   beforeAll(async () => {
     process.env.CREDENTIALS_ENCRYPTION_KEY = TEST_CREDENTIALS_ENCRYPTION_KEY;
-    process.env.ABUSE_ENFORCE_LIVE_GATES = "1";
 
     if (!databaseUrl) {
       return;
@@ -57,7 +55,6 @@ describe("anti-abuse (REQ-ABUSE)", () => {
   });
 
   afterAll(async () => {
-    delete process.env.ABUSE_ENFORCE_LIVE_GATES;
     await prisma.$disconnect();
   });
 
@@ -97,7 +94,7 @@ describe("anti-abuse (REQ-ABUSE)", () => {
     }
   });
 
-  it("brand-new free org cannot enable live Custom HTTP SMS", async ({
+  it("brand-new free org can enable live Custom HTTP SMS without approval", async ({
     skip,
   }) => {
     if (!databaseAvailable) skip();
@@ -110,59 +107,6 @@ describe("anti-abuse (REQ-ABUSE)", () => {
       adminName: "Owner",
       email: `abuse-free-${suffix}@test.local`,
       password: "password12345",
-    });
-
-    const session = await createSessionRecord(
-      org.user.id,
-      org.organization.id,
-    );
-    await mockSessionCookie(session.rawToken);
-
-    try {
-      const response = await putSmsChannelConfigRoute(
-        new Request("http://localhost/api/v1/channel-config/sms", {
-          method: "PUT",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            provider: ChannelProvider.CUSTOM_HTTP,
-            username: "u",
-            password: "p",
-            baseUrl: "https://sms.example",
-            sendPath: "/send.aspx",
-            route: "trans1",
-            senderId: "SENDER",
-            isActive: true,
-          }),
-        }),
-      );
-
-      expect(response.status).toBe(400);
-      const body = await response.json();
-      expect(body.error.message).toMatch(/paid plan|approval/i);
-    } finally {
-      await prisma.organization.delete({ where: { id: org.organization.id } });
-    }
-  });
-
-  it("allows live Custom HTTP when STARTER", async ({ skip }) => {
-    if (!databaseAvailable) skip();
-
-    const suffix = uniqueSuffix();
-    const org = await createRegisteredOrganization({
-      organizationName: `Abuse Paid ${suffix}`,
-      organizationSlug: `abuse-paid-${suffix}`,
-      timezone: "UTC",
-      adminName: "Owner",
-      email: `abuse-paid-${suffix}@test.local`,
-      password: "password12345",
-    });
-
-    await prisma.subscription.update({
-      where: { organizationId: org.organization.id },
-      data: {
-        plan: SubscriptionPlan.STARTER,
-        status: SubscriptionStatus.ACTIVE,
-      },
     });
 
     const session = await createSessionRecord(
