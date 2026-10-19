@@ -17,10 +17,12 @@ import {
 } from "@/components/ui/page";
 import type { PlatformOverviewStats } from "@/lib/admin/overview";
 import type { PlatformUsageSnapshot } from "@/lib/admin/org-ops";
+import type { PlatformPlanAlerts } from "@/lib/admin/plan-alerts";
 import type { PlatformOrganizationSummary } from "@/lib/admin/organizations";
 import type { PlatformVendorSummary } from "@/lib/admin/vendors";
 import { getAdminOverviewDict } from "@/lib/i18n/dictionaries/admin-overview";
 import { useLocale } from "@/lib/i18n/use-locale";
+import { formatDisplayDate } from "@/lib/ui/datetime";
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("en-IN").format(value);
@@ -31,6 +33,7 @@ export type AdminOverviewClientProps = {
   usage: PlatformUsageSnapshot;
   organizations: PlatformOrganizationSummary[];
   vendors: PlatformVendorSummary[];
+  planAlerts: PlatformPlanAlerts;
 };
 
 export function AdminOverviewClient({
@@ -38,6 +41,7 @@ export function AdminOverviewClient({
   usage,
   organizations,
   vendors,
+  planAlerts,
 }: AdminOverviewClientProps) {
   const locale = useLocale();
   const dict = getAdminOverviewDict(locale);
@@ -119,6 +123,99 @@ export function AdminOverviewClient({
           },
         ]}
       />
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Panel className="p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-stone-900">
+                {dict.expiringPlansTitle(planAlerts.warningDays)}
+              </h2>
+              <p className="mt-1 text-xs text-stone-500">{dict.expiringPlansHint}</p>
+            </div>
+            <p className="text-2xl font-semibold text-stone-900">
+              {formatNumber(planAlerts.expiringPlans.length)}
+            </p>
+          </div>
+          {planAlerts.expiringPlans.length === 0 ? (
+            <p className="mt-3 text-sm text-stone-500">{dict.noExpiringPlans}</p>
+          ) : (
+            <ul className="mt-3 max-h-72 space-y-2 overflow-y-auto text-sm">
+              {planAlerts.expiringPlans.map((alert) => (
+                <li
+                  key={alert.organizationId}
+                  className="flex items-center justify-between gap-3 border-b border-stone-100 pb-2 last:border-0 last:pb-0"
+                >
+                  <div className="min-w-0">
+                    <Link
+                      href={`/admin/organizations/${alert.organizationId}`}
+                      className="font-medium text-stone-900 hover:text-primary"
+                    >
+                      {alert.organizationName}
+                    </Link>
+                    <p className="text-xs text-stone-500">
+                      {alert.plan} · {dict.endsOn(formatDisplayDate(alert.paidUntil))}
+                    </p>
+                  </div>
+                  <StatusBadge
+                    label={dict.daysLeft(alert.daysLeft)}
+                    tone={alert.daysLeft <= 3 ? "danger" : "warning"}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel className="p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-stone-900">
+                {dict.exhaustedTitle}
+              </h2>
+              <p className="mt-1 text-xs text-stone-500">{dict.exhaustedHint}</p>
+            </div>
+            <p className="text-2xl font-semibold text-stone-900">
+              {formatNumber(planAlerts.exhaustedChannels.length)}
+            </p>
+          </div>
+          {planAlerts.exhaustedChannels.length === 0 ? (
+            <p className="mt-3 text-sm text-stone-500">{dict.noExhausted}</p>
+          ) : (
+            <ul className="mt-3 max-h-72 space-y-2 overflow-y-auto text-sm">
+              {planAlerts.exhaustedChannels.map((alert) => (
+                <li
+                  key={alert.organizationId}
+                  className="border-b border-stone-100 pb-2 last:border-0 last:pb-0"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <Link
+                      href={`/admin/organizations/${alert.organizationId}`}
+                      className="font-medium text-stone-900 hover:text-primary"
+                    >
+                      {alert.organizationName}
+                    </Link>
+                    <span className="text-xs text-stone-500">{alert.plan}</span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {alert.limits.map((limit) => (
+                      <StatusBadge
+                        key={limit.channel}
+                        tone="danger"
+                        label={`${
+                          limit.channel === "ALL"
+                            ? dict.allChannels
+                            : dict.channel[limit.channel]
+                        } ${formatNumber(limit.used)}/${formatNumber(limit.limit)}`}
+                      />
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Panel className="p-5">

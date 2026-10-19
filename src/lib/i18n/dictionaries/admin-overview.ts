@@ -38,6 +38,16 @@ export type AdminOverviewDict = {
   currentRoutedDeliveries: (n: string) => string;
   noDecidedDeliveries: string;
   successPercent: (pct: number) => string;
+  expiringPlansTitle: (days: number) => string;
+  expiringPlansHint: string;
+  noExpiringPlans: string;
+  daysLeft: (days: number) => string;
+  endsOn: (date: string) => string;
+  exhaustedTitle: string;
+  exhaustedHint: string;
+  noExhausted: string;
+  allChannels: string;
+  channel: { SMS: string; WHATSAPP: string; EMAIL: string; CALL: string };
 };
 
 const ADMIN_OVERVIEW_DICT: Record<Locale, AdminOverviewDict> = {
@@ -80,6 +90,16 @@ const ADMIN_OVERVIEW_DICT: Record<Locale, AdminOverviewDict> = {
     currentRoutedDeliveries: (n) => `${n} current-routed deliveries this month (IST)`,
     noDecidedDeliveries: "No decided deliveries",
     successPercent: (pct) => `${pct}% success`,
+    expiringPlansTitle: (days) => `Plans expiring in ${days} days`,
+    expiringPlansHint: "Paid plans ending soon. Renew them before the client loses access.",
+    noExpiringPlans: "No plan ends in the next few days.",
+    daysLeft: (days) => (days === 1 ? "1 day left" : `${days} days left`),
+    endsOn: (date) => `Ends ${date}`,
+    exhaustedTitle: "Message limits used up",
+    exhaustedHint: "Clients that have sent every message their plan allows this month on a channel.",
+    noExhausted: "No client has used up a limit this month.",
+    allChannels: "All channels",
+    channel: { SMS: "SMS", WHATSAPP: "WhatsApp", EMAIL: "Email", CALL: "Call" },
   },
   hi: {
     title: "ओवरव्यू",
@@ -120,6 +140,16 @@ const ADMIN_OVERVIEW_DICT: Record<Locale, AdminOverviewDict> = {
     currentRoutedDeliveries: (n) => `${n} करंट-रूटेड डिलीवरी इस महीने (IST)`,
     noDecidedDeliveries: "कोई तय डिलीवरी नहीं",
     successPercent: (pct) => `${pct}% सक्सेस`,
+    expiringPlansTitle: (days) => `${days} दिनों में ख़त्म होने वाले प्लान`,
+    expiringPlansHint: "जल्द ख़त्म होने वाले पेड प्लान। क्लायंट की एक्सेस बंद होने से पहले रिन्यू करें।",
+    noExpiringPlans: "अगले कुछ दिनों में कोई प्लान ख़त्म नहीं हो रहा।",
+    daysLeft: (days) => (days === 1 ? "1 दिन बाकी" : `${days} दिन बाकी`),
+    endsOn: (date) => `${date} को ख़त्म`,
+    exhaustedTitle: "मेसेज लिमिट पूरी हो गई",
+    exhaustedHint: "जिन क्लायंट ने इस महीने किसी चैनल पर प्लान के सारे मेसेज भेज दिए हैं।",
+    noExhausted: "इस महीने किसी क्लायंट की लिमिट पूरी नहीं हुई।",
+    allChannels: "सभी चैनल",
+    channel: { SMS: "SMS", WHATSAPP: "WhatsApp", EMAIL: "ईमेल", CALL: "कॉल" },
   },
   mr: {
     title: "ओव्हरव्ह्यू",
@@ -160,6 +190,16 @@ const ADMIN_OVERVIEW_DICT: Record<Locale, AdminOverviewDict> = {
     currentRoutedDeliveries: (n) => `${n} करंट-राउटेड डिलिव्हरी या महिन्यात (IST)`,
     noDecidedDeliveries: "कोणतीही ठरलेली डिलिव्हरी नाही",
     successPercent: (pct) => `${pct}% यशस्वी`,
+    expiringPlansTitle: (days) => `${days} दिवसांत संपणारे प्लान`,
+    expiringPlansHint: "लवकरच संपणारे पेड प्लान. क्लायंटची अ‍ॅक्सेस बंद होण्याआधी रिन्यू करा.",
+    noExpiringPlans: "पुढच्या काही दिवसांत कोणताही प्लान संपत नाही.",
+    daysLeft: (days) => (days === 1 ? "1 दिवस बाकी" : `${days} दिवस बाकी`),
+    endsOn: (date) => `${date} ला संपतो`,
+    exhaustedTitle: "मेसेज लिमिट संपली",
+    exhaustedHint: "ज्या क्लायंटनी या महिन्यात एखाद्या चॅनेलवर प्लानचे सर्व मेसेज पाठवले आहेत.",
+    noExhausted: "या महिन्यात कोणत्याही क्लायंटची लिमिट संपलेली नाही.",
+    allChannels: "सर्व चॅनेल्स",
+    channel: { SMS: "SMS", WHATSAPP: "WhatsApp", EMAIL: "ईमेल", CALL: "कॉल" },
   },
 };
 
