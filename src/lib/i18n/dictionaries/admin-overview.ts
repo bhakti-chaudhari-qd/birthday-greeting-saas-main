@@ -47,6 +47,8 @@ export type AdminOverviewDict = {
   exhaustedHint: string;
   noExhausted: string;
   allChannels: string;
+  viewList: string;
+  hideList: string;
   channel: { SMS: string; WHATSAPP: string; EMAIL: string; CALL: string };
 };
 
@@ -99,6 +101,8 @@ const ADMIN_OVERVIEW_DICT: Record<Locale, AdminOverviewDict> = {
     exhaustedHint: "Clients that have sent every message their plan allows this month on a channel.",
     noExhausted: "No client has used up a limit this month.",
     allChannels: "All channels",
+    viewList: "View list",
+    hideList: "Hide list",
     channel: { SMS: "SMS", WHATSAPP: "WhatsApp", EMAIL: "Email", CALL: "Call" },
   },
   hi: {
@@ -149,6 +153,8 @@ const ADMIN_OVERVIEW_DICT: Record<Locale, AdminOverviewDict> = {
     exhaustedHint: "जिन क्लायंट ने इस महीने किसी चैनल पर प्लान के सारे मेसेज भेज दिए हैं।",
     noExhausted: "इस महीने किसी क्लायंट की लिमिट पूरी नहीं हुई।",
     allChannels: "सभी चैनल",
+    viewList: "लिस्ट देखें",
+    hideList: "लिस्ट छिपाएँ",
     channel: { SMS: "SMS", WHATSAPP: "WhatsApp", EMAIL: "ईमेल", CALL: "कॉल" },
   },
   mr: {
@@ -199,6 +205,8 @@ const ADMIN_OVERVIEW_DICT: Record<Locale, AdminOverviewDict> = {
     exhaustedHint: "ज्या क्लायंटनी या महिन्यात एखाद्या चॅनेलवर प्लानचे सर्व मेसेज पाठवले आहेत.",
     noExhausted: "या महिन्यात कोणत्याही क्लायंटची लिमिट संपलेली नाही.",
     allChannels: "सर्व चॅनेल्स",
+    viewList: "यादी पहा",
+    hideList: "यादी लपवा",
     channel: { SMS: "SMS", WHATSAPP: "WhatsApp", EMAIL: "ईमेल", CALL: "कॉल" },
   },
 };
