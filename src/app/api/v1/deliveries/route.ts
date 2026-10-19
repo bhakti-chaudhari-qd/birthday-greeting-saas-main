@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireApiAuth,
+  requireSessionAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import { listDeliveries } from "@/lib/deliveries/list";
 import { listDeliveriesQuerySchema } from "@/lib/validation/send";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const { searchParams } = new URL(request.url);
     const query = listDeliveriesQuerySchema.parse({
       page: searchParams.get("page") ?? undefined,

@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 
 import {
-  requireApiAuth,
+  requireSessionAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import { getActiveImportJobForOrganization } from "@/lib/contacts/import-jobs";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request?: Request) {
+export async function GET() {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const job = await getActiveImportJobForOrganization(auth.organizationId);
 
     return NextResponse.json({

@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireApiAuth,
+  requireSessionAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import { getOccasionsDayView } from "@/lib/queue/occasions-day-view";
 import { occasionsDayQuerySchema } from "@/lib/validation/occasions";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const { searchParams } = new URL(request.url);
     const query = occasionsDayQuerySchema.parse({
       date: searchParams.get("date") ?? undefined,

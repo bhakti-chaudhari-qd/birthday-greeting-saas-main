@@ -3,9 +3,9 @@ import { ZodError } from "zod";
 import { z } from "zod";
 
 import {
-  requireApiAuth,
+  requireSessionAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import {
   ContactImportJobNotFoundError,
@@ -25,7 +25,7 @@ type RouteContext = {
 
 export async function GET(request: Request, context: RouteContext) {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const { id } = await context.params;
     const { searchParams } = new URL(request.url);
     const query = querySchema.parse({

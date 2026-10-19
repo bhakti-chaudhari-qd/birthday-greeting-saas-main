@@ -3,10 +3,10 @@ import { UserRole } from "@prisma/client";
 import { ZodError } from "zod";
 
 import {
-  requireApiAdmin,
-  requireApiAuth,
+  requireSessionAdmin,
+  requireSessionAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import { TemplateValidationError } from "@/lib/templates/errors";
 import {
@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireApiAdmin(request);
+    const auth = await requireSessionAdmin();
     const body = await request.json();
     const input = createTemplateSchema.parse(body);
     const template = await createTemplate(auth.organizationId, input);
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const { searchParams } = new URL(request.url);
     const query = listTemplatesQuerySchema.parse({
       page: searchParams.get("page") ?? undefined,

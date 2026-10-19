@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireApiAuth,
+  requireSessionAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import { ContactValidationError } from "@/lib/contacts/errors";
 import {
@@ -48,7 +48,7 @@ function countImportRows(input: {
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const body = await request.json();
     const input = importContactsBodySchema.parse(body);
 

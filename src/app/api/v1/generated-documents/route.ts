@@ -3,9 +3,9 @@ import { UserRole } from "@prisma/client";
 import { ZodError } from "zod";
 
 import {
-  requireApiAuth,
+  requireSessionAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import { generatedDocumentErrorResponse } from "@/lib/generated-documents/api-errors";
 import {
@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const { searchParams } = new URL(request.url);
     const query = listGeneratedDocumentsQuerySchema.parse({
       page: searchParams.get("page") ?? undefined,
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
 /** Generates a PDF (Phase 4, unchanged) and persists it (Phase 5). */
 export async function POST(request: Request) {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const body = await request.json().catch(() => ({}));
     const input = createGeneratedDocumentSchema.parse(body);
 

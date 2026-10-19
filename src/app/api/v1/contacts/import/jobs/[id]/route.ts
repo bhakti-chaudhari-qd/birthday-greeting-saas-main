@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
 import {
-  requireApiAuth,
+  requireSessionAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import {
   ContactImportJobNotFoundError,
@@ -16,9 +16,9 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(_request: Request, context: RouteContext) {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const { id } = await context.params;
     const job = await getContactImportJobForOrganization(auth.organizationId, id);
 

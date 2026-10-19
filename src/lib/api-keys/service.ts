@@ -1,8 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 
-import { UserRole, type ApiKey } from "@prisma/client";
+import type { ApiKey } from "@prisma/client";
 
-import type { AuthContext } from "@/lib/auth/types";
 import { prisma } from "@/lib/db";
 
 export const API_KEY_TOKEN_PREFIX = "bw_live_";
@@ -53,7 +52,7 @@ export async function listApiKeys(organizationId: string) {
 }
 
 /**
- * Creates a full-access key for the organization. The raw key is returned
+ * Creates a contact-sync key for the organization. The raw key is returned
  * once here and never again - only its SHA-256 hash is stored.
  */
 export async function createApiKey(
@@ -100,13 +99,14 @@ export async function revokeApiKey(organizationId: string, id: string) {
 }
 
 /**
- * Resolves a raw key to the auth context of its organization. Keys are
- * full-access, so the context carries the Owner role and acts as the user
- * who created the key. Returns null for unknown, revoked, or disabled keys.
+ * Resolves a raw key to its organization. A key carries no user or role -
+ * it only unlocks the integration routes (see requireApiKey). Returns null
+ * for unknown or revoked keys, a deactivated organization, or a key whose
+ * creator has been deactivated.
  */
 export async function authenticateApiKey(
   rawKey: string,
-): Promise<{ apiKeyId: string; auth: AuthContext } | null> {
+): Promise<{ apiKeyId: string; organizationId: string } | null> {
   if (!rawKey.startsWith(API_KEY_TOKEN_PREFIX)) {
     return null;
   }
@@ -142,14 +142,5 @@ export async function authenticateApiKey(
       });
   }
 
-  return {
-    apiKeyId: apiKey.id,
-    auth: {
-      userId: createdBy.id,
-      organizationId: apiKey.organizationId,
-      role: UserRole.ADMIN,
-      email: createdBy.email,
-      name: createdBy.name,
-    },
-  };
+  return { apiKeyId: apiKey.id, organizationId: apiKey.organizationId };
 }

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
 import {
-  requireApiAdmin,
+  requireSessionAdmin,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import {
   DeliveryNotFoundError,
@@ -17,9 +17,9 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(_request: Request, context: RouteContext) {
   try {
-    const auth = await requireApiAdmin(request);
+    const auth = await requireSessionAdmin();
     const { id } = await context.params;
     const result = await refreshDeliveryStatus(auth.organizationId, id);
 

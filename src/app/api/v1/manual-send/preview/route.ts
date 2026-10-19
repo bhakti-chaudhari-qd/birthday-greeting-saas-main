@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireApiAdmin,
+  requireSessionAdmin,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import {
   QueueTemplateNotFoundError,
@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireApiAdmin(request);
+    const auth = await requireSessionAdmin();
     const body = await request.json();
     const input = manualSendPreviewRequestSchema.parse(body);
     const preview = await previewManualSend(auth.organizationId, input);

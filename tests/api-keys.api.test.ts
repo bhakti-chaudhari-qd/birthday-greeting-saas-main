@@ -5,11 +5,11 @@ import {
   GET as listKeysRoute,
   POST as createKeyRoute,
 } from "@/app/api/v1/api-keys/route";
+import { GET as listContactsRoute } from "@/app/api/v1/contacts/route";
 import {
-  GET as listContactsRoute,
-  POST as createContactRoute,
-} from "@/app/api/v1/contacts/route";
-import { API_KEY_RATE_MAX_PER_WINDOW } from "@/lib/api/api-auth";
+  GET as integrationListRoute,
+  POST as integrationUpsertRoute,
+} from "@/app/api/v1/integrations/contacts/route";
 import {
   API_KEY_TOKEN_PREFIX,
   createApiKey,
@@ -27,6 +27,8 @@ vi.mock("next/headers", () => ({
 
 const databaseUrl = process.env.DATABASE_URL;
 let databaseAvailable = false;
+
+const INTEGRATION_URL = "http://localhost/api/v1/integrations/contacts";
 
 function registerInput(suffix: string) {
   return {
@@ -49,13 +51,20 @@ async function mockSessionCookie(rawToken: string | null) {
   } as unknown as Awaited<ReturnType<typeof cookies>>);
 }
 
-function contactsRequest(key: string | null, init?: RequestInit) {
-  return new Request("http://localhost/api/v1/contacts", {
-    ...init,
+function listRequest(key: string | null, query = "") {
+  return new Request(`${INTEGRATION_URL}${query}`, {
+    headers: key ? { Authorization: `Bearer ${key}` } : {},
+  });
+}
+
+function upsertRequest(key: string, contacts: unknown[]) {
+  return new Request(INTEGRATION_URL, {
+    method: "POST",
     headers: {
+      Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
-      ...(key ? { Authorization: `Bearer ${key}` } : {}),
     },
+    body: JSON.stringify({ contacts }),
   });
 }
 
@@ -91,7 +100,7 @@ describe("organization API keys", () => {
       const created = await createKeyRoute(
         new Request("http://localhost/api/v1/api-keys", {
           method: "POST",
-          body: JSON.stringify({ name: "CRM" }),
+          body: JSON.stringify({ name: "OMS" }),
         }),
       );
       expect(created.status).toBe(201);
@@ -114,7 +123,7 @@ describe("organization API keys", () => {
     }
   });
 
-  it("authenticates opted-in routes with a key and scopes them to its organization", async ({
+  it("syncs name, dob, mobile and email only, scoped to the key's organization", async ({
     skip,
   }) => {
     if (!databaseAvailable) skip();
@@ -126,23 +135,48 @@ describe("organization API keys", () => {
     try {
       const keyA = await createApiKey(orgA.organization.id, orgA.user.id, "A");
       const keyB = await createApiKey(orgB.organization.id, orgB.user.id, "B");
+      const mobile = uniqueIndianMobile();
 
-      const created = await createContactRoute(
-        contactsRequest(keyA.key, {
-          method: "POST",
-          body: JSON.stringify({
-            name: "Via API",
-            mobile: uniqueIndianMobile(),
-            isActive: true,
-          }),
-        }),
+      const created = await integrationUpsertRoute(
+        upsertRequest(keyA.key, [
+          {
+            name: "Asha",
+            mobile,
+            email: "asha@example.com",
+            dob: "1990-08-15",
+          },
+        ]),
       );
-      expect(created.status).toBe(201);
+      expect(created.status).toBe(200);
+      const createdBody = await created.json();
+      expect(createdBody.meta).toEqual({ created: 1, updated: 0, failed: 0 });
+      expect(createdBody.data[0].contact).toEqual({
+        id: expect.any(String),
+        name: "Asha",
+        dob: "1990-08-15",
+        mobile,
+        email: "asha@example.com",
+      });
 
-      const listA = await (await listContactsRoute(contactsRequest(keyA.key))).json();
-      const listB = await (await listContactsRoute(contactsRequest(keyB.key))).json();
-      expect(JSON.stringify(listA)).toContain("Via API");
-      expect(JSON.stringify(listB)).not.toContain("Via API");
+      // Same mobile updates in place; omitted email/dob keep their values.
+      const updated = await integrationUpsertRoute(
+        upsertRequest(keyA.key, [{ name: "Asha Patel", mobile }]),
+      );
+      const updatedBody = await updated.json();
+      expect(updatedBody.meta).toEqual({ created: 0, updated: 1, failed: 0 });
+      expect(updatedBody.data[0].contact).toMatchObject({
+        name: "Asha Patel",
+        dob: "1990-08-15",
+        email: "asha@example.com",
+      });
+
+      const listA = await (
+        await integrationListRoute(listRequest(keyA.key, `?mobile=${mobile}`))
+      ).json();
+      expect(listA.data).toEqual([updatedBody.data[0].contact]);
+
+      const listB = await (await integrationListRoute(listRequest(keyB.key))).json();
+      expect(listB.data).toEqual([]);
 
       const used = await prisma.apiKey.findUniqueOrThrow({
         where: { id: keyA.id },
@@ -154,7 +188,9 @@ describe("organization API keys", () => {
     }
   });
 
-  it("rejects missing, unknown, and revoked keys", async ({ skip }) => {
+  it("rejects missing, unknown, and revoked keys, and is refused by dashboard routes", async ({
+    skip,
+  }) => {
     if (!databaseAvailable) skip();
 
     const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
@@ -163,20 +199,24 @@ describe("organization API keys", () => {
     try {
       const key = await createApiKey(org.organization.id, org.user.id, "Temp");
 
-      await mockSessionCookie(null);
-      expect((await listContactsRoute(contactsRequest(null))).status).toBe(401);
-      expect(
-        (await listContactsRoute(contactsRequest(`${API_KEY_TOKEN_PREFIX}nope`)))
-          .status,
-      ).toBe(401);
-
-      // A bad key must not fall back to a valid dashboard cookie.
+      // A logged-in dashboard cookie does not open the integration route.
       await mockSessionCookie(session.rawToken);
+      expect((await integrationListRoute(listRequest(null))).status).toBe(401);
       expect(
-        (await listContactsRoute(contactsRequest(`${API_KEY_TOKEN_PREFIX}nope`)))
+        (await integrationListRoute(listRequest(`${API_KEY_TOKEN_PREFIX}nope`)))
           .status,
       ).toBe(401);
 
+      // A key does not open dashboard routes.
+      await mockSessionCookie(null);
+      const dashboard = await listContactsRoute(
+        new Request("http://localhost/api/v1/contacts", {
+          headers: { Authorization: `Bearer ${key.key}` },
+        }),
+      );
+      expect(dashboard.status).toBe(401);
+
+      await mockSessionCookie(session.rawToken);
       const revoked = await revokeRoute(
         new Request(`http://localhost/api/v1/api-keys/${key.id}`, {
           method: "DELETE",
@@ -185,8 +225,7 @@ describe("organization API keys", () => {
       );
       expect(revoked.status).toBe(200);
 
-      await mockSessionCookie(null);
-      expect((await listContactsRoute(contactsRequest(key.key))).status).toBe(401);
+      expect((await integrationListRoute(listRequest(key.key))).status).toBe(401);
     } finally {
       await prisma.organization.delete({ where: { id: org.organization.id } });
     }
@@ -209,28 +248,6 @@ describe("organization API keys", () => {
         }),
       );
       expect(response.status).toBe(401);
-    } finally {
-      await prisma.organization.delete({ where: { id: org.organization.id } });
-    }
-  });
-
-  it("returns 429 once a key exceeds its per-minute limit", async ({ skip }) => {
-    if (!databaseAvailable) skip();
-
-    const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
-    await mockSessionCookie(null);
-
-    try {
-      const key = await createApiKey(org.organization.id, org.user.id, "Busy");
-
-      for (let index = 0; index < API_KEY_RATE_MAX_PER_WINDOW; index += 1) {
-        const response = await listContactsRoute(contactsRequest(key.key));
-        expect(response.status).toBe(200);
-      }
-
-      const limited = await listContactsRoute(contactsRequest(key.key));
-      expect(limited.status).toBe(429);
-      expect(limited.headers.get("Retry-After")).toBe("60");
     } finally {
       await prisma.organization.delete({ where: { id: org.organization.id } });
     }

@@ -56,6 +56,9 @@ type Labels = {
   usageTitle: string;
   usageIntro: string;
   usageEndpoints: string;
+  usageReadHint: string;
+  usageWrite: string;
+  usageWriteHint: string;
   usageLimit: string;
 };
 
@@ -63,7 +66,7 @@ const LABELS: Record<Locale, Labels> = {
   en: {
     title: "API Keys",
     description:
-      "Connect your own software to this account. A key gives full access to your contacts, templates and messages, so share it only with systems you trust.",
+      "Let another app, such as your OMS, sync contacts with this account. A key can only read and update each contact's name, date of birth, phone number and email - nothing else.",
     createTitle: "Create a key",
     namePlaceholder: "Name, e.g. CRM integration",
     create: "Create key",
@@ -93,15 +96,20 @@ const LABELS: Record<Locale, Labels> = {
     failedToRevoke: "Could not revoke the API key.",
     usageTitle: "How to use a key",
     usageIntro:
-      "Send the key in the Authorization header of every request. Requests and responses are JSON.",
-    usageEndpoints: "Available endpoints",
+      "Send the key in the Authorization header. Requests and responses are JSON, and dates use YYYY-MM-DD.",
+    usageEndpoints: "Read contacts",
+    usageReadHint:
+      "Pages of 50 (limit up to 100). Add updatedSince=<ISO time> to get only contacts changed since your last sync, or mobile=<number> to look one up.",
+    usageWrite: "Add or update contacts",
+    usageWriteHint:
+      "Up to 100 per request, matched by mobile number. Leave out email or dob to keep the saved value; send null to clear it.",
     usageLimit:
-      "Each key can make up to 120 requests per minute. Your plan's contact and message limits apply to API requests too.",
+      "Each key can make up to 120 requests per minute. New contacts count toward your plan's contact limit.",
   },
   hi: {
     title: "API कीज़",
     description:
-      "अपने सॉफ़्टवेयर को इस अकाउंट से जोड़ें। एक की से आपके कॉन्टैक्ट, टेम्पलेट और मेसेज का पूरा एक्सेस मिलता है, इसलिए इसे सिर्फ़ भरोसेमंद सिस्टम के साथ शेयर करें।",
+      "किसी दूसरे ऐप, जैसे आपके OMS, को इस अकाउंट के साथ कॉन्टैक्ट सिंक करने दें। एक की से सिर्फ़ हर कॉन्टैक्ट का नाम, जन्मतिथि, फ़ोन नंबर और ईमेल पढ़ा और अपडेट किया जा सकता है - इसके अलावा कुछ नहीं।",
     createTitle: "नई की बनाएं",
     namePlaceholder: "नाम, जैसे CRM इंटीग्रेशन",
     create: "की बनाएं",
@@ -131,15 +139,20 @@ const LABELS: Record<Locale, Labels> = {
     failedToRevoke: "API की रद्द नहीं हो सकी।",
     usageTitle: "की का इस्तेमाल कैसे करें",
     usageIntro:
-      "हर रिक्वेस्ट के Authorization हेडर में की भेजें। रिक्वेस्ट और रिस्पॉन्स JSON में होते हैं।",
-    usageEndpoints: "उपलब्ध एंडपॉइंट",
+      "Authorization हेडर में की भेजें। रिक्वेस्ट और रिस्पॉन्स JSON में होते हैं, और तारीखें YYYY-MM-DD फ़ॉर्मैट में।",
+    usageEndpoints: "कॉन्टैक्ट पढ़ें",
+    usageReadHint:
+      "हर पेज में 50 (limit से 100 तक)। पिछले सिंक के बाद बदले कॉन्टैक्ट के लिए updatedSince=<ISO समय> जोड़ें, या किसी एक को ढूंढने के लिए mobile=<नंबर>।",
+    usageWrite: "कॉन्टैक्ट जोड़ें या अपडेट करें",
+    usageWriteHint:
+      "एक रिक्वेस्ट में 100 तक, मोबाइल नंबर से मिलाए जाते हैं। सेव की गई वैल्यू रखने के लिए email या dob न भेजें; हटाने के लिए null भेजें।",
     usageLimit:
-      "हर की से एक मिनट में 120 रिक्वेस्ट की जा सकती हैं। आपके प्लान की कॉन्टैक्ट और मेसेज सीमाएं API रिक्वेस्ट पर भी लागू होती हैं।",
+      "हर की से एक मिनट में 120 रिक्वेस्ट की जा सकती हैं। नए कॉन्टैक्ट आपके प्लान की कॉन्टैक्ट सीमा में गिने जाते हैं।",
   },
   mr: {
     title: "API कीज",
     description:
-      "तुमचे सॉफ्टवेअर या खात्याशी जोडा. एका कीमुळे तुमचे कॉन्टॅक्ट, टेम्पलेट आणि मेसेज यांचा पूर्ण ॲक्सेस मिळतो, त्यामुळे ती फक्त विश्वासू सिस्टमसोबतच शेअर करा.",
+      "दुसऱ्या ॲपला, जसे तुमचे OMS, या खात्यासोबत कॉन्टॅक्ट सिंक करू द्या. एका कीने फक्त प्रत्येक कॉन्टॅक्टचे नाव, जन्मतारीख, फोन नंबर आणि ईमेल वाचता आणि अपडेट करता येतात - याशिवाय काहीही नाही.",
     createTitle: "नवीन की तयार करा",
     namePlaceholder: "नाव, उदा. CRM इंटिग्रेशन",
     create: "की तयार करा",
@@ -169,25 +182,30 @@ const LABELS: Record<Locale, Labels> = {
     failedToRevoke: "API की रद्द होऊ शकली नाही.",
     usageTitle: "की कशी वापरायची",
     usageIntro:
-      "प्रत्येक रिक्वेस्टच्या Authorization हेडरमध्ये की पाठवा. रिक्वेस्ट आणि रिस्पॉन्स JSON मध्ये असतात.",
-    usageEndpoints: "उपलब्ध एंडपॉइंट",
+      "Authorization हेडरमध्ये की पाठवा. रिक्वेस्ट आणि रिस्पॉन्स JSON मध्ये असतात, आणि तारखा YYYY-MM-DD फॉरमॅटमध्ये.",
+    usageEndpoints: "कॉन्टॅक्ट वाचा",
+    usageReadHint:
+      "प्रत्येक पेजमध्ये 50 (limit ने 100 पर्यंत). मागील सिंकनंतर बदललेल्या कॉन्टॅक्टसाठी updatedSince=<ISO वेळ> जोडा, किंवा एक शोधण्यासाठी mobile=<नंबर>.",
+    usageWrite: "कॉन्टॅक्ट जोडा किंवा अपडेट करा",
+    usageWriteHint:
+      "एका रिक्वेस्टमध्ये 100 पर्यंत, मोबाइल नंबरने जुळवले जातात. सेव्ह केलेली व्हॅल्यू ठेवण्यासाठी email किंवा dob पाठवू नका; काढण्यासाठी null पाठवा.",
     usageLimit:
-      "प्रत्येक कीने एका मिनिटात 120 रिक्वेस्ट करता येतात. तुमच्या प्लॅनच्या कॉन्टॅक्ट आणि मेसेज मर्यादा API रिक्वेस्टलाही लागू होतात.",
+      "प्रत्येक कीने एका मिनिटात 120 रिक्वेस्ट करता येतात. नवीन कॉन्टॅक्ट तुमच्या प्लॅनच्या कॉन्टॅक्ट मर्यादेत मोजले जातात.",
   },
 };
 
-/** Route groups reachable with an API key (see requireApiAuth usages). */
-const API_ENDPOINT_GROUPS = [
-  "/api/v1/contacts",
-  "/api/v1/contact-categories",
-  "/api/v1/contact-fields",
-  "/api/v1/occasions",
-  "/api/v1/templates",
-  "/api/v1/manual-send",
-  "/api/v1/queue",
-  "/api/v1/deliveries",
-  "/api/v1/generated-documents",
-] as const;
+const INTEGRATION_CONTACTS_PATH = "/api/v1/integrations/contacts";
+
+const UPSERT_EXAMPLE_BODY = `{
+  "contacts": [
+    {
+      "name": "Asha Patel",
+      "mobile": "9876543210",
+      "email": "asha@example.com",
+      "dob": "1990-08-15"
+    }
+  ]
+}`;
 
 function formatDateTime(value: string): string {
   return new Date(value).toLocaleString("en-IN", {
@@ -434,17 +452,20 @@ export function ApiKeySettings() {
           {labels.usageTitle}
         </h2>
         <p className="mt-1 text-sm text-stone-600">{labels.usageIntro}</p>
-        <pre className="mt-3 overflow-x-auto rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-900">
-          {`curl ${origin}/api/v1/contacts \\\n  -H "Authorization: Bearer bw_live_..."`}
-        </pre>
         <h3 className="mt-4 text-sm font-medium text-stone-800">
           {labels.usageEndpoints}
         </h3>
-        <ul className="mt-2 grid gap-1 font-mono text-xs text-stone-700 sm:grid-cols-2">
-          {API_ENDPOINT_GROUPS.map((path) => (
-            <li key={path}>{path}</li>
-          ))}
-        </ul>
+        <p className="mt-1 text-xs text-stone-600">{labels.usageReadHint}</p>
+        <pre className="mt-2 overflow-x-auto rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-900">
+          {`curl "${origin}${INTEGRATION_CONTACTS_PATH}?page=1&limit=50" \\\n  -H "Authorization: Bearer bw_live_..."`}
+        </pre>
+        <h3 className="mt-4 text-sm font-medium text-stone-800">
+          {labels.usageWrite}
+        </h3>
+        <p className="mt-1 text-xs text-stone-600">{labels.usageWriteHint}</p>
+        <pre className="mt-2 overflow-x-auto rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-900">
+          {`curl -X POST ${origin}${INTEGRATION_CONTACTS_PATH} \\\n  -H "Authorization: Bearer bw_live_..." \\\n  -H "Content-Type: application/json" \\\n  -d '${UPSERT_EXAMPLE_BODY}'`}
+        </pre>
         <p className="mt-4 text-xs text-stone-500">{labels.usageLimit}</p>
       </Panel>
     </PageShell>

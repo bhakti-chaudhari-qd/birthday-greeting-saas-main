@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireApiAdmin,
-  requireApiAuth,
+  requireSessionAdmin,
+  requireSessionAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import {
   ContactFieldConflictError,
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const { searchParams } = new URL(request.url);
     const activeOnly = searchParams.get("isActive") === "true";
     const data = await listContactFieldDefinitions(auth.organizationId, {
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireApiAdmin(request);
+    const auth = await requireSessionAdmin();
     const body = await request.json();
     const input = createContactFieldDefinitionSchema.parse(body);
     const data = await createContactFieldDefinition(auth.organizationId, input);

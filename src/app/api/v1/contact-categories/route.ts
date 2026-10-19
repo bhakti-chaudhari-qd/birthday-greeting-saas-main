@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireApiAuth,
+  requireSessionAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import {
   ContactCategoryConflictError,
@@ -16,9 +16,9 @@ import { createContactCategorySchema } from "@/lib/validation/contact";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request?: Request) {
+export async function GET() {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const data = await listContactCategories(auth.organizationId);
     return NextResponse.json({ data });
   } catch (error) {
@@ -34,7 +34,7 @@ export async function GET(request?: Request) {
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const body = await request.json();
     const input = createContactCategorySchema.parse(body);
     const data = await createContactCategory(auth.organizationId, input.name);

@@ -1,10 +1,9 @@
+import type { NextResponse } from "next/server";
+
 import { authenticateApiKey } from "@/lib/api-keys/service";
 import { RateLimitError } from "@/lib/auth/rate-limit";
-import type { AuthContext } from "@/lib/auth/types";
 
-import { requireSessionAdmin, requireSessionAuth } from "./session-auth";
-
-export { sessionAuthErrorResponse } from "./session-auth";
+import { jsonError } from "./response";
 
 const API_KEY_RATE_WINDOW_MS = 60 * 1000;
 export const API_KEY_RATE_MAX_PER_WINDOW = 120;
@@ -28,50 +27,47 @@ function consumeApiKeyRateLimit(apiKeyId: string): void {
   current.hits += 1;
 }
 
-function readBearerToken(request: Request | undefined): string | null {
-  const header = request?.headers.get("authorization");
+function readBearerToken(request: Request): string | null {
+  const header = request.headers.get("authorization");
   if (!header) {
     return null;
   }
 
   const match = /^Bearer\s+(\S+)$/i.exec(header.trim());
-  return match ? match[1] : "";
+  return match ? match[1] : null;
 }
 
 /**
- * Auth for routes opened to external integrations: an
- * `Authorization: Bearer bw_live_...` API key, or the dashboard session
- * cookie when no Authorization header is sent. A request that sends a bad
- * key is rejected - it never falls back to the cookie.
+ * Auth for the integration routes (src/app/api/v1/integrations): requires
+ * an `Authorization: Bearer bw_live_...` API key. The dashboard session
+ * cookie is not accepted here, and API keys are not accepted anywhere else.
  */
-export async function requireApiAuth(request?: Request): Promise<AuthContext> {
+export async function requireApiKey(
+  request: Request,
+): Promise<{ organizationId: string; apiKeyId: string }> {
   const token = readBearerToken(request);
-
-  if (token === null) {
-    return requireSessionAuth();
-  }
-
-  const resolved = await authenticateApiKey(token);
+  const resolved = token ? await authenticateApiKey(token) : null;
 
   if (!resolved) {
-    throw new Error("UNAUTHORIZED");
+    throw new Error("API_KEY_UNAUTHORIZED");
   }
 
   consumeApiKeyRateLimit(resolved.apiKeyId);
 
-  return resolved.auth;
+  return resolved;
 }
 
-/**
- * Owner-level variant. API keys are full-access (Owner role), so this only
- * narrows cookie sessions - Staff sessions are rejected as before.
- */
-export async function requireApiAdmin(request?: Request): Promise<AuthContext> {
-  const token = readBearerToken(request);
-
-  if (token === null) {
-    return requireSessionAdmin();
+/** Maps API key failures to 401/429 responses; otherwise null. */
+export function apiKeyAuthErrorResponse(error: unknown): NextResponse | null {
+  if (error instanceof Error && error.message === "API_KEY_UNAUTHORIZED") {
+    return jsonError("A valid API key is required", 401);
   }
 
-  return requireApiAuth(request);
+  if (error instanceof RateLimitError) {
+    const response = jsonError(error.message, 429);
+    response.headers.set("Retry-After", "60");
+    return response;
+  }
+
+  return null;
 }

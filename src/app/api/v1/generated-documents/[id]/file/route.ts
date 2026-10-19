@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
 import {
-  requireApiAuth,
+  requireSessionAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import { generatedDocumentErrorResponse } from "@/lib/generated-documents/api-errors";
 import { getGeneratedDocumentFile } from "@/lib/generated-documents/service";
@@ -19,7 +19,7 @@ type RouteContext = { params: Promise<{ id: string }> };
  */
 export async function GET(request: Request, context: RouteContext) {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const { id } = await context.params;
     const { searchParams } = new URL(request.url);
     const download = searchParams.get("download") === "1";

@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireApiAdmin,
+  requireSessionAdmin,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import { exportDeliveriesCsv } from "@/lib/deliveries/export";
 import { exportDeliveriesQuerySchema } from "@/lib/validation/send";
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireApiAdmin(request);
+    const auth = await requireSessionAdmin();
     const { searchParams } = new URL(request.url);
     const query = exportDeliveriesQuerySchema.parse({
       search: searchParams.get("search") ?? undefined,

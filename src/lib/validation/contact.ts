@@ -9,7 +9,7 @@ import {
   normalizeCsvOccasionDateToIso,
 } from "@/lib/contacts/dates";
 
-const contactMobileSchema = z
+export const contactMobileSchema = z
   .string()
   .trim()
   .min(10)
@@ -39,7 +39,7 @@ const categoryNameSchema = z.string().trim().min(1).max(50);
 /** Extra category ids beyond the primary categoryId/categoryName. */
 const categoryTagIdsSchema = z.array(categoryIdSchema).max(20).optional();
 
-const contactEmailSchema = z
+export const contactEmailSchema = z
   .string()
   .trim()
   .email("Enter a valid email address")

@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import {
-  requireApiAuth,
+  requireSessionAuth,
   sessionAuthErrorResponse,
-} from "@/lib/api/api-auth";
+} from "@/lib/api/session-auth";
 import { jsonError } from "@/lib/api/response";
 import { ContactDeleteBlockedError } from "@/lib/contacts/errors";
 import { bulkDeleteContacts } from "@/lib/contacts/service";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireApiAuth(request);
+    const auth = await requireSessionAuth();
     const body = await request.json();
     const input = bulkContactIdsSchema.parse(body);
     const result = await bulkDeleteContacts(auth.organizationId, input);
