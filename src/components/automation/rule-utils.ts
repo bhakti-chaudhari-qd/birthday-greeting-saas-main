@@ -1,5 +1,6 @@
 import type { Channel } from "@prisma/client";
 
+import { CALL_CHANNEL_ENABLED } from "@/lib/channel-config/call-availability";
 import type { CategoryAutomationRuleView } from "@/lib/automation/category-settings";
 
 import { CHANNEL_LABEL, type AutomationCardData } from "./types";
@@ -187,7 +188,9 @@ export function buildAutomationCards(
       { channel: "WHATSAPP", enabled: rule.whatsappEnabled, templateId: rule.whatsappTemplateId },
       { channel: "EMAIL", enabled: rule.emailEnabled, templateId: rule.emailTemplateId },
       { channel: "SMS", enabled: rule.smsEnabled, templateId: rule.smsTemplateId },
-      { channel: "CALL", enabled: rule.callEnabled, templateId: rule.callTemplateId },
+      ...(CALL_CHANNEL_ENABLED
+        ? [{ channel: "CALL" as const, enabled: rule.callEnabled, templateId: rule.callTemplateId }]
+        : []),
     ];
 
     const hasSendTime = rule.sendHour !== null && rule.sendMinute !== null;

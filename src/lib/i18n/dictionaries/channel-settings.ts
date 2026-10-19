@@ -6,6 +6,8 @@ export type ChannelSettingsDict = {
     loading: string;
     channelTabsLabel: string;
     callTab: string;
+    callComingSoonTitle: string;
+    callComingSoonBody: string;
   };
   common: {
     active: string;
@@ -125,6 +127,8 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       loading: "Loading channel settings…",
       channelTabsLabel: "Channel",
       callTab: "Call",
+      callComingSoonTitle: "Call - coming soon",
+      callComingSoonBody: "Automated greeting calls are on their way. You will be able to set up this channel here soon.",
     },
     common: {
       active: "Active",
@@ -256,6 +260,8 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       loading: "चैनल सेटिंग्स लोड हो रही हैं…",
       channelTabsLabel: "चैनल",
       callTab: "कॉल",
+      callComingSoonTitle: "कॉल - जल्द आ रहा है",
+      callComingSoonBody: "ऑटोमेटेड बधाई कॉल जल्द आ रही हैं। आप जल्द ही यहाँ यह चैनल सेट कर पाएँगे।",
     },
     common: {
       active: "एक्टिव",
@@ -388,6 +394,8 @@ const CHANNEL_SETTINGS_DICT: Record<Locale, ChannelSettingsDict> = {
       loading: "चॅनेल सेटिंग्ज लोड होत आहेत…",
       channelTabsLabel: "चॅनेल",
       callTab: "कॉल",
+      callComingSoonTitle: "कॉल - लवकरच येत आहे",
+      callComingSoonBody: "स्वयंचलित शुभेच्छा कॉल लवकरच येत आहेत. तुम्ही लवकरच हा चॅनेल येथे सेट करू शकाल.",
     },
     common: {
       active: "एक्टिव",

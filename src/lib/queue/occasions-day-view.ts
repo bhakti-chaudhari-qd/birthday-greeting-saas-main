@@ -5,6 +5,7 @@ import {
   type QueueStatus,
 } from "@prisma/client";
 
+import { CALL_CHANNEL_ENABLED } from "@/lib/channel-config/call-availability";
 import { AUTOMATION_TIMEZONE } from "@/lib/automation/constants";
 import { formatAutomationSendTimeLabel } from "@/lib/automation/send-time";
 import { clientVisibleMobile } from "@/lib/contacts/mask";
@@ -256,7 +257,8 @@ function buildSectionContacts(
     let smsEnabled = Boolean(rule?.smsEnabled && rule.smsTemplateId);
     let whatsappEnabled = Boolean(rule?.whatsappEnabled && rule.whatsappTemplateId);
     let emailEnabled = Boolean(rule?.emailEnabled && rule.emailTemplateId);
-    let callEnabled = Boolean(rule?.callEnabled && rule.callTemplateId);
+    let callEnabled =
+      CALL_CHANNEL_ENABLED && Boolean(rule?.callEnabled && rule.callTemplateId);
     const smsTemplate = rule?.smsTemplateId
       ? (templateById.get(rule.smsTemplateId) ?? null)
       : null;
@@ -549,7 +551,8 @@ export async function getOccasionsDayView(
       automationEnabled: anyRule.some((rule) => rule.smsEnabled),
       whatsappAutomationEnabled: anyRule.some((rule) => rule.whatsappEnabled),
       emailAutomationEnabled: anyRule.some((rule) => rule.emailEnabled),
-      callAutomationEnabled: anyRule.some((rule) => rule.callEnabled),
+      callAutomationEnabled:
+        CALL_CHANNEL_ENABLED && anyRule.some((rule) => rule.callEnabled),
       sendTimeLabel:
         allContactsRule &&
         allContactsRule.sendHour !== null &&

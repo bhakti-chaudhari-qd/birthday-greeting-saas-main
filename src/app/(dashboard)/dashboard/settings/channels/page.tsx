@@ -11,9 +11,11 @@ import { WhatsAppChannelSettings } from "@/components/settings/whatsapp-channel-
 import {
   PageHeader,
   PageShell,
+  Panel,
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/ui/page";
+import { CALL_CHANNEL_ENABLED } from "@/lib/channel-config/call-availability";
 import { getChannelSettingsDict } from "@/lib/i18n/dictionaries/channel-settings";
 import { useLocale } from "@/lib/i18n/use-locale";
 
@@ -118,7 +120,18 @@ function ChannelSettingsTabs() {
         {tab === "sms" ? <SmsChannelSettings /> : null}
         {tab === "whatsapp" ? <WhatsAppChannelSettings /> : null}
         {tab === "email" ? <EmailChannelSettings /> : null}
-        {tab === "call" ? <CallChannelSettings /> : null}
+        {tab === "call" ? (
+          CALL_CHANNEL_ENABLED ? (
+            <CallChannelSettings />
+          ) : (
+            <Panel className="p-6">
+              <h2 className="text-base font-semibold text-stone-900">
+                {dict.callComingSoonTitle}
+              </h2>
+              <p className="mt-1 text-sm text-stone-600">{dict.callComingSoonBody}</p>
+            </Panel>
+          )
+        ) : null}
       </div>
 
     </PageShell>

@@ -12,6 +12,7 @@ import {
   inputClass,
   secondaryButtonClass,
 } from "@/components/ui/page";
+import { CALL_CHANNEL_ENABLED } from "@/lib/channel-config/call-availability";
 import { getActivityDict, type ActivityDict } from "@/lib/i18n/dictionaries/activity";
 import { translateOccasionName } from "@/lib/i18n/occasion-labels";
 import { useLocale } from "@/lib/i18n/use-locale";
@@ -785,7 +786,7 @@ status === "all" ? (
               <option value="WHATSAPP">WhatsApp</option>
               <option value="EMAIL">Email</option>
               <option value="SMS">SMS</option>
-              <option value="CALL">Call</option>
+              {CALL_CHANNEL_ENABLED ? <option value="CALL">Call</option> : null}
             </select>
           </label>
           <div className="flex items-center gap-1.5">

@@ -11,6 +11,7 @@ import {
   type AutomationOrganizationInput,
   type OccasionAutomationSummary,
 } from "@/lib/automation/run-occasion-automation";
+import { CALL_CHANNEL_ENABLED } from "@/lib/channel-config/call-availability";
 import { getEffectiveChannelConfig } from "@/lib/channel-config/platform-defaults";
 import { prisma } from "@/lib/db";
 import type { QueueGenerationSummary } from "@/lib/queue/generate";
@@ -213,8 +214,9 @@ async function runCategoryRoutedAutomation(input: {
       Channel.SMS,
       Channel.WHATSAPP,
       Channel.EMAIL,
-      Channel.CALL,
-    ] as const) {
+      // Paused rules keep their call settings; they just don't queue calls.
+      ...(CALL_CHANNEL_ENABLED ? [Channel.CALL] : []),
+    ]) {
       const rules = await listActiveCategoryChannelRules(
         organization.id,
         input.occasionType,

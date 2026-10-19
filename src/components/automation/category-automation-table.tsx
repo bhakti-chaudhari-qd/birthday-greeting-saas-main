@@ -23,6 +23,7 @@ import {
   hour12ToHour24,
   hour24ToHour12,
 } from "@/lib/automation/send-time";
+import { CALL_CHANNEL_ENABLED } from "@/lib/channel-config/call-availability";
 import {
   getGreetingRoutesDict,
   type GreetingRoutesDict,
@@ -761,7 +762,7 @@ export function CategoryAutomationTable() {
               (row.smsEnabled && row.smsTemplateId) ||
               (row.whatsappEnabled && row.whatsappTemplateId) ||
               (row.emailEnabled && row.emailTemplateId) ||
-              (row.callEnabled && row.callTemplateId);
+              (CALL_CHANNEL_ENABLED && row.callEnabled && row.callTemplateId);
 
             return (
               <li
@@ -875,6 +876,7 @@ export function CategoryAutomationTable() {
                       )
                     }
                   />
+                  {CALL_CHANNEL_ENABLED ? (
                   <ChannelRow
                     label={dict.channels.call}
                     enabled={row.callEnabled}
@@ -909,6 +911,7 @@ export function CategoryAutomationTable() {
                       </>
                     }
                   />
+                  ) : null}
                 </div>
               </li>
             );

@@ -6,6 +6,7 @@ import {
   formatAutomationSendTimeLabel,
   getLocalHourMinute,
 } from "@/lib/automation/send-time";
+import { CALL_CHANNEL_ENABLED } from "@/lib/channel-config/call-availability";
 import { getEmailChannelConfig } from "@/lib/channel-config/email-service";
 import { getSmsChannelConfig } from "@/lib/channel-config/service";
 import { getWhatsAppChannelConfig } from "@/lib/channel-config/whatsapp-service";
@@ -175,7 +176,9 @@ async function loadAutomationState(organizationId: string): Promise<{
       [rule.smsEnabled, rule.smsTemplateId, Channel.SMS],
       [rule.whatsappEnabled, rule.whatsappTemplateId, Channel.WHATSAPP],
       [rule.emailEnabled, rule.emailTemplateId, Channel.EMAIL],
-      [rule.callEnabled, rule.callTemplateId, Channel.CALL],
+      ...(CALL_CHANNEL_ENABLED
+        ? [[rule.callEnabled, rule.callTemplateId, Channel.CALL] as [boolean, string | null, Channel]]
+        : []),
     ];
 
     let ruleHasActiveChannel = false;

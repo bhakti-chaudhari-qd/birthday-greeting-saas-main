@@ -9,6 +9,7 @@ import { Drawer } from "@/components/ui/drawer";
 import { InlineAlert } from "@/components/ui/feedback";
 import { inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/page";
 import type { CategoryAutomationSettingsView } from "@/lib/automation/category-settings";
+import { CALL_CHANNEL_ENABLED } from "@/lib/channel-config/call-availability";
 import { getGreetingRoutesDict } from "@/lib/i18n/dictionaries/greeting-routes";
 import { useLocale } from "@/lib/i18n/use-locale";
 
@@ -33,7 +34,9 @@ type ChannelFormState = { enabled: boolean; templateId: string };
 
 type PreviewState = { body: string; previewMessage: string; emailSubject: string | null };
 
-const CHANNELS: Channel[] = ["WHATSAPP", "EMAIL", "SMS", "CALL"];
+const CHANNELS: Channel[] = CALL_CHANNEL_ENABLED
+  ? ["WHATSAPP", "EMAIL", "SMS", "CALL"]
+  : ["WHATSAPP", "EMAIL", "SMS"];
 
 function emptyChannelForm(): Record<Channel, ChannelFormState> {
   return {
@@ -194,7 +197,7 @@ export function AutomationDrawer({
         rule.smsTemplateId ||
           rule.whatsappTemplateId ||
           rule.emailTemplateId ||
-          rule.callTemplateId,
+          (CALL_CHANNEL_ENABLED && rule.callTemplateId),
       ),
     );
 
