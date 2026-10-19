@@ -13,7 +13,9 @@ import { formatLongDate } from "@/lib/i18n/format-date";
 import { translateOccasionName } from "@/lib/i18n/occasion-labels";
 import { toDevanagari } from "@/lib/i18n/transliterate";
 import { useLocale } from "@/lib/i18n/use-locale";
+import { formatDisplayDate } from "@/lib/ui/datetime";
 import type {
+  DashboardChannelUsage,
   DashboardHomeAlert,
   DashboardHomeStatus,
   DashboardHomeSummary,
@@ -110,6 +112,20 @@ function ChannelStatusRow({
         label={connected ? dict.connected : dict.notConnected}
         tone={connected ? "success" : "danger"}
       />
+    </div>
+  );
+}
+
+function PlanUsageChannelRow({ usage }: { usage: DashboardChannelUsage }) {
+  const dict = getDashboardHomeDict(useLocale()).planUsage;
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-sm font-medium text-stone-800">
+        {dict.channel[usage.channel]}
+      </span>
+      <span className="text-sm text-stone-600">
+        {dict.remainingOfTotal(usage.remaining, usage.limit)}
+      </span>
     </div>
   );
 }
@@ -449,6 +465,50 @@ export function DashboardHome({
                   connected={summary.channels.emailConnected}
                 />
               </div>
+            </StatusCard>
+          ) : null}
+
+          {summary.planUsage ? (
+            <StatusCard label={dict.planUsage.planExpiry} href="/dashboard/settings/billing">
+              <p className="mt-3 text-2xl font-semibold text-stone-900">
+                {summary.planUsage.daysUntilExpiry !== null
+                  ? dict.planUsage.daysLeft(summary.planUsage.daysUntilExpiry)
+                  : dict.planUsage.noExpiry}
+              </p>
+              <p className="mt-auto pt-4 text-xs text-stone-500">
+                {summary.planUsage.paidUntilIso
+                  ? dict.planUsage.endsOn(formatDisplayDate(summary.planUsage.paidUntilIso))
+                  : "—"}
+              </p>
+            </StatusCard>
+          ) : null}
+
+          {summary.planUsage ? (
+            <StatusCard label={dict.planUsage.messagesRemaining} href="/dashboard/settings/billing">
+              {summary.planUsage.messages ? (
+                <>
+                  <p className="mt-3 text-2xl font-semibold text-stone-900">
+                    {dict.planUsage.remainingOfTotal(
+                      summary.planUsage.messages.remaining,
+                      summary.planUsage.messages.limit,
+                    )}
+                  </p>
+                  {summary.planUsage.channels && summary.planUsage.channels.length > 0 ? (
+                    <div className="mt-auto flex flex-col gap-1.5 pt-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
+                        {dict.planUsage.perChannelHeading}
+                      </p>
+                      {summary.planUsage.channels.map((usage) => (
+                        <PlanUsageChannelRow key={usage.channel} usage={usage} />
+                      ))}
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <p className="mt-3 text-2xl font-semibold text-stone-900">
+                  {dict.planUsage.noMessageLimit}
+                </p>
+              )}
             </StatusCard>
           ) : null}
         </div>

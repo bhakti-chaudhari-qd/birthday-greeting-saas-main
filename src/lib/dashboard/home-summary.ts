@@ -1,4 +1,4 @@
-import { Channel, QueueStatus, UserRole } from "@prisma/client";
+import { Channel, QueueStatus, SubscriptionPlan, UserRole } from "@prisma/client";
 
 import { getActivityUpcoming } from "@/lib/activity/upcoming";
 import { AUTOMATION_TIMEZONE } from "@/lib/automation/constants";
@@ -11,6 +11,10 @@ import { getEmailChannelConfig } from "@/lib/channel-config/email-service";
 import { getSmsChannelConfig } from "@/lib/channel-config/service";
 import { getWhatsAppChannelConfig } from "@/lib/channel-config/whatsapp-service";
 import { prisma } from "@/lib/db";
+import {
+  getEffectiveMonthlyMessageLimit,
+  isUsagePeriodStale,
+} from "@/lib/queue/limits";
 import {
   getOrganizationLocalIsoDate,
   getPreviousIsoDate,
@@ -67,6 +71,24 @@ export type DashboardUpcomingToday = {
   viewAllHref: string;
 };
 
+export type DashboardChannelUsage = {
+  channel: Channel;
+  used: number;
+  limit: number;
+  remaining: number;
+};
+
+export type DashboardPlanUsage = {
+  plan: SubscriptionPlan;
+  /** Whole days left, rounded up; null for FREE plans or when paidUntil isn't set. */
+  daysUntilExpiry: number | null;
+  paidUntilIso: string | null;
+  /** Aggregate monthly message allowance; null when the plan has no enforced limit. */
+  messages: { used: number; limit: number; remaining: number } | null;
+  /** Per-channel allocation, CUSTOM plan only; null for every other plan. */
+  channels: DashboardChannelUsage[] | null;
+};
+
 export type DashboardHomeSummary = {
   todayDateLabel: string;
   /** Same day as todayDateLabel, as YYYY-MM-DD - lets the client reformat it in the selected language. */
@@ -79,6 +101,8 @@ export type DashboardHomeSummary = {
   activeContactsCount: number;
   /** Owner-only: STAFF cannot view or manage channel connections. */
   channels: DashboardChannelStatus | null;
+  /** Owner-only: STAFF cannot view billing/plan usage. */
+  planUsage: DashboardPlanUsage | null;
   alerts: DashboardHomeAlert[];
   runningAutomations: RunningAutomationRow[];
   missedQueue: { targetDate: string; missedCount: number } | null;
@@ -273,6 +297,74 @@ async function countMissedYesterday(
   return missed;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Owner-only plan/usage snapshot for the homepage KPI cards; mirrors the admin plan-alerts logic. */
+async function loadPlanUsage(
+  organizationId: string,
+  now: Date,
+): Promise<DashboardPlanUsage | null> {
+  const subscription = await prisma.subscription.findUnique({
+    where: { organizationId },
+    select: {
+      plan: true,
+      paidUntil: true,
+      monthlyMessageLimit: true,
+      bonusMessageCredits: true,
+      messagesSentThisMonth: true,
+      billingPeriodStart: true,
+      channelLimits: {
+        select: { channel: true, monthlyLimit: true, messagesSentThisMonth: true },
+      },
+    },
+  });
+
+  if (!subscription) {
+    return null;
+  }
+
+  const paidUntilMs = subscription.paidUntil?.getTime();
+  const daysUntilExpiry =
+    subscription.plan !== SubscriptionPlan.FREE && paidUntilMs !== undefined
+      ? Math.ceil((paidUntilMs - now.getTime()) / DAY_MS)
+      : null;
+
+  const periodStale = isUsagePeriodStale(subscription.billingPeriodStart, now);
+
+  let messages: DashboardPlanUsage["messages"] = null;
+  const limit = getEffectiveMonthlyMessageLimit(subscription);
+  if (limit > 0) {
+    const used = periodStale ? 0 : subscription.messagesSentThisMonth;
+    messages = { used, limit, remaining: Math.max(0, limit - used) };
+  }
+
+  let channels: DashboardChannelUsage[] | null = null;
+  if (
+    subscription.plan === SubscriptionPlan.CUSTOM &&
+    subscription.channelLimits.length > 0
+  ) {
+    channels = subscription.channelLimits
+      .filter((row) => row.monthlyLimit > 0)
+      .map((row) => {
+        const used = periodStale ? 0 : row.messagesSentThisMonth;
+        return {
+          channel: row.channel,
+          used,
+          limit: row.monthlyLimit,
+          remaining: Math.max(0, row.monthlyLimit - used),
+        };
+      });
+  }
+
+  return {
+    plan: subscription.plan,
+    daysUntilExpiry,
+    paidUntilIso: subscription.paidUntil?.toISOString() ?? null,
+    messages,
+    channels,
+  };
+}
+
 export async function getDashboardHomeSummary(
   organizationId: string,
   role: UserRole,
@@ -291,6 +383,7 @@ export async function getDashboardHomeSummary(
     whatsappChannel,
     missedCount,
     upcomingToday,
+    planUsage,
   ] = await Promise.all([
     loadAutomationState(organizationId),
     getOccasionsDayView(organizationId, todayDate),
@@ -308,6 +401,7 @@ export async function getDashboardHomeSummary(
       : Promise.resolve(null),
     isAdmin ? countMissedYesterday(organizationId, yesterdayDate) : Promise.resolve(0),
     loadUpcomingToday(organizationId, todayDate),
+    isAdmin ? loadPlanUsage(organizationId, new Date()) : Promise.resolve(null),
   ]);
 
   const { rows: runningAutomations, nextRunLabel } = automationState;
@@ -410,6 +504,7 @@ export async function getDashboardHomeSummary(
     scheduledTodayCount: occasionsToday.summary.total,
     activeContactsCount,
     channels: isAdmin ? { whatsappConnected, smsConnected, emailConnected } : null,
+    planUsage,
     alerts,
     runningAutomations,
     missedQueue:

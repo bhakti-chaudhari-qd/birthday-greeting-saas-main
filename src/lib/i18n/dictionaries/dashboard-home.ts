@@ -57,6 +57,17 @@ export type DashboardHomeDict = {
     sendTime: string;
   };
   occasionStatus: Record<OccasionHumanStatus, string>;
+  planUsage: {
+    planExpiry: string;
+    daysLeft: (days: number) => string;
+    endsOn: (date: string) => string;
+    noExpiry: string;
+    messagesRemaining: string;
+    remainingOfTotal: (remaining: number, total: number) => string;
+    noMessageLimit: string;
+    perChannelHeading: string;
+    channel: { SMS: string; WHATSAPP: string; EMAIL: string; CALL: string };
+  };
 };
 
 const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
@@ -142,6 +153,18 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       failed: "Failed",
       skipped: "Skipped",
     },
+    planUsage: {
+      planExpiry: "Plan expiry",
+      daysLeft: (days) => (days === 1 ? "1 day left" : `${days} days left`),
+      endsOn: (date) => `Ends ${date}`,
+      noExpiry: "No expiry",
+      messagesRemaining: "Messages remaining",
+      remainingOfTotal: (remaining, total) =>
+        `${remaining} of ${total}`,
+      noMessageLimit: "No limit set",
+      perChannelHeading: "Remaining by channel",
+      channel: { SMS: "SMS", WHATSAPP: "WhatsApp", EMAIL: "Email", CALL: "Call" },
+    },
   },
   hi: {
     welcome: (firstName) => `नमस्ते, ${firstName}`,
@@ -225,6 +248,17 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       failed: "असफल",
       skipped: "स्किप्ड",
     },
+    planUsage: {
+      planExpiry: "प्लान समाप्ति",
+      daysLeft: (days) => (days === 1 ? "1 दिन बाकी" : `${days} दिन बाकी`),
+      endsOn: (date) => `${date} को ख़त्म`,
+      noExpiry: "कोई समाप्ति नहीं",
+      messagesRemaining: "बचे हुए मेसेज",
+      remainingOfTotal: (remaining, total) => `${total} में से ${remaining}`,
+      noMessageLimit: "कोई लिमिट सेट नहीं",
+      perChannelHeading: "चैनल के अनुसार बचे हुए",
+      channel: { SMS: "SMS", WHATSAPP: "WhatsApp", EMAIL: "ईमेल", CALL: "कॉल" },
+    },
   },
   mr: {
     welcome: (firstName) => `नमस्कार, ${firstName}`,
@@ -307,6 +341,17 @@ const DASHBOARD_HOME_DICT: Record<Locale, DashboardHomeDict> = {
       sent: "सबमिट केले",
       failed: "अयशस्वी",
       skipped: "वगळले",
+    },
+    planUsage: {
+      planExpiry: "प्लान एक्सपायरी",
+      daysLeft: (days) => (days === 1 ? "1 दिवस बाकी" : `${days} दिवस बाकी`),
+      endsOn: (date) => `${date} ला संपतो`,
+      noExpiry: "एक्सपायरी नाही",
+      messagesRemaining: "उरलेले मेसेज",
+      remainingOfTotal: (remaining, total) => `${total} पैकी ${remaining}`,
+      noMessageLimit: "कोणतीही लिमिट सेट नाही",
+      perChannelHeading: "चॅनेलनुसार उरलेले",
+      channel: { SMS: "SMS", WHATSAPP: "WhatsApp", EMAIL: "ईमेल", CALL: "कॉल" },
     },
   },
 };
