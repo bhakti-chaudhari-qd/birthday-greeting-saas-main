@@ -3,7 +3,7 @@ import { ChannelProvider } from "@prisma/client";
 import type { ResolvedVoiceProviderConfig } from "@/lib/channel-config/voice-types";
 import { toIndianProviderMobileDigits } from "@/lib/contacts/mobile";
 
-import { assertPublicHttpTarget } from "../ssrf-guard";
+import { guardedFetch } from "../ssrf-guard";
 import {
   ProviderSendError,
   isCallSendRequest,
@@ -74,8 +74,6 @@ export function createLegacyHttpVoiceProvider(
   const requestUrl = new URL(config.sendPath, config.baseUrl).toString();
 
   async function post(form: FormData): Promise<ParsedVoiceResponse> {
-    await assertPublicHttpTarget(requestUrl);
-
     const controller = new AbortController();
     const timeout = setTimeout(
       () => controller.abort(),
@@ -84,7 +82,7 @@ export function createLegacyHttpVoiceProvider(
 
     try {
       // Credentials travel in the form body. Never log the form or the response.
-      const response = await fetchFn(requestUrl, {
+      const response = await guardedFetch(fetchFn, requestUrl, {
         method: "POST",
         body: form,
         signal: controller.signal,

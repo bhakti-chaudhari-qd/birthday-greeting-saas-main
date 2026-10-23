@@ -29,7 +29,7 @@ import {
   type MessageSendRequest,
   type MessageSendResult,
 } from "../types";
-import { assertPublicHttpTarget } from "../ssrf-guard";
+import { guardedFetch } from "../ssrf-guard";
 
 export type LegacyHttpSmsProviderConfig = ResolvedSmsProviderConfig & {
   fetchFn?: typeof fetch;
@@ -112,13 +112,11 @@ async function fetchProviderResponse(
   requestUrl: string,
   timeoutMs: number,
 ): Promise<string> {
-  await assertPublicHttpTarget(requestUrl);
-
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetchFn(requestUrl, {
+    const response = await guardedFetch(fetchFn, requestUrl, {
       method: "GET",
       signal: controller.signal,
     });
@@ -198,8 +196,6 @@ export function createLegacyHttpSmsProvider(
         templateId: dltTemplateId,
       });
 
-      await assertPublicHttpTarget(requestUrl);
-
       const controller = new AbortController();
       const timeout = setTimeout(
         () => controller.abort(),
@@ -209,7 +205,7 @@ export function createLegacyHttpSmsProvider(
       let responseText: string;
 
       try {
-        const response = await fetchFn(requestUrl, {
+        const response = await guardedFetch(fetchFn, requestUrl, {
           method: "GET",
           signal: controller.signal,
         });

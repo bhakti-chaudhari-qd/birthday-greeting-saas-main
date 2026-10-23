@@ -16,6 +16,8 @@ function isPrivateOrReservedIPv4(ip: string): boolean {
   if (a === 192 && b === 168) return true; // private
   if (a === 169 && b === 254) return true; // link-local, incl. cloud metadata (169.254.169.254)
   if (a === 0) return true; // "this network"
+  if (a === 100 && b >= 64 && b <= 127) return true; // shared/CGNAT 100.64.0.0/10, incl. some cloud metadata (100.100.100.200)
+  if (a === 198 && (b === 18 || b === 19)) return true; // benchmarking 198.18.0.0/15
   if (a >= 224) return true; // multicast / reserved
 
   return false;
@@ -24,6 +26,8 @@ function isPrivateOrReservedIPv4(ip: string): boolean {
 function isPrivateOrReservedIPv6(ip: string): boolean {
   const normalized = ip.toLowerCase();
   if (normalized === "::1") return true; // loopback
+  if (normalized === "::" || normalized === "0:0:0:0:0:0:0:0") return true; // unspecified - some stacks route this to localhost
+  if (normalized.startsWith("64:ff9b::")) return true; // NAT64 well-known prefix - can bridge to an internal IPv4 target
   if (normalized.startsWith("fc") || normalized.startsWith("fd")) return true; // unique local fc00::/7
   if (
     normalized.startsWith("fe8") ||
@@ -109,4 +113,31 @@ export async function assertPublicHttpTarget(targetUrl: string): Promise<void> {
       "SSRF_BLOCKED_TARGET",
     );
   }
+}
+
+/**
+ * Validates the target the same way as assertPublicHttpTarget, then performs
+ * the request with redirects disabled. A redirect response is treated as
+ * blocked rather than followed: assertPublicHttpTarget only vets the first
+ * URL, so a gateway that is reachable and passes the check could otherwise
+ * 30x the request to an internal address (fetch follows redirects by
+ * default) and bypass the guard entirely on the second hop.
+ */
+export async function guardedFetch(
+  fetchFn: typeof fetch,
+  targetUrl: string,
+  init: RequestInit,
+): Promise<Response> {
+  await assertPublicHttpTarget(targetUrl);
+
+  const response = await fetchFn(targetUrl, { ...init, redirect: "manual" });
+
+  if (response.status >= 300 && response.status < 400) {
+    throw new ProviderSendError(
+      "Provider target returned a redirect, which is not followed",
+      "SSRF_BLOCKED_TARGET",
+    );
+  }
+
+  return response;
 }

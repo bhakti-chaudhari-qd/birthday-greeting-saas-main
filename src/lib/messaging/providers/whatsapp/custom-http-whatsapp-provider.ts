@@ -20,7 +20,7 @@ import {
   type MessageSendRequest,
   type MessageSendResult,
 } from "../types";
-import { assertPublicHttpTarget } from "../ssrf-guard";
+import { assertPublicHttpTarget, guardedFetch } from "../ssrf-guard";
 
 export type CustomHttpWhatsAppProviderConfig =
   ResolvedWhatsAppHttpProviderConfig & {
@@ -82,7 +82,7 @@ async function fetchProviderResponseWithFetch(
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetchFn(url, {
+    const response = await guardedFetch(fetchFn, url, {
       method: "POST",
       body: form,
       signal: controller.signal,

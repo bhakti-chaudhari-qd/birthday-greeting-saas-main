@@ -3,7 +3,7 @@ import type { ResolvedWhatsAppHttpProviderConfig } from "@/lib/channel-config/wh
 import { buildCustomWhatsAppSendUrl } from "./custom-http-whatsapp-provider";
 import { formatIndianWhatsAppRecipient } from "./format-recipient";
 import { describeNetworkError } from "./post-multipart";
-import { assertPublicHttpTarget } from "../ssrf-guard";
+import { guardedFetch } from "../ssrf-guard";
 import {
   ProviderSendError,
   isWhatsAppSendRequest,
@@ -110,7 +110,6 @@ export function createKoverageWhatsAppProvider(
         /\/contact\/send-message$/,
         "/contact/send-template-message",
       );
-      await assertPublicHttpTarget(url);
 
       const payload: Record<string, string> = {
         phone_number: formatIndianWhatsAppRecipient(request.recipient),
@@ -129,7 +128,7 @@ export function createKoverageWhatsAppProvider(
 
       let response: Response;
       try {
-        response = await fetchFn(url, {
+        response = await guardedFetch(fetchFn, url, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${config.apiKey}`,
@@ -140,6 +139,9 @@ export function createKoverageWhatsAppProvider(
           signal: controller.signal,
         });
       } catch (error) {
+        if (error instanceof ProviderSendError) {
+          throw error;
+        }
         if (error instanceof Error && error.name === "AbortError") {
           throw new ProviderSendError(
             "WhatsApp provider request timed out",
