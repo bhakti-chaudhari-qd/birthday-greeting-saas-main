@@ -137,6 +137,7 @@ function renderMessageBody(
     email?: string | null;
     mobile?: string | null;
     address?: string | null;
+    addedByPlatformAdmin?: boolean;
   },
   queuedBody: string | null,
 ): string | null {

@@ -1,3 +1,5 @@
+import { maskEmailForDisplay, maskMobileForDisplay } from "@/lib/contacts/mask";
+
 import { TemplateValidationError } from "./errors";
 
 export const BUILTIN_TEMPLATE_VARIABLES = ["name", "mobile", "email", "address"] as const;
@@ -98,6 +100,16 @@ export function templateValuesForContact(contact: {
   mobile?: string | null;
   address?: string | null;
   attributes?: unknown;
+  /**
+   * A contact a Platform Admin added on the client's behalf never shows its
+   * real mobile/email to the client side (see src/lib/contacts/mask.ts) -
+   * that has to hold for {{mobile}}/{{email}} template variables too, since
+   * the rendered text is what actually goes out and what the Owner/Staff
+   * read back in the queue/activity views. Masking only at the display
+   * layer wouldn't be enough: the real value would still be in the message
+   * that was actually sent, recoverable from Activity/Deliveries.
+   */
+  addedByPlatformAdmin?: boolean;
 }): Partial<Record<string, string | number | boolean | null | undefined>> {
   const attributes =
     contact.attributes &&
@@ -105,11 +117,20 @@ export function templateValuesForContact(contact: {
     !Array.isArray(contact.attributes)
       ? (contact.attributes as Record<string, string | number | boolean | null | undefined>)
       : {};
+  const masked = contact.addedByPlatformAdmin === true;
   return {
     ...attributes,
     name: contact.name,
-    email: contact.email ?? undefined,
-    mobile: contact.mobile ?? undefined,
+    email: contact.email
+      ? masked
+        ? maskEmailForDisplay(contact.email)
+        : contact.email
+      : undefined,
+    mobile: contact.mobile
+      ? masked
+        ? maskMobileForDisplay(contact.mobile)
+        : contact.mobile
+      : undefined,
     address: contact.address ?? undefined,
   };
 }

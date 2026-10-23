@@ -11,7 +11,10 @@ import { QueueValidationError } from "./errors";
 
 export function resolveWhatsAppParameterValues(
   template: Pick<MessageTemplate, "whatsappParameterOrder" | "variables">,
-  contact: Pick<Contact, "name" | "email" | "mobile" | "address" | "attributes">,
+  contact: Pick<
+    Contact,
+    "name" | "email" | "mobile" | "address" | "attributes" | "addedByPlatformAdmin"
+  >,
 ): string[] {
   const order =
     template.whatsappParameterOrder.length > 0

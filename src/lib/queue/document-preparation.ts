@@ -156,6 +156,7 @@ export async function ensureQueueDocumentForRetry(
           mobile: true,
           address: true,
           attributes: true,
+          addedByPlatformAdmin: true,
         },
       })
     : null;

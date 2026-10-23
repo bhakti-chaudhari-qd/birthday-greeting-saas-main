@@ -108,6 +108,7 @@ type ManualSendRecipient = {
   address: string | null;
   attributes: Prisma.JsonValue;
   isActive: boolean;
+  addedByPlatformAdmin: boolean;
 };
 
 type PreparedManualSend = {
@@ -182,6 +183,7 @@ async function resolveActiveContactsForManualSend(
       address: contact.address,
       attributes: contact.attributes,
       isActive: contact.isActive,
+      addedByPlatformAdmin: contact.addedByPlatformAdmin,
     };
   });
 }
@@ -225,6 +227,7 @@ function resolveQuickListRecipients(
       address: null,
       attributes: {},
       isActive: true,
+      addedByPlatformAdmin: false,
     });
   }
 

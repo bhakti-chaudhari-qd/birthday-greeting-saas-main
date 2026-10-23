@@ -75,6 +75,7 @@ async function processContactsInPages(
     address: string | null;
     attributes: Prisma.JsonValue;
     categoryId: string | null;
+    addedByPlatformAdmin: boolean;
   }) => Promise<void>,
   onPage?: (contactIds: string[]) => Promise<void>,
 ) {
@@ -94,6 +95,7 @@ async function processContactsInPages(
         address: true,
         attributes: true,
         categoryId: true,
+        addedByPlatformAdmin: true,
       },
     });
 
@@ -346,6 +348,7 @@ export async function generateOccasionQueue(
       mobile: string;
       address: string | null;
       attributes: Prisma.JsonValue;
+      addedByPlatformAdmin: boolean;
     };
   }> = [];
 
@@ -538,6 +541,7 @@ export async function generateOccasionQueue(
               mobile: contact.mobile,
               address: contact.address,
               attributes: contact.attributes,
+              addedByPlatformAdmin: contact.addedByPlatformAdmin,
             },
           });
         }
