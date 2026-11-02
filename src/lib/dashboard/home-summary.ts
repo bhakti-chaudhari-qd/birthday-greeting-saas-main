@@ -331,13 +331,6 @@ async function loadPlanUsage(
 
   const periodStale = isUsagePeriodStale(subscription.billingPeriodStart, now);
 
-  let messages: DashboardPlanUsage["messages"] = null;
-  const limit = getEffectiveMonthlyMessageLimit(subscription);
-  if (limit > 0) {
-    const used = periodStale ? 0 : subscription.messagesSentThisMonth;
-    messages = { used, limit, remaining: Math.max(0, limit - used) };
-  }
-
   let channels: DashboardChannelUsage[] | null = null;
   if (
     subscription.plan === SubscriptionPlan.CUSTOM &&
@@ -354,6 +347,21 @@ async function loadPlanUsage(
           remaining: Math.max(0, row.monthlyLimit - used),
         };
       });
+  }
+
+  let messages: DashboardPlanUsage["messages"] = null;
+  if (channels && channels.length > 0) {
+    // CUSTOM sends are capped per channel, so the total is the channel sum.
+    // The aggregate counter can carry usage from before the plan switch.
+    const used = channels.reduce((sum, row) => sum + row.used, 0);
+    const limit = channels.reduce((sum, row) => sum + row.limit, 0);
+    messages = { used, limit, remaining: Math.max(0, limit - used) };
+  } else {
+    const limit = getEffectiveMonthlyMessageLimit(subscription);
+    if (limit > 0) {
+      const used = periodStale ? 0 : subscription.messagesSentThisMonth;
+      messages = { used, limit, remaining: Math.max(0, limit - used) };
+    }
   }
 
   return {

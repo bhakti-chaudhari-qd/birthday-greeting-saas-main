@@ -87,8 +87,6 @@ export async function getBillingOverview(
   }
 
   const bonusMessageCredits = effective.bonusMessageCredits ?? 0;
-  const effectiveMonthlyMessageLimit =
-    effective.monthlyMessageLimit + bonusMessageCredits;
   const creditsCheckoutEnabled =
     billingReady && canPurchaseCreditPacks(effective);
   const channelBreakdown = (subscription?.channelLimits ?? []).map((limit) => ({
@@ -96,6 +94,16 @@ export async function getBillingOverview(
     monthlyLimit: limit.monthlyLimit,
     messagesSentThisMonth: limit.messagesSentThisMonth,
   }));
+  // CUSTOM sends are capped per channel, so the totals are the channel sums.
+  // The aggregate counter can carry usage from before the plan switch.
+  const usesChannelTotals =
+    effective.plan === SubscriptionPlan.CUSTOM && channelBreakdown.length > 0;
+  const effectiveMonthlyMessageLimit = usesChannelTotals
+    ? channelBreakdown.reduce((sum, entry) => sum + entry.monthlyLimit, 0)
+    : effective.monthlyMessageLimit + bonusMessageCredits;
+  const messagesSentThisMonth = usesChannelTotals
+    ? channelBreakdown.reduce((sum, entry) => sum + entry.messagesSentThisMonth, 0)
+    : effective.messagesSentThisMonth;
 
   return {
     billingReady,
@@ -106,7 +114,7 @@ export async function getBillingOverview(
       monthlyMessageLimit: effective.monthlyMessageLimit,
       bonusMessageCredits,
       effectiveMonthlyMessageLimit,
-      messagesSentThisMonth: effective.messagesSentThisMonth,
+      messagesSentThisMonth,
       /** Per-channel allocation for CUSTOM plans; empty when using the aggregate limit. */
       channelBreakdown,
       billingPeriodStart: effective.billingPeriodStart.toISOString(),
