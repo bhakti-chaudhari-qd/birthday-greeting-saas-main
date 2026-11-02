@@ -152,8 +152,9 @@ export async function recordPlanPayment(
   organizationId: string,
   amountPaise: number,
   note: string | undefined,
-  recordedByAdminId: string,
+  recordedByAdminId: string | null,
   db: PrismaClient = defaultPrisma,
+  options: { preferDealId?: string } = {},
 ) {
   return db.$transaction(async (tx) => {
     const [unpaidDeals, unpaidTopUps] = await Promise.all([
@@ -180,7 +181,13 @@ export async function recordPlanPayment(
         amountDuePaise: topUp.amountDuePaise,
         amountPaidPaise: topUp.amountPaidPaise,
       })),
-    ].sort((a, b) => a.date.getTime() - b.date.getTime());
+    ].sort(
+      (a, b) =>
+        // A payment collected for one deal (its balance link) settles it first.
+        Number(b.id === options.preferDealId) -
+          Number(a.id === options.preferDealId) ||
+        a.date.getTime() - b.date.getTime(),
+    );
 
     let remaining = amountPaise;
     for (const item of items) {
@@ -217,6 +224,160 @@ export async function recordPlanPayment(
         recordedByAdminId,
       },
     });
+  });
+}
+
+export type EditPlanDealInput = {
+  organizationId: string;
+  dealId: string;
+  durationDays: number;
+  amountPaise: number;
+  contactLimit: number;
+  /** STARTER/PRO only. */
+  monthlyMessageLimit?: number;
+  /** CUSTOM only. */
+  smsMonthlyLimit?: number;
+  whatsappMonthlyLimit?: number;
+  emailMonthlyLimit?: number;
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function dealPaymentStatusFor(
+  amountPaidPaise: number,
+  amountDuePaise: number,
+): DealPaymentStatus {
+  if (amountPaidPaise >= amountDuePaise) return DealPaymentStatus.PAID;
+  if (amountPaidPaise > 0) return DealPaymentStatus.PARTIALLY_PAID;
+  return DealPaymentStatus.UNPAID;
+}
+
+/**
+ * Edits the org's current (most recent) plan deal in place and applies it to
+ * access now. paidUntil moves by the change in duration, and message limits
+ * move by the change in each limit, so channel top-ups already added this
+ * period are kept. The amount only changes what the deal owes in the ledger;
+ * it can't drop below what has already been paid.
+ */
+export async function editCurrentPlanDeal(
+  input: EditPlanDealInput,
+  db: PrismaClient = defaultPrisma,
+  now: Date = new Date(),
+) {
+  return db.$transaction(async (tx) => {
+    const deal = await tx.planDeal.findFirst({
+      where: { id: input.dealId, organizationId: input.organizationId },
+    });
+    if (!deal) {
+      throw new PlanLedgerError("Deal not found for this organization");
+    }
+
+    const latest = await tx.planDeal.findFirst({
+      where: { organizationId: input.organizationId },
+      orderBy: { activatedAt: "desc" },
+      select: { id: true },
+    });
+    if (latest?.id !== deal.id) {
+      throw new PlanLedgerError("Only the most recent deal can be edited");
+    }
+
+    const subscription = await tx.subscription.findUnique({
+      where: { organizationId: input.organizationId },
+      include: { channelLimits: true },
+    });
+    if (!subscription || subscription.plan !== deal.plan) {
+      throw new PlanLedgerError(
+        "This deal is no longer the client's current plan",
+      );
+    }
+
+    if (input.amountPaise < deal.amountPaidPaise) {
+      throw new PlanLedgerError(
+        "Amount can't be less than what has already been paid on this deal",
+      );
+    }
+
+    const shiftMs = (input.durationDays - deal.durationDays) * DAY_MS;
+    const resultingPaidUntil = new Date(deal.resultingPaidUntil.getTime() + shiftMs);
+    const paidUntil = new Date(
+      (subscription.paidUntil ?? deal.resultingPaidUntil).getTime() + shiftMs,
+    );
+    if (paidUntil <= now) {
+      throw new PlanLedgerError("The new duration would end the plan in the past");
+    }
+
+    let monthlyMessageLimit = subscription.monthlyMessageLimit;
+    const isCustom = deal.plan === SubscriptionPlan.CUSTOM;
+
+    if (isCustom) {
+      if (
+        input.smsMonthlyLimit == null ||
+        input.whatsappMonthlyLimit == null ||
+        input.emailMonthlyLimit == null
+      ) {
+        throw new PlanLedgerError("CUSTOM deals need SMS, WhatsApp and Email limits");
+      }
+      const allocations: Array<[Channel, number | null, number]> = [
+        [Channel.SMS, deal.smsMonthlyLimit, input.smsMonthlyLimit],
+        [Channel.WHATSAPP, deal.whatsappMonthlyLimit, input.whatsappMonthlyLimit],
+        [Channel.EMAIL, deal.emailMonthlyLimit, input.emailMonthlyLimit],
+      ];
+      for (const [channel, previous, next] of allocations) {
+        const delta = next - (previous ?? 0);
+        const row = subscription.channelLimits.find((r) => r.channel === channel);
+        if (row) {
+          await tx.channelMessageLimit.update({
+            where: { id: row.id },
+            data: { monthlyLimit: Math.max(0, row.monthlyLimit + delta) },
+          });
+        } else {
+          await tx.channelMessageLimit.create({
+            data: { subscriptionId: subscription.id, channel, monthlyLimit: next },
+          });
+        }
+        monthlyMessageLimit += delta;
+      }
+    } else {
+      if (input.monthlyMessageLimit == null) {
+        throw new PlanLedgerError("STARTER/PRO deals need a monthly message limit");
+      }
+      monthlyMessageLimit +=
+        input.monthlyMessageLimit -
+        (deal.monthlyMessageLimit ?? input.monthlyMessageLimit);
+    }
+
+    await tx.subscription.update({
+      where: { organizationId: input.organizationId },
+      data: {
+        paidUntil,
+        contactLimit: input.contactLimit,
+        monthlyMessageLimit: Math.max(0, monthlyMessageLimit),
+        // The expiry job marks lapsed plans PAST_DUE; extending one revives it.
+        ...(subscription.status === SubscriptionStatus.PAST_DUE
+          ? { status: SubscriptionStatus.ACTIVE }
+          : {}),
+      },
+    });
+
+    const updated = await tx.planDeal.update({
+      where: { id: deal.id },
+      data: {
+        durationDays: input.durationDays,
+        amountDuePaise: input.amountPaise,
+        paymentStatus: dealPaymentStatusFor(deal.amountPaidPaise, input.amountPaise),
+        contactLimit: input.contactLimit,
+        resultingPaidUntil,
+        ...(isCustom
+          ? {
+              smsMonthlyLimit: input.smsMonthlyLimit,
+              whatsappMonthlyLimit: input.whatsappMonthlyLimit,
+              emailMonthlyLimit: input.emailMonthlyLimit,
+            }
+          : { monthlyMessageLimit: input.monthlyMessageLimit }),
+      },
+    });
+
+    return { before: deal, deal: updated };
   });
 }
 

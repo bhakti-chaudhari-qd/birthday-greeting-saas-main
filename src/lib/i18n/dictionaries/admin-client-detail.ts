@@ -139,6 +139,29 @@ export type AdminClientDetailDict = {
     limits: string;
     expiryAfterDeal: string;
     messagesPerMonth: string;
+    edit: string;
+    editTitle: (planLabel: string) => string;
+    editHint: string;
+    durationDays: string;
+    amountInr: string;
+    contactLimit: string;
+    monthlyMessages: string;
+    smsPerMonth: string;
+    whatsappPerMonth: string;
+    emailPerMonth: string;
+    newExpiry: string;
+    balanceAfterEdit: (paid: string, balance: string) => string;
+    customerEmail: string;
+    saveAndCharge: (balance: string) => string;
+    saveWithoutPayment: string;
+    saving: string;
+    close: string;
+    nothingToCharge: string;
+    link: string;
+    savedSuccess: string;
+    chargedSuccess: (amount: string) => string;
+    linkFailed: (reason: string) => string;
+    failedToSave: string;
   };
   channelTopUp: {
     hint: string;
@@ -438,6 +461,35 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
       limits: "Limits",
       expiryAfterDeal: "Expiry after this deal",
       messagesPerMonth: "messages/mo",
+      edit: "Edit",
+      editTitle: (planLabel) => `Edit current ${planLabel} deal`,
+      editHint:
+        "Changes apply to the client's access as soon as you save. Expiry moves by the change in duration; channel top-ups already added are kept.",
+      durationDays: "Duration (days)",
+      amountInr: "Amount (INR)",
+      contactLimit: "Contact limit",
+      monthlyMessages: "Messages per month",
+      smsPerMonth: "SMS per month",
+      whatsappPerMonth: "WhatsApp per month",
+      emailPerMonth: "Email per month",
+      newExpiry: "New expiry",
+      balanceAfterEdit: (paid, balance) =>
+        `Already paid ${paid} · Still owed after this edit: ${balance}`,
+      customerEmail: "Customer email for the payment link (optional)",
+      saveAndCharge: (balance) => `Save & charge ${balance}`,
+      saveWithoutPayment: "Save & continue without payment",
+      saving: "Saving...",
+      close: "Close",
+      nothingToCharge:
+        "Nothing left to charge on this deal — raise the amount to charge the difference.",
+      link: "Payment link",
+      savedSuccess:
+        "Deal updated. Any amount still owed stays in the ledger as unpaid.",
+      chargedSuccess: (amount) =>
+        `Deal updated and a payment link for ${amount} was created. Send it to the client; the payment is recorded against this deal once paid.`,
+      linkFailed: (reason) =>
+        `Deal updated, but the payment link could not be created: ${reason}`,
+      failedToSave: "Failed to update deal",
     },
     channelTopUp: {
       hint: "Increases one channel's limit for the current period only — never extends access or resets the other channels.",
@@ -737,6 +789,34 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
       limits: "सीमाएँ",
       expiryAfterDeal: "इस डील के बाद एक्सपायरी",
       messagesPerMonth: "मेसेज/महीना",
+      edit: "एडिट",
+      editTitle: (planLabel) => `मौजूदा ${planLabel} डील एडिट करें`,
+      editHint:
+        "सेव करते ही बदलाव क्लायंट के एक्सेस पर लागू हो जाते हैं। एक्सपायरी अवधि के बदलाव जितनी आगे-पीछे होती है; पहले से जोड़े गए चैनल टॉप-अप बने रहते हैं।",
+      durationDays: "अवधि (दिन)",
+      amountInr: "राशि (INR)",
+      contactLimit: "कॉन्टैक्ट सीमा",
+      monthlyMessages: "मेसेज प्रति महीना",
+      smsPerMonth: "SMS प्रति महीना",
+      whatsappPerMonth: "WhatsApp प्रति महीना",
+      emailPerMonth: "ईमेल प्रति महीना",
+      newExpiry: "नई एक्सपायरी",
+      balanceAfterEdit: (paid, balance) =>
+        `पहले से भुगतान ${paid} · इस बदलाव के बाद बकाया: ${balance}`,
+      customerEmail: "पेमेंट लिंक के लिए ग्राहक ईमेल (वैकल्पिक)",
+      saveAndCharge: (balance) => `सेव करें और ${balance} चार्ज करें`,
+      saveWithoutPayment: "सेव करें, बिना पेमेंट के जारी रखें",
+      saving: "सेव हो रहा है...",
+      close: "बंद करें",
+      nothingToCharge:
+        "इस डील पर चार्ज करने के लिए कुछ बाकी नहीं — अंतर चार्ज करने के लिए राशि बढ़ाएँ।",
+      link: "पेमेंट लिंक",
+      savedSuccess: "डील अपडेट हो गई। बकाया राशि लेजर में अनपेड के रूप में रहेगी।",
+      chargedSuccess: (amount) =>
+        `डील अपडेट हो गई और ${amount} का पेमेंट लिंक बन गया। इसे क्लायंट को भेजें; भुगतान होने पर यह इसी डील में दर्ज होगा।`,
+      linkFailed: (reason) =>
+        `डील अपडेट हो गई, लेकिन पेमेंट लिंक नहीं बन सका: ${reason}`,
+      failedToSave: "डील अपडेट नहीं हो सकी",
     },
     channelTopUp: {
       hint: "सिर्फ मौजूदा पीरियड के लिए एक चैनल की सीमा बढ़ाता है — न एक्सेस बढ़ाता है, न दूसरे चैनल रीसेट करता है।",
@@ -1035,6 +1115,34 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
       limits: "मर्यादा",
       expiryAfterDeal: "या डीलनंतरची एक्सपायरी",
       messagesPerMonth: "मेसेज/महिना",
+      edit: "एडिट",
+      editTitle: (planLabel) => `सध्याची ${planLabel} डील एडिट करा`,
+      editHint:
+        "सेव्ह करताच बदल क्लायंटच्या अ‍ॅक्सेसवर लागू होतात. एक्सपायरी कालावधीतील बदलाइतकी पुढे-मागे होते; आधी जोडलेले चॅनेल टॉप-अप कायम राहतात.",
+      durationDays: "कालावधी (दिवस)",
+      amountInr: "रक्कम (INR)",
+      contactLimit: "कॉन्टॅक्ट मर्यादा",
+      monthlyMessages: "मेसेज प्रति महिना",
+      smsPerMonth: "SMS प्रति महिना",
+      whatsappPerMonth: "WhatsApp प्रति महिना",
+      emailPerMonth: "ईमेल प्रति महिना",
+      newExpiry: "नवीन एक्सपायरी",
+      balanceAfterEdit: (paid, balance) =>
+        `आधी भरलेले ${paid} · या बदलानंतर थकबाकी: ${balance}`,
+      customerEmail: "पेमेंट लिंकसाठी ग्राहक ईमेल (ऐच्छिक)",
+      saveAndCharge: (balance) => `सेव्ह करा आणि ${balance} चार्ज करा`,
+      saveWithoutPayment: "सेव्ह करा, पेमेंटशिवाय सुरू ठेवा",
+      saving: "सेव्ह होत आहे...",
+      close: "बंद करा",
+      nothingToCharge:
+        "या डीलवर चार्ज करण्यासाठी काही बाकी नाही — फरक चार्ज करण्यासाठी रक्कम वाढवा.",
+      link: "पेमेंट लिंक",
+      savedSuccess: "डील अपडेट झाली. थकबाकी लेजरमध्ये अनपेड म्हणून राहील.",
+      chargedSuccess: (amount) =>
+        `डील अपडेट झाली आणि ${amount} ची पेमेंट लिंक तयार झाली. ती क्लायंटला पाठवा; पेमेंट झाल्यावर ते याच डीलवर नोंदवले जाईल.`,
+      linkFailed: (reason) =>
+        `डील अपडेट झाली, पण पेमेंट लिंक तयार होऊ शकली नाही: ${reason}`,
+      failedToSave: "डील अपडेट करता आली नाही",
     },
     channelTopUp: {
       hint: "फक्त चालू कालावधीसाठी एका चॅनेलची मर्यादा वाढवते — अ‍ॅक्सेस वाढवत नाही किंवा इतर चॅनेल रीसेट करत नाही.",

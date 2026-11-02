@@ -10,6 +10,7 @@ import {
   markSubscriptionPastDue,
 } from "@/lib/billing/apply-plan";
 import { isCheckoutPlan, isCreditPackId } from "@/lib/billing/catalogue";
+import { recordPlanPayment } from "@/lib/billing/plan-ledger";
 import { prisma as defaultPrisma } from "@/lib/db";
 
 export type RazorpayWebhookPayload = {
@@ -58,6 +59,7 @@ export type ProcessWebhookResult =
       action:
         | "activated"
         | "credits_applied"
+        | "payment_recorded"
         | "renewed"
         | "past_due"
         | "cancelled";
@@ -202,7 +204,7 @@ export async function processRazorpayWebhook(
       };
     }
 
-    if (kind === "PAYMENT_LINK" || paymentLinkId) {
+    if (kind === "PAYMENT_LINK" || kind === "DEAL_BALANCE" || paymentLinkId) {
       const checkout = paymentLinkId
         ? await db.billingCheckout.findFirst({
             where: {
@@ -211,6 +213,35 @@ export async function processRazorpayWebhook(
             },
           })
         : null;
+
+      // A link with no plan collects an edited deal's balance: record the
+      // payment against that deal and leave access alone.
+      if (checkout && checkout.plan === null) {
+        if (checkout.status === "CREATED") {
+          await recordPlanPayment(
+            organizationId,
+            checkout.amountPaise,
+            `Razorpay payment link ${paymentLinkId}`,
+            null,
+            db,
+            { preferDealId: notes.planDealId?.trim() },
+          );
+          await db.billingCheckout.update({
+            where: { id: checkout.id },
+            data: {
+              status: "PAID",
+              ...(paymentId ? { razorpayPaymentId: paymentId } : {}),
+            },
+          });
+        }
+
+        return {
+          outcome: "applied",
+          eventId,
+          organizationId,
+          action: "payment_recorded",
+        };
+      }
 
       const plan =
         checkout?.plan ??

@@ -19,6 +19,7 @@ export const PLATFORM_ADMIN_AUDIT_ACTIONS = {
   QUEUE_RETRY_SCHEDULED: "QUEUE_RETRY_SCHEDULED",
   PLAN_ACTIVATED_DIRECT: "PLAN_ACTIVATED_DIRECT",
   PLAN_REVOKED: "PLAN_REVOKED",
+  PLAN_DEAL_EDITED: "PLAN_DEAL_EDITED",
   PLAN_PAYMENT_RECORDED: "PLAN_PAYMENT_RECORDED",
   PAYMENT_LINK_CREATED: "PAYMENT_LINK_CREATED",
   PAYMENT_LINK_CANCELLED: "PAYMENT_LINK_CANCELLED",
@@ -51,6 +52,7 @@ const ALLOWED_VALUE_KEYS = new Set([
   "dealSmsLimit",
   "dealWhatsappLimit",
   "dealEmailLimit",
+  "durationDays",
   "messagesSentThisMonth",
   "name",
   "referralCode",
@@ -97,6 +99,7 @@ export type PlatformAdminAuditValues = Partial<{
   dealSmsLimit: number | null;
   dealWhatsappLimit: number | null;
   dealEmailLimit: number | null;
+  durationDays: number;
   messagesSentThisMonth: number | null;
   name: string;
   referralCode: string;

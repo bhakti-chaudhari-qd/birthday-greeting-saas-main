@@ -10,6 +10,7 @@ import {
 import { getPlanCatalogueEntry } from "@/lib/billing/catalogue";
 import {
   PlanLedgerError,
+  editCurrentPlanDeal,
   getPlanLedgerForOrganization,
   recordPlanPayment,
   topUpCustomPlanChannel,
@@ -18,8 +19,10 @@ import { ActivePlanRenewalConfirmationRequiredError } from "@/lib/billing/servic
 import {
   PlatformAdminPlanRevokeError,
   activatePlanForPlatformAdmin,
+  editPlanDealForPlatformAdmin,
   revokePlanForPlatformAdmin,
 } from "@/lib/admin/org-ops";
+import { processRazorpayWebhook } from "@/lib/billing/webhook";
 import { prisma } from "@/lib/db";
 import { cleanupOrganization, uniqueSuffix } from "./helpers";
 
@@ -562,6 +565,170 @@ describe("renewal confirmation guard", () => {
       await expect(
         revokePlanForPlatformAdmin(org.organization.id, adminId),
       ).rejects.toThrow(PlatformAdminPlanRevokeError);
+    } finally {
+      await cleanupOrganization(org.organization.id);
+    }
+  });
+
+  it("editing the current CUSTOM deal shifts expiry and limits by the change, keeps top-ups, and re-prices the ledger", async ({
+    skip,
+  }) => {
+    if (!databaseAvailable) skip();
+
+    const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
+    try {
+      const { deal } = await activatePlanDealDirectly({
+        organizationId: org.organization.id,
+        plan: SubscriptionPlan.CUSTOM,
+        amountPaise: 499_00,
+        contactLimit: 1000,
+        smsMonthlyLimit: 1000,
+        whatsappMonthlyLimit: 1000,
+        emailMonthlyLimit: 500,
+        durationDays: 30,
+        createdByAdminId: adminId,
+      });
+      await recordPlanPayment(org.organization.id, 499_00, undefined, adminId);
+      await topUpCustomPlanChannel({
+        organizationId: org.organization.id,
+        channel: Channel.SMS,
+        messagesAdded: 200,
+        amountPaise: 0,
+        createdByAdminId: adminId,
+      });
+      const before = await prisma.subscription.findUniqueOrThrow({
+        where: { organizationId: org.organization.id },
+      });
+
+      const edited = await editPlanDealForPlatformAdmin(
+        org.organization.id,
+        deal.id,
+        {
+          durationDays: 60,
+          amountPaise: 899_00,
+          contactLimit: 1500,
+          smsMonthlyLimit: 1500,
+          whatsappMonthlyLimit: 1000,
+          emailMonthlyLimit: 500,
+        },
+        adminId,
+      );
+
+      expect(edited.durationDays).toBe(60);
+      expect(edited.amountDuePaise).toBe(899_00);
+      expect(edited.paymentStatus).toBe("PARTIALLY_PAID");
+      expect(edited.resultingPaidUntil.getTime()).toBe(
+        deal.resultingPaidUntil.getTime() + 30 * 24 * 60 * 60 * 1000,
+      );
+
+      const after = await prisma.subscription.findUniqueOrThrow({
+        where: { organizationId: org.organization.id },
+        include: { channelLimits: true },
+      });
+      expect(after.paidUntil!.getTime()).toBe(
+        before.paidUntil!.getTime() + 30 * 24 * 60 * 60 * 1000,
+      );
+      expect(after.contactLimit).toBe(1500);
+      // 1000 deal + 200 top-up + 500 edit increase.
+      expect(after.channelLimits.find((r) => r.channel === Channel.SMS)?.monthlyLimit).toBe(1700);
+      expect(after.monthlyMessageLimit).toBe(before.monthlyMessageLimit + 500);
+
+      const ledger = await getPlanLedgerForOrganization(org.organization.id);
+      expect(ledger.outstandingBalancePaise).toBe(400_00);
+    } finally {
+      await cleanupOrganization(org.organization.id);
+    }
+  });
+
+  it("refuses to edit a deal that is not the most recent one", async ({ skip }) => {
+    if (!databaseAvailable) skip();
+
+    const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
+    try {
+      const { deal: first } = await activatePlanDealDirectly({
+        organizationId: org.organization.id,
+        plan: SubscriptionPlan.STARTER,
+        durationDays: 30,
+        createdByAdminId: adminId,
+      });
+      await activatePlanDealDirectly({
+        organizationId: org.organization.id,
+        plan: SubscriptionPlan.STARTER,
+        durationDays: 30,
+        createdByAdminId: adminId,
+      });
+
+      await expect(
+        editCurrentPlanDeal({
+          organizationId: org.organization.id,
+          dealId: first.id,
+          durationDays: 45,
+          amountPaise: first.amountDuePaise,
+          contactLimit: first.contactLimit,
+          monthlyMessageLimit: first.monthlyMessageLimit ?? 0,
+        }),
+      ).rejects.toThrow(PlanLedgerError);
+    } finally {
+      await cleanupOrganization(org.organization.id);
+    }
+  });
+
+  it("a paid balance link records the payment against its deal without touching access", async ({
+    skip,
+  }) => {
+    if (!databaseAvailable) skip();
+
+    const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
+    try {
+      const { deal, subscription } = await activatePlanDealDirectly({
+        organizationId: org.organization.id,
+        plan: SubscriptionPlan.CUSTOM,
+        amountPaise: 899_00,
+        contactLimit: 1000,
+        smsMonthlyLimit: 1000,
+        whatsappMonthlyLimit: 1000,
+        emailMonthlyLimit: 500,
+        durationDays: 30,
+        createdByAdminId: adminId,
+      });
+      const linkId = `plink_bal_${uniqueSuffix()}`;
+      await prisma.billingCheckout.create({
+        data: {
+          organizationId: org.organization.id,
+          kind: "PAYMENT_LINK",
+          plan: null,
+          razorpayOrderId: `plink_${linkId}`,
+          razorpayPaymentLinkId: linkId,
+          amountPaise: 899_00,
+          status: "CREATED",
+        },
+      });
+
+      const result = await processRazorpayWebhook({
+        id: `evt_${uniqueSuffix()}`,
+        event: "payment_link.paid",
+        payload: {
+          payment_link: {
+            entity: {
+              id: linkId,
+              notes: {
+                organizationId: org.organization.id,
+                kind: "DEAL_BALANCE",
+                planDealId: deal.id,
+              },
+            },
+          },
+        },
+      });
+      expect(result).toMatchObject({ outcome: "applied", action: "payment_recorded" });
+
+      const paidDeal = await prisma.planDeal.findUniqueOrThrow({ where: { id: deal.id } });
+      expect(paidDeal.paymentStatus).toBe("PAID");
+      const after = await prisma.subscription.findUniqueOrThrow({
+        where: { organizationId: org.organization.id },
+      });
+      expect(after.paidUntil?.getTime()).toBe(subscription.paidUntil?.getTime());
+      expect(await prisma.planDeal.count({ where: { organizationId: org.organization.id } })).toBe(1);
     } finally {
       await cleanupOrganization(org.organization.id);
     }

@@ -1,6 +1,10 @@
 "use client";
 
+import { useState } from "react";
+
+import { DealEditForm } from "@/components/admin/deal-edit-form";
 import { StatusBadge } from "@/components/ui/feedback";
+import { compactSecondaryButtonClass } from "@/components/ui/page";
 import {
   formatInrFromPaise,
   getPlanDisplayLabel,
@@ -12,6 +16,9 @@ import { useLocale } from "@/lib/i18n/use-locale";
 import { formatCustomerDateTime } from "@/lib/ui/datetime";
 
 type DealHistoryPanelProps = {
+  organizationId: string;
+  /** The org's plan right now; only a latest deal on this plan can be edited. */
+  currentPlan: string | null;
   deals: PlanDealSummary[];
   planLabels: PlanLabelMap;
 };
@@ -22,8 +29,17 @@ const DEAL_STATUS_TONE = {
   PAID: "success",
 } as const;
 
-export function DealHistoryPanel({ deals, planLabels }: DealHistoryPanelProps) {
+export function DealHistoryPanel({
+  organizationId,
+  currentPlan,
+  deals,
+  planLabels,
+}: DealHistoryPanelProps) {
   const dict = getAdminClientDetailDict(useLocale()).dealHistory;
+  const [editing, setEditing] = useState(false);
+  // Deals are newest first; only the current one can be edited.
+  const editableDeal =
+    deals[0] && deals[0].plan === currentPlan ? deals[0] : null;
 
   return (
     <div className="p-5 sm:p-6">
@@ -42,6 +58,7 @@ export function DealHistoryPanel({ deals, planLabels }: DealHistoryPanelProps) {
                 <th className="py-2 pr-4">{dict.duration}</th>
                 <th className="py-2 pr-4">{dict.limits}</th>
                 <th className="py-2 pr-4">{dict.expiryAfterDeal}</th>
+                <th className="py-2 pr-4"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -90,12 +107,32 @@ export function DealHistoryPanel({ deals, planLabels }: DealHistoryPanelProps) {
                   <td className="py-2 pr-4 whitespace-nowrap text-stone-700">
                     {formatCustomerDateTime(deal.resultingPaidUntil)}
                   </td>
+                  <td className="py-2 pr-4">
+                    {deal.id === editableDeal?.id && !editing ? (
+                      <button
+                        type="button"
+                        className={compactSecondaryButtonClass}
+                        onClick={() => setEditing(true)}
+                      >
+                        {dict.edit}
+                      </button>
+                    ) : null}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {editing && editableDeal ? (
+        <DealEditForm
+          organizationId={organizationId}
+          deal={editableDeal}
+          planLabels={planLabels}
+          onClose={() => setEditing(false)}
+        />
+      ) : null}
     </div>
   );
 }

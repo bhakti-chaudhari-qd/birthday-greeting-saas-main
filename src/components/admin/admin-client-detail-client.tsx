@@ -199,6 +199,8 @@ export function AdminClientDetailClient({
           </p>
         </div>
         <DealHistoryPanel
+          organizationId={organization.id}
+          currentPlan={organization.plan}
           deals={organization.planLedger.deals}
           planLabels={planLabels}
         />

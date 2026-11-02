@@ -16,6 +16,7 @@ import {
   revokePlanToFree,
 } from "@/lib/billing/apply-plan";
 import {
+  editCurrentPlanDeal,
   getPlanLedgerForOrganization,
   recordPlanPayment,
   topUpCustomPlanChannel,
@@ -287,6 +288,25 @@ export const topUpCustomPlanChannelSchema = z.object({
   messagesAdded: z.number().int().min(1).max(10_000_000),
   amountPaise: z.number().int().min(0).max(10_000_000_00),
 });
+
+/**
+ * Edits the org's current plan deal. Plan-specific limits are checked by
+ * editCurrentPlanDeal. charge=true also creates a payment link for whatever
+ * the deal still owes after the edit.
+ */
+export const editPlanDealSchema = z.object({
+  durationDays: z.number().int().min(1).max(366),
+  amountPaise: z.number().int().min(0).max(10_000_000_00),
+  contactLimit: z.number().int().min(1).max(1_000_000),
+  monthlyMessageLimit: z.number().int().min(0).max(10_000_000).optional(),
+  smsMonthlyLimit: z.number().int().min(0).max(10_000_000).optional(),
+  whatsappMonthlyLimit: z.number().int().min(0).max(10_000_000).optional(),
+  emailMonthlyLimit: z.number().int().min(0).max(10_000_000).optional(),
+  charge: z.boolean().optional(),
+  customerEmail: z.string().trim().email().max(255).optional(),
+});
+
+export type EditPlanDealRequest = z.infer<typeof editPlanDealSchema>;
 
 export type UpdatePlatformOrganizationInput = z.infer<
   typeof updatePlatformOrganizationSchema
@@ -638,6 +658,52 @@ export async function revokePlanForPlatformAdmin(
     throw new PlatformAdminOrgError("Client not found after revoke");
   }
   return updated;
+}
+
+/**
+ * Edits the org's current plan deal and applies it to access now. See
+ * editCurrentPlanDeal for the domain rules (throws PlanLedgerError).
+ */
+export async function editPlanDealForPlatformAdmin(
+  organizationId: string,
+  dealId: string,
+  input: EditPlanDealRequest,
+  actorAdminId: string,
+) {
+  const { before, deal } = await editCurrentPlanDeal({
+    organizationId,
+    dealId,
+    durationDays: input.durationDays,
+    amountPaise: input.amountPaise,
+    contactLimit: input.contactLimit,
+    monthlyMessageLimit: input.monthlyMessageLimit,
+    smsMonthlyLimit: input.smsMonthlyLimit,
+    whatsappMonthlyLimit: input.whatsappMonthlyLimit,
+    emailMonthlyLimit: input.emailMonthlyLimit,
+  });
+
+  const dealValues = (row: typeof deal): PlatformAdminAuditValues => ({
+    durationDays: row.durationDays,
+    amountPaise: row.amountDuePaise,
+    contactLimit: row.contactLimit,
+    monthlyMessageLimit: row.monthlyMessageLimit,
+    dealSmsLimit: row.smsMonthlyLimit,
+    dealWhatsappLimit: row.whatsappMonthlyLimit,
+    dealEmailLimit: row.emailMonthlyLimit,
+  });
+
+  await createPlatformAdminAuditEvent({
+    actorAdminId,
+    organizationId,
+    action: PLATFORM_ADMIN_AUDIT_ACTIONS.PLAN_DEAL_EDITED,
+    targetType: "organization",
+    targetId: organizationId,
+    before: dealValues(before),
+    after: dealValues(deal),
+    metadata: { dealId: deal.id, plan: deal.plan },
+  });
+
+  return deal;
 }
 
 /** Records a payment against an org's outstanding plan-deal balance (FIFO across unpaid deals/top-ups). */

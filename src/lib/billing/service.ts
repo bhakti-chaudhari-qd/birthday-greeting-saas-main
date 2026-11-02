@@ -684,6 +684,102 @@ export async function createAdminPaymentLink(
   };
 }
 
+/**
+ * Platform Admin charges what is still owed on one plan deal (e.g. after
+ * editing it) via a Razorpay Payment Link. Access is not affected; when paid,
+ * the webhook records the payment against that deal. Balance links are
+ * PAYMENT_LINK checkouts with no plan, which is how the webhook tells them
+ * apart from plan links.
+ */
+export async function createDealBalancePaymentLink(input: {
+  organizationId: string;
+  dealId: string;
+  customerEmail?: string;
+  db?: PrismaClient;
+}) {
+  const db = input.db ?? defaultPrisma;
+  const deal = await db.planDeal.findFirst({
+    where: { id: input.dealId, organizationId: input.organizationId },
+    include: { organization: { select: { name: true } } },
+  });
+  if (!deal) {
+    throw new BillingValidationError("Deal not found for this organization");
+  }
+
+  const amountPaise = deal.amountDuePaise - deal.amountPaidPaise;
+  if (amountPaise < 100) {
+    throw new BillingValidationError(
+      "Nothing to charge: this deal owes less than ₹1",
+    );
+  }
+
+  const credentials = requireRazorpayCredentials();
+
+  // Keep at most one outstanding balance link per org.
+  const outstanding = await db.billingCheckout.findMany({
+    where: {
+      organizationId: input.organizationId,
+      kind: "PAYMENT_LINK",
+      plan: null,
+      status: "CREATED",
+    },
+  });
+  for (const old of outstanding) {
+    if (!old.razorpayPaymentLinkId) {
+      continue;
+    }
+    try {
+      await cancelRazorpayPaymentLink(old.razorpayPaymentLinkId, credentials);
+    } catch {
+      throw new BillingValidationError(
+        "An existing outstanding balance link could not be cancelled — it may already be paid. Check payment link history before retrying.",
+      );
+    }
+    await db.billingCheckout.update({
+      where: { id: old.id },
+      data: { status: "CANCELLED" },
+    });
+  }
+
+  const catalogue = await getPlanCatalogueEntry(deal.plan, db);
+  const paymentLink = await createRazorpayPaymentLink(
+    {
+      amountPaise,
+      currency: "INR",
+      description: `${catalogue.label} plan balance for ${deal.organization.name}`,
+      customer: {
+        email: input.customerEmail,
+        name: deal.organization.name,
+      },
+      notes: {
+        organizationId: input.organizationId,
+        kind: "DEAL_BALANCE",
+        planDealId: deal.id,
+      },
+    },
+    credentials,
+  );
+
+  await db.billingCheckout.create({
+    data: {
+      organizationId: input.organizationId,
+      kind: "PAYMENT_LINK",
+      plan: null,
+      razorpayOrderId: `plink_${paymentLink.id}`,
+      razorpayPaymentLinkId: paymentLink.id,
+      amountPaise,
+      currency: "INR",
+      status: "CREATED",
+    },
+  });
+
+  return {
+    paymentLinkId: paymentLink.id,
+    shortUrl: paymentLink.short_url,
+    amountPaise,
+  };
+}
+
 export type AdminPaymentLinkSummary = {
   id: string;
   plan: SubscriptionPlan | null;
