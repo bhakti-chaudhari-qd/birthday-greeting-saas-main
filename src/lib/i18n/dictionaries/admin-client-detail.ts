@@ -105,6 +105,13 @@ export type AdminClientDetailDict = {
     confirmRenewalTitle: string;
     continueAnyway: string;
     cancel: string;
+    revokePlan: string;
+    revoking: string;
+    revokeConfirmTitle: string;
+    revokeConfirmMessage: (planLabel: string) => string;
+    revokeConfirmLabel: string;
+    revokedSuccess: (planLabel: string) => string;
+    failedToRevoke: string;
     paymentLinkWarning: (
       activeLabel: string,
       paidUntil: string,
@@ -398,6 +405,15 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
       confirmRenewalTitle: "Confirm renewal",
       continueAnyway: "Continue anyway",
       cancel: "Cancel",
+      revokePlan: "Revoke plan",
+      revoking: "Revoking...",
+      revokeConfirmTitle: "Revoke plan",
+      revokeConfirmMessage: (planLabel) =>
+        `Revoke this client's ${planLabel} plan? They drop to the Free plan right away: Free contact and message limits apply, access-until is cleared, and any Razorpay auto-renewal is cancelled. Unpaid balances stay in the ledger.`,
+      revokeConfirmLabel: "Revoke plan",
+      revokedSuccess: (planLabel) =>
+        `${planLabel} plan revoked. The client is now on the Free plan.`,
+      failedToRevoke: "Failed to revoke plan",
       paymentLinkWarning: (activeLabel, paidUntil, changingPlan, dealLabel) =>
         `This client already has an active ${activeLabel} plan until ${paidUntil}. Once paid, this link will ${changingPlan ? `replace it with ${dealLabel}` : `renew it, extending access from ${paidUntil}`}.`,
       renewalWarning: (
@@ -688,6 +704,15 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
       confirmRenewalTitle: "रिन्यूअल की पुष्टि करें",
       continueAnyway: "फिर भी जारी रखें",
       cancel: "रद्द करें",
+      revokePlan: "प्लान रद्द करें",
+      revoking: "रद्द हो रहा है...",
+      revokeConfirmTitle: "प्लान रद्द करें",
+      revokeConfirmMessage: (planLabel) =>
+        `इस क्लायंट का ${planLabel} प्लान रद्द करें? क्लायंट तुरंत फ्री प्लान पर आ जाएगा: फ्री कॉन्टैक्ट और मैसेज लिमिट लागू होंगी, एक्सेस की तारीख हट जाएगी, और Razorpay ऑटो-रिन्यूअल रद्द हो जाएगा। बकाया राशि लेजर में बनी रहेगी।`,
+      revokeConfirmLabel: "प्लान रद्द करें",
+      revokedSuccess: (planLabel) =>
+        `${planLabel} प्लान रद्द हो गया। क्लायंट अब फ्री प्लान पर है।`,
+      failedToRevoke: "प्लान रद्द नहीं हो सका",
       paymentLinkWarning: (activeLabel, paidUntil, changingPlan, dealLabel) =>
         `इस क्लायंट का पहले से ही ${activeLabel} प्लान ${paidUntil} तक एक्टिव है। भुगतान होने पर, यह लिंक ${changingPlan ? `इसे ${dealLabel} से बदल देगा` : `इसे रिन्यू कर देगा, और एक्सेस ${paidUntil} से आगे बढ़ जाएगी`}।`,
       renewalWarning: (
@@ -977,6 +1002,15 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
       confirmRenewalTitle: "रिन्यूअलची पुष्टी करा",
       continueAnyway: "तरीही सुरू ठेवा",
       cancel: "रद्द करा",
+      revokePlan: "प्लान रद्द करा",
+      revoking: "रद्द होत आहे...",
+      revokeConfirmTitle: "प्लान रद्द करा",
+      revokeConfirmMessage: (planLabel) =>
+        `या क्लायंटचा ${planLabel} प्लान रद्द करायचा? क्लायंट लगेच फ्री प्लानवर येईल: फ्री कॉन्टॅक्ट आणि मेसेज मर्यादा लागू होतील, अ‍ॅक्सेसची तारीख काढली जाईल, आणि Razorpay ऑटो-रिन्यूअल रद्द होईल. थकबाकी लेजरमध्ये राहील.`,
+      revokeConfirmLabel: "प्लान रद्द करा",
+      revokedSuccess: (planLabel) =>
+        `${planLabel} प्लान रद्द झाला. क्लायंट आता फ्री प्लानवर आहे.`,
+      failedToRevoke: "प्लान रद्द करता आला नाही",
       paymentLinkWarning: (activeLabel, paidUntil, changingPlan, dealLabel) =>
         `या क्लायंटचा आधीच ${activeLabel} प्लान ${paidUntil} पर्यंत एक्टिव्ह आहे. पेमेंट झाल्यावर, ही लिंक ${changingPlan ? `तो ${dealLabel} ने बदलेल` : `त्याचे नूतनीकरण करेल, अ‍ॅक्सेस ${paidUntil} पासून वाढेल`}.`,
       renewalWarning: (

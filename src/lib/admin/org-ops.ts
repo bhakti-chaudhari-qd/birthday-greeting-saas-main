@@ -11,7 +11,10 @@ import {
   adminPasswordResetThrottleKey,
   recordAdminPasswordReset,
 } from "@/lib/auth/rate-limit";
-import { activatePlanDealDirectly } from "@/lib/billing/apply-plan";
+import {
+  activatePlanDealDirectly,
+  revokePlanToFree,
+} from "@/lib/billing/apply-plan";
 import {
   getPlanLedgerForOrganization,
   recordPlanPayment,
@@ -59,6 +62,14 @@ export class PlatformAdminOrgDeleteError extends Error {
     super(message);
     this.name = "PlatformAdminOrgDeleteError";
     this.status = status;
+  }
+}
+
+/** A plan revoke that was refused (already FREE, or Razorpay cancel failed). */
+export class PlatformAdminPlanRevokeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PlatformAdminPlanRevokeError";
   }
 }
 
@@ -538,6 +549,93 @@ export async function activatePlanForPlatformAdmin(
   const updated = await getOrganizationForPlatformAdmin(organizationId);
   if (!updated) {
     throw new PlatformAdminOrgError("Client not found after activation");
+  }
+  return updated;
+}
+
+/**
+ * Revokes the org's paid plan (STARTER/PRO/CUSTOM) and drops it to FREE now.
+ * Any Razorpay auto-renewal is cancelled first so the client is not charged
+ * again; a failed cancel aborts the revoke. The plan-deal ledger is untouched,
+ * so outstanding balances still show.
+ */
+export async function revokePlanForPlatformAdmin(
+  organizationId: string,
+  actorAdminId: string,
+): Promise<PlatformOrganizationDetail> {
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: {
+      id: true,
+      subscription: {
+        select: {
+          plan: true,
+          status: true,
+          contactLimit: true,
+          monthlyMessageLimit: true,
+          razorpaySubscriptionId: true,
+        },
+      },
+    },
+  });
+  if (!organization) {
+    throw new PlatformAdminOrgError("Client not found");
+  }
+
+  const existing = organization.subscription;
+  if (!existing || existing.plan === SubscriptionPlan.FREE) {
+    throw new PlatformAdminPlanRevokeError(
+      "This client is already on the Free plan",
+    );
+  }
+
+  const credentials = getRazorpayCredentials();
+  if (
+    existing.razorpaySubscriptionId &&
+    existing.status === SubscriptionStatus.ACTIVE &&
+    credentials
+  ) {
+    try {
+      await cancelRazorpaySubscription(
+        existing.razorpaySubscriptionId,
+        credentials,
+      );
+    } catch (error) {
+      console.error("Razorpay subscription cancel failed before plan revoke", {
+        organizationId,
+        error,
+      });
+      throw new PlatformAdminPlanRevokeError(
+        "Could not cancel this client's Razorpay auto-renewal, so the plan was not revoked. Cancel the subscription in Razorpay, then try again.",
+      );
+    }
+  }
+
+  const revoked = await revokePlanToFree(organizationId);
+
+  await createPlatformAdminAuditEvent({
+    actorAdminId,
+    organizationId,
+    action: PLATFORM_ADMIN_AUDIT_ACTIONS.PLAN_REVOKED,
+    targetType: "organization",
+    targetId: organizationId,
+    before: {
+      plan: existing.plan,
+      subscriptionStatus: existing.status,
+      contactLimit: existing.contactLimit,
+      monthlyMessageLimit: existing.monthlyMessageLimit,
+    },
+    after: {
+      plan: revoked.plan,
+      subscriptionStatus: revoked.status,
+      contactLimit: revoked.contactLimit,
+      monthlyMessageLimit: revoked.monthlyMessageLimit,
+    },
+  });
+
+  const updated = await getOrganizationForPlatformAdmin(organizationId);
+  if (!updated) {
+    throw new PlatformAdminOrgError("Client not found after revoke");
   }
   return updated;
 }

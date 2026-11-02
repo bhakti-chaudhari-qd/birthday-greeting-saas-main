@@ -16,7 +16,9 @@ import {
 } from "@/lib/billing/plan-ledger";
 import { ActivePlanRenewalConfirmationRequiredError } from "@/lib/billing/service";
 import {
+  PlatformAdminPlanRevokeError,
   activatePlanForPlatformAdmin,
+  revokePlanForPlatformAdmin,
 } from "@/lib/admin/org-ops";
 import { prisma } from "@/lib/db";
 import { cleanupOrganization, uniqueSuffix } from "./helpers";
@@ -515,6 +517,51 @@ describe("renewal confirmation guard", () => {
       );
       expect(confirmed.plan).toBe(SubscriptionPlan.PRO);
       expect(confirmed.planLedger.deals).toHaveLength(2);
+    } finally {
+      await cleanupOrganization(org.organization.id);
+    }
+  });
+
+  it("revoking a CUSTOM plan drops the org to FREE, clears channel rows, and keeps the ledger", async ({
+    skip,
+  }) => {
+    if (!databaseAvailable) skip();
+
+    const org = await createRegisteredOrganization(registerInput(uniqueSuffix()));
+    try {
+      await activatePlanForPlatformAdmin(
+        org.organization.id,
+        {
+          plan: SubscriptionPlan.CUSTOM,
+          amountPaise: 5_000_00,
+          contactLimit: 2000,
+          smsMonthlyLimit: 1000,
+          whatsappMonthlyLimit: 1000,
+          emailMonthlyLimit: 500,
+          durationDays: 30,
+        },
+        adminId,
+      );
+
+      const revoked = await revokePlanForPlatformAdmin(org.organization.id, adminId);
+      const free = await getPlanCatalogueEntry(SubscriptionPlan.FREE);
+
+      expect(revoked.plan).toBe(SubscriptionPlan.FREE);
+      expect(revoked.subscriptionStatus).toBe(SubscriptionStatus.ACTIVE);
+      expect(revoked.paidUntil).toBeNull();
+      expect(revoked.contactLimit).toBe(free.contactLimit);
+      expect(revoked.monthlyMessageLimit).toBe(free.monthlyMessageLimit);
+      expect(revoked.channelLimits).toHaveLength(0);
+      expect(revoked.planLedger.deals).toHaveLength(1);
+
+      const audit = await prisma.platformAdminAuditEvent.findFirst({
+        where: { organizationId: org.organization.id, action: "PLAN_REVOKED" },
+      });
+      expect(audit).not.toBeNull();
+
+      await expect(
+        revokePlanForPlatformAdmin(org.organization.id, adminId),
+      ).rejects.toThrow(PlatformAdminPlanRevokeError);
     } finally {
       await cleanupOrganization(org.organization.id);
     }

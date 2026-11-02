@@ -56,6 +56,8 @@ export function PlanActivationForm({
   const [linkBusy, setLinkBusy] = useState(false);
   const [activateBusy, setActivateBusy] = useState(false);
   const [paymentLinkUrl, setPaymentLinkUrl] = useState<string | null>(null);
+  const [revokeBusy, setRevokeBusy] = useState(false);
+  const [revokeConfirmOpen, setRevokeConfirmOpen] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState<{
     message: string;
     onConfirm: () => void;
@@ -249,6 +251,35 @@ export function PlanActivationForm({
     }
   }
 
+  const canRevoke = organization.plan != null && organization.plan !== "FREE";
+  const currentPlanLabel = getPlanDisplayLabel(organization.plan, planLabels);
+
+  async function performRevokePlan() {
+    setError(null);
+    setSuccess(null);
+    setPaymentLinkUrl(null);
+    setRevokeBusy(true);
+
+    try {
+      const response = await fetch(
+        `/api/v1/admin/organizations/${organization.id}/plan-revocation`,
+        { method: "POST" },
+      );
+      const payload = await response.json();
+      if (!response.ok) {
+        setError(payload.error?.message ?? dict.failedToRevoke);
+        return;
+      }
+      setSuccess(dict.revokedSuccess(currentPlanLabel));
+      router.refresh();
+    } catch {
+      setError(dict.failedToRevoke);
+    } finally {
+      setRevokeBusy(false);
+      setRevokeConfirmOpen(false);
+    }
+  }
+
   return (
     <div className="space-y-4 p-5 sm:p-6">
       <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
@@ -272,6 +303,16 @@ export function PlanActivationForm({
               : dict.notSet}
           </strong>
         </p>
+        {canRevoke ? (
+          <button
+            type="button"
+            disabled={revokeBusy}
+            className="mt-3 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+            onClick={() => setRevokeConfirmOpen(true)}
+          >
+            {revokeBusy ? dict.revoking : dict.revokePlan}
+          </button>
+        ) : null}
       </div>
 
       <p className="text-sm text-stone-600">{dict.description}</p>
@@ -461,6 +502,17 @@ export function PlanActivationForm({
         busy={activateBusy || linkBusy}
         onConfirm={() => pendingConfirm?.onConfirm()}
         onCancel={() => setPendingConfirm(null)}
+      />
+
+      <ConfirmDialog
+        open={revokeConfirmOpen}
+        title={dict.revokeConfirmTitle}
+        message={dict.revokeConfirmMessage(currentPlanLabel)}
+        confirmLabel={dict.revokeConfirmLabel}
+        cancelLabel={dict.cancel}
+        busy={revokeBusy}
+        onConfirm={() => void performRevokePlan()}
+        onCancel={() => setRevokeConfirmOpen(false)}
       />
     </div>
   );

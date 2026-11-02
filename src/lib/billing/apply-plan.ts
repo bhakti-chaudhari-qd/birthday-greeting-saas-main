@@ -395,6 +395,37 @@ export async function applyPaymentLinkDealToOrganization(
   });
 }
 
+/**
+ * Platform Admin revoke: drops the org back to the FREE catalogue limits
+ * immediately and clears paidUntil, the Razorpay subscription link and any
+ * CUSTOM per-channel allocations. Bonus credits and this month's usage are
+ * kept. The caller cancels any Razorpay auto-renewal first.
+ */
+export async function revokePlanToFree(
+  organizationId: string,
+  db: PrismaClient = defaultPrisma,
+) {
+  const catalogue = await getPlanCatalogueEntry(SubscriptionPlan.FREE, db);
+
+  return db.$transaction(async (tx) => {
+    const subscription = await tx.subscription.update({
+      where: { organizationId },
+      data: {
+        plan: SubscriptionPlan.FREE,
+        status: SubscriptionStatus.ACTIVE,
+        contactLimit: catalogue.contactLimit,
+        monthlyMessageLimit: catalogue.monthlyMessageLimit,
+        paidUntil: null,
+        razorpaySubscriptionId: null,
+      },
+    });
+    await tx.channelMessageLimit.deleteMany({
+      where: { subscriptionId: subscription.id },
+    });
+    return subscription;
+  });
+}
+
 /** Extend paidUntil after a successful recurring charge (does not change plan limits). */
 export async function extendSubscriptionPaidUntil(
   organizationId: string,
