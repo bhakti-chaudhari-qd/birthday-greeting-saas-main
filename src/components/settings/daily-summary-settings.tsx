@@ -10,6 +10,7 @@ import {
   secondaryButtonClass,
 } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
+import { formatAutomationSendTimeLabel } from "@/lib/automation/send-time";
 import type { Locale } from "@/lib/i18n/constants";
 import { useLocale } from "@/lib/i18n/use-locale";
 
@@ -19,12 +20,23 @@ type Settings = {
   recipients: string[];
   defaultNumber: string | null;
   maxRecipients: number;
+  sendHour: number | null;
+  defaultSendHour: number;
 };
+
+const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
+
+function hourLabel(hour: number): string {
+  return formatAutomationSendTimeLabel(hour, 0);
+}
 
 type Labels = {
   title: string;
   description: string;
   enabled: string;
+  sendTime: string;
+  defaultTime: (time: string) => string;
+  sendTimeNote: string;
   turnedOffByAdmin: string;
   recipients: string;
   usingDefault: (number: string) => string;
@@ -42,8 +54,12 @@ const LABELS: Record<Locale, Labels> = {
   en: {
     title: "Daily summary on WhatsApp",
     description:
-      "Every morning at 9 AM we send a WhatsApp summary of the previous day's messages: how many were sent and how many failed on each channel.",
+      "Every day at the time you choose we send a WhatsApp summary of your messages: how many were sent and how many failed on each channel.",
     enabled: "Send me the daily summary",
+    sendTime: "Send it at (IST)",
+    defaultTime: (time) => `Default (${time})`,
+    sendTimeNote:
+      "If you choose 6:00 PM or later, you get that same day's summary, and any activity after that time is added to the next day's summary. Before 6:00 PM, you get the previous day's summary.",
     turnedOffByAdmin:
       "The daily summary has been turned off for your account by the platform team. Contact support to turn it back on.",
     recipients: "Send it to",
@@ -62,8 +78,12 @@ const LABELS: Record<Locale, Labels> = {
   hi: {
     title: "WhatsApp पर रोज़ का सारांश",
     description:
-      "हर सुबह 9 बजे हम पिछले दिन के मेसेज का WhatsApp सारांश भेजते हैं: हर चैनल पर कितने भेजे गए और कितने फ़ेल हुए।",
+      "हर दिन आपके चुने हुए समय पर हम आपके मेसेज का WhatsApp सारांश भेजते हैं: हर चैनल पर कितने भेजे गए और कितने फ़ेल हुए।",
     enabled: "मुझे रोज़ का सारांश भेजें",
+    sendTime: "भेजने का समय (IST)",
+    defaultTime: (time) => `डिफ़ॉल्ट (${time})`,
+    sendTimeNote:
+      "अगर आप शाम 6:00 बजे या उसके बाद का समय चुनते हैं, तो आपको उसी दिन का सारांश मिलेगा, और उस समय के बाद की गतिविधि अगले दिन के सारांश में जुड़ जाएगी। शाम 6:00 बजे से पहले के समय पर आपको पिछले दिन का सारांश मिलेगा।",
     turnedOffByAdmin:
       "प्लेटफ़ॉर्म टीम ने आपके अकाउंट के लिए रोज़ का सारांश बंद कर दिया है। इसे फिर से चालू करने के लिए सपोर्ट से संपर्क करें।",
     recipients: "इन नंबरों पर भेजें",
@@ -82,8 +102,12 @@ const LABELS: Record<Locale, Labels> = {
   mr: {
     title: "WhatsApp वर रोजचा सारांश",
     description:
-      "दररोज सकाळी 9 वाजता आम्ही आदल्या दिवसाच्या मेसेजचा WhatsApp सारांश पाठवतो: प्रत्येक चॅनेलवर किती पाठवले गेले आणि किती अयशस्वी झाले.",
+      "दररोज तुम्ही निवडलेल्या वेळी आम्ही तुमच्या मेसेजचा WhatsApp सारांश पाठवतो: प्रत्येक चॅनेलवर किती पाठवले गेले आणि किती अयशस्वी झाले.",
     enabled: "मला रोजचा सारांश पाठवा",
+    sendTime: "पाठवण्याची वेळ (IST)",
+    defaultTime: (time) => `डीफॉल्ट (${time})`,
+    sendTimeNote:
+      "तुम्ही संध्याकाळी 6:00 किंवा त्यानंतरची वेळ निवडल्यास, तुम्हाला त्याच दिवसाचा सारांश मिळेल आणि त्या वेळेनंतरची ॲक्टिव्हिटी पुढच्या दिवसाच्या सारांशात जोडली जाईल. संध्याकाळी 6:00 च्या आधीच्या वेळेला तुम्हाला आदल्या दिवसाचा सारांश मिळेल.",
     turnedOffByAdmin:
       "प्लॅटफॉर्म टीमने तुमच्या खात्यासाठी रोजचा सारांश बंद केला आहे. तो पुन्हा सुरू करण्यासाठी सपोर्टशी संपर्क साधा.",
     recipients: "या नंबरवर पाठवा",
@@ -102,8 +126,9 @@ const LABELS: Record<Locale, Labels> = {
 };
 
 /**
- * Owner control for the daily WhatsApp summary: on/off, and the numbers it
- * goes to. With no numbers saved it goes to the Owner's own WhatsApp number.
+ * Owner control for the daily WhatsApp summary: on/off, the hour it goes out
+ * and the numbers it goes to. With no numbers saved it goes to the Owner's
+ * own WhatsApp number.
  */
 export function DailySummarySettings() {
   const labels = LABELS[useLocale()];
@@ -113,6 +138,8 @@ export function DailySummarySettings() {
   const [recipients, setRecipients] = useState<string[]>([]);
   const [defaultNumber, setDefaultNumber] = useState<string | null>(null);
   const [maxRecipients, setMaxRecipients] = useState(5);
+  const [sendHour, setSendHour] = useState<number | null>(null);
+  const [defaultSendHour, setDefaultSendHour] = useState(9);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -123,6 +150,8 @@ export function DailySummarySettings() {
     setRecipients(settings.recipients);
     setDefaultNumber(settings.defaultNumber);
     setMaxRecipients(settings.maxRecipients);
+    setSendHour(settings.sendHour);
+    setDefaultSendHour(settings.defaultSendHour);
   }
 
   useEffect(() => {
@@ -154,6 +183,7 @@ export function DailySummarySettings() {
         body: JSON.stringify({
           enabled,
           recipients: recipients.map((value) => value.trim()).filter(Boolean),
+          sendHour,
         }),
       });
       const body = await response.json();
@@ -196,6 +226,27 @@ export function DailySummarySettings() {
         />
         <span className="font-medium text-stone-800">{labels.enabled}</span>
       </label>
+
+      <label className="mt-4 block max-w-md text-sm">
+        <span className="font-medium text-stone-800">{labels.sendTime}</span>
+        <select
+          className={`mt-2 ${inputClass}`}
+          value={sendHour ?? ""}
+          onChange={(event) =>
+            setSendHour(
+              event.target.value === "" ? null : Number(event.target.value),
+            )
+          }
+        >
+          <option value="">{labels.defaultTime(hourLabel(defaultSendHour))}</option>
+          {HOURS.map((hour) => (
+            <option key={hour} value={hour}>
+              {hourLabel(hour)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="mt-2 max-w-md text-xs text-stone-500">{labels.sendTimeNote}</p>
 
       <div className="mt-4 text-sm">
         <span className="font-medium text-stone-800">{labels.recipients}</span>

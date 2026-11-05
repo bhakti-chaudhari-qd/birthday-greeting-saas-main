@@ -1,6 +1,7 @@
 import { Channel, QueueStatus, UserRole } from "@prisma/client";
 
 import { AUTOMATION_TIMEZONE } from "@/lib/automation/constants";
+import { getAutomationSendInstant } from "@/lib/automation/send-time";
 import { normalizeMobile } from "@/lib/contacts/mobile";
 import { prisma } from "@/lib/db";
 import { createMetaWhatsAppProvider } from "@/lib/messaging/providers/whatsapp/meta-whatsapp-provider";
@@ -11,9 +12,20 @@ import {
   parseTargetDate,
 } from "@/lib/queue/dates";
 
-import { loadDailySummaryConfig, type DailySummaryConfig } from "./platform-config";
+import {
+  getPlatformDailySummarySettings,
+  loadDailySummaryConfig,
+  type DailySummaryConfig,
+} from "./platform-config";
 
 export const DAILY_SUMMARY_MAX_RECIPIENTS = 5;
+/**
+ * A summary sent at or after this IST hour covers that same day, and anything
+ * sent after the summary time counts towards the next day's summary. Before
+ * it, the summary covers the whole previous day.
+ */
+export const DAILY_SUMMARY_SAME_DAY_FROM_HOUR = 18;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Organizations handled per cron tick; the rest follow on the next ticks. */
 const ORGANIZATIONS_PER_RUN = 25;
@@ -87,19 +99,35 @@ function currentIstHour(now: Date): number {
 }
 
 export type DailySummaryRunResult =
-  | { status: "not_configured" | "before_send_time" }
+  | { status: "not_configured" }
   | {
       status: "ran";
-      targetDate: string;
       organizations: number;
       sent: number;
       failed: number;
       skipped: number;
     };
 
+/** True when a summary sent at `sendHour` (IST) covers that same day. */
+export function isSameDaySummaryHour(sendHour: number): boolean {
+  return sendHour >= DAILY_SUMMARY_SAME_DAY_FROM_HOUR;
+}
+
+function notHandledFor(targetDate: Date) {
+  return {
+    OR: [
+      { dailySummaryLastSentFor: null },
+      { dailySummaryLastSentFor: { lt: targetDate } },
+    ],
+  };
+}
+
 /**
- * Sends each organization yesterday's (IST) message summary once the send
- * hour has passed, including for days with nothing sent. Safe to call every minute:
+ * Sends each organization its message summary once its send hour (the
+ * Owner's choice, else the platform default) has passed, including for days
+ * with nothing sent. Before 6 PM it covers the whole previous day (IST);
+ * from 6 PM on it covers the 24 hours up to the send hour, so the rest of
+ * that evening goes into the next day's summary. Safe to call every minute:
  * an organization is claimed for the day before anything is sent, so
  * overlapping ticks cannot send it twice.
  */
@@ -111,28 +139,57 @@ export async function runDailySummaries(
     return { status: "not_configured" };
   }
 
-  if (currentIstHour(now) < config.sendHour) {
-    return { status: "before_send_time" };
-  }
+  const nowHour = currentIstHour(now);
+  const todayIso = getOrganizationLocalIsoDate(AUTOMATION_TIMEZONE, now);
+  const yesterdayIso = getPreviousIsoDate(todayIso);
+  const targetIsoFor = (sendHour: number) =>
+    isSameDaySummaryHour(sendHour) ? todayIso : yesterdayIso;
+  const targetDateFor = (sendHour: number) =>
+    parseTargetDate(targetIsoFor(sendHour)).date;
 
-  const targetIso = getPreviousIsoDate(
-    getOrganizationLocalIsoDate(AUTOMATION_TIMEZONE, now),
-  );
-  const targetDate = parseTargetDate(targetIso).date;
-  const notYetHandled = {
-    OR: [
-      { dailySummaryLastSentFor: null },
-      { dailySummaryLastSentFor: { lt: targetDate } },
-    ],
-  };
+  const due = [
+    {
+      AND: [
+        {
+          dailySummarySendHour: {
+            lt: DAILY_SUMMARY_SAME_DAY_FROM_HOUR,
+            lte: nowHour,
+          },
+        },
+        notHandledFor(parseTargetDate(yesterdayIso).date),
+      ],
+    },
+    {
+      AND: [
+        {
+          dailySummarySendHour: {
+            gte: DAILY_SUMMARY_SAME_DAY_FROM_HOUR,
+            lte: nowHour,
+          },
+        },
+        notHandledFor(parseTargetDate(todayIso).date),
+      ],
+    },
+    ...(config.sendHour <= nowHour
+      ? [
+          {
+            AND: [
+              { dailySummarySendHour: null },
+              notHandledFor(targetDateFor(config.sendHour)),
+            ],
+          },
+        ]
+      : []),
+  ];
 
   const organizations = await prisma.organization.findMany({
-    where: { isActive: true, ...notYetHandled },
+    where: { isActive: true, OR: due },
     select: {
       id: true,
       name: true,
       dailySummaryEnabled: true,
       dailySummaryAllowedByAdmin: true,
+      dailySummarySendHour: true,
       dailySummaryRecipients: { select: { mobile: true } },
       users: {
         where: { role: UserRole.ADMIN, isActive: true },
@@ -147,7 +204,6 @@ export async function runDailySummaries(
 
   const result = {
     status: "ran" as const,
-    targetDate: targetIso,
     organizations: organizations.length,
     sent: 0,
     failed: 0,
@@ -157,23 +213,63 @@ export async function runDailySummaries(
     return result;
   }
 
-  const grouped = await prisma.sendQueue.groupBy({
-    by: ["organizationId", "channel", "status"],
-    where: {
-      organizationId: { in: organizations.map((organization) => organization.id) },
-      scheduledDate: targetDate,
-      channel: { in: [...SUMMARY_CHANNELS] },
-      status: {
-        in: [QueueStatus.SENT, QueueStatus.DELIVERED, QueueStatus.FAILED],
-      },
-    },
-    _count: { _all: true },
-  });
+  const sendHourOf = (organization: (typeof organizations)[number]) =>
+    organization.dailySummarySendHour ?? config.sendHour;
+
+  const organizationIdsByHour = new Map<number, string[]>();
+  for (const organization of organizations) {
+    const hour = sendHourOf(organization);
+    organizationIdsByHour.set(hour, [
+      ...(organizationIdsByHour.get(hour) ?? []),
+      organization.id,
+    ]);
+  }
+
+  // Previous-day summaries count by greeting day; same-day ones count what
+  // was sent or failed in the 24 hours up to the send hour.
+  const grouped = await Promise.all(
+    [...organizationIdsByHour].map(([hour, organizationIds]) => {
+      const base = {
+        organizationId: { in: organizationIds },
+        channel: { in: [...SUMMARY_CHANNELS] },
+      };
+      if (!isSameDaySummaryHour(hour)) {
+        return prisma.sendQueue.groupBy({
+          by: ["organizationId", "channel", "status"],
+          where: {
+            ...base,
+            scheduledDate: targetDateFor(hour),
+            status: {
+              in: [QueueStatus.SENT, QueueStatus.DELIVERED, QueueStatus.FAILED],
+            },
+          },
+          _count: { _all: true },
+        });
+      }
+
+      const end = getAutomationSendInstant(hour, 0, now);
+      const window = { gte: new Date(end.getTime() - DAY_MS), lt: end };
+      return prisma.sendQueue.groupBy({
+        by: ["organizationId", "channel", "status"],
+        where: {
+          ...base,
+          OR: [
+            {
+              status: { in: [QueueStatus.SENT, QueueStatus.DELIVERED] },
+              sentAt: window,
+            },
+            { status: QueueStatus.FAILED, updatedAt: window },
+          ],
+        },
+        _count: { _all: true },
+      });
+    }),
+  );
 
   const provider = summaryProvider(config);
 
   const countsByOrganization = new Map<string, ChannelCounts>();
-  for (const row of grouped) {
+  for (const row of grouped.flat()) {
     const counts = countsByOrganization.get(row.organizationId) ?? emptyCounts();
     const channelCounts = counts[row.channel as keyof ChannelCounts];
     if (!channelCounts) {
@@ -185,8 +281,10 @@ export async function runDailySummaries(
   }
 
   for (const organization of organizations) {
+    const targetIso = targetIsoFor(sendHourOf(organization));
+    const targetDate = parseTargetDate(targetIso).date;
     const claimed = await prisma.organization.updateMany({
-      where: { id: organization.id, ...notYetHandled },
+      where: { id: organization.id, ...notHandledFor(targetDate) },
       data: { dailySummaryLastSentFor: targetDate },
     });
     if (claimed.count === 0) {
@@ -296,16 +394,22 @@ export type DailySummarySettings = {
   /** The Owner's own WhatsApp number, used when no recipients are saved. */
   defaultNumber: string | null;
   maxRecipients: number;
+  /** IST hour (0-23) the Owner chose; null means "use defaultSendHour". */
+  sendHour: number | null;
+  /** The platform-wide hour used when the Owner has not chosen one. */
+  defaultSendHour: number;
 };
 
 export async function getDailySummarySettings(
   organizationId: string,
 ): Promise<DailySummarySettings> {
+  const platform = await getPlatformDailySummarySettings();
   const organization = await prisma.organization.findUniqueOrThrow({
     where: { id: organizationId },
     select: {
       dailySummaryEnabled: true,
       dailySummaryAllowedByAdmin: true,
+      dailySummarySendHour: true,
       dailySummaryRecipients: {
         select: { mobile: true },
         orderBy: { createdAt: "asc" },
@@ -328,12 +432,19 @@ export async function getDailySummarySettings(
     ),
     defaultNumber: owner?.whatsappNumber ?? owner?.mobile ?? null,
     maxRecipients: DAILY_SUMMARY_MAX_RECIPIENTS,
+    sendHour: organization.dailySummarySendHour,
+    defaultSendHour: platform.sendHour,
   };
 }
 
 export async function updateDailySummarySettings(
   organizationId: string,
-  input: { enabled: boolean; recipients: string[] },
+  input: {
+    enabled: boolean;
+    recipients: string[];
+    /** Omit to keep the saved hour; null goes back to the platform default. */
+    sendHour?: number | null;
+  },
 ): Promise<DailySummarySettings> {
   const recipients: string[] = [];
   for (const raw of input.recipients) {
@@ -363,7 +474,12 @@ export async function updateDailySummarySettings(
     }),
     prisma.organization.update({
       where: { id: organizationId },
-      data: { dailySummaryEnabled: input.enabled },
+      data: {
+        dailySummaryEnabled: input.enabled,
+        ...(input.sendHour !== undefined
+          ? { dailySummarySendHour: input.sendHour }
+          : {}),
+      },
     }),
   ]);
 

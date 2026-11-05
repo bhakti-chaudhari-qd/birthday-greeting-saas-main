@@ -233,7 +233,7 @@ export function DailySummaryConfigPanel({
           </span>
         </label>
         <label className="block text-sm">
-          <span className="font-medium text-stone-800">Send time (IST)</span>
+          <span className="font-medium text-stone-800">Default send time (IST)</span>
           <select
             className={`mt-1 ${inputClass}`}
             value={settings.sendHour}
@@ -245,6 +245,9 @@ export function DailySummaryConfigPanel({
               </option>
             ))}
           </select>
+          <span className="mt-1 block text-xs text-stone-500">
+            Used for clients who have not picked their own time under Settings.
+          </span>
         </label>
 
         {error ? (

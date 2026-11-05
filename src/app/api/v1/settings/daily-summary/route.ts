@@ -21,10 +21,14 @@ const updateSchema = z
     recipients: z
       .array(z.string().trim().min(1).max(20))
       .max(DAILY_SUMMARY_MAX_RECIPIENTS),
+    sendHour: z.number().int().min(0).max(23).nullable().optional(),
   })
   .strict();
 
-/** Owner-only: who receives the daily WhatsApp summary, and whether it is on. */
+/**
+ * Owner-only: who receives the daily WhatsApp summary, at what hour, and
+ * whether it is on.
+ */
 export async function GET() {
   try {
     const auth = await requireSessionAdmin();

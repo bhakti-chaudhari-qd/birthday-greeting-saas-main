@@ -7,7 +7,10 @@ import {
   setPlatformDailySummaryEnabledSchema,
   updatePlatformDailySummarySchema,
 } from "@/lib/daily-summary/platform-config";
-import { buildDailySummaryParameters } from "@/lib/daily-summary/service";
+import {
+  buildDailySummaryParameters,
+  isSameDaySummaryHour,
+} from "@/lib/daily-summary/service";
 import { signupSchema } from "@/lib/validation/auth";
 
 describe("updatePlatformDailySummarySchema", () => {
@@ -74,6 +77,15 @@ describe("buildDailySummaryParameters", () => {
         EMAIL: { sent: 0, failed: 2 },
       }),
     ).toEqual(["Acme", "8 Oct 2026", "12", "1", "3", "0", "0", "2"]);
+  });
+});
+
+describe("isSameDaySummaryHour", () => {
+  it("covers the same day from 6 PM on, and the previous day before it", () => {
+    expect(isSameDaySummaryHour(9)).toBe(false);
+    expect(isSameDaySummaryHour(17)).toBe(false);
+    expect(isSameDaySummaryHour(18)).toBe(true);
+    expect(isSameDaySummaryHour(23)).toBe(true);
   });
 });
 

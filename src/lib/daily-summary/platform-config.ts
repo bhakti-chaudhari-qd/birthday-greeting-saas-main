@@ -15,7 +15,7 @@ export type DailySummaryConfig = {
   apiVersion: string;
   templateName: string;
   language: string;
-  /** Hour of day (IST, 0-23) from which the previous day's summary goes out. */
+  /** Default hour of day (IST, 0-23) for clients who have not chosen one. */
   sendHour: number;
 };
 

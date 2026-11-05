@@ -131,6 +131,9 @@ model Organization {
   /// Last greeting day (IST) a summary was handled for - sent, or skipped
   /// because nothing was sent that day. Guards against sending it twice.
   dailySummaryLastSentFor            DateTime? @db.Date
+  /// Owner's chosen IST hour (0-23) for the summary; null uses the platform
+  /// default. From 6 PM on it covers that same day, otherwise the day before.
+  dailySummarySendHour               Int?
   /// Vendor who referred this org at signup (optional attribution).
   referredByVendorId                 String?
   referredAt                         DateTime?
