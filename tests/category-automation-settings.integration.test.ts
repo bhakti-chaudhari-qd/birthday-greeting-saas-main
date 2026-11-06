@@ -374,17 +374,19 @@ describe("category automation settings", () => {
       ],
     });
 
-    const disabledSettings = await getCategoryAutomationSettings(
+    const clearedSettings = await getCategoryAutomationSettings(
       org.organization.id,
       birthday.id,
     );
-    const disabledCard = buildAutomationCards(
+    // Every channel cleared (no template anywhere) is the "delete" action -
+    // the automation must disappear from the list entirely, not show as a
+    // "Disabled" card with no channels.
+    const clearedCard = buildAutomationCards(
       birthday.id,
       birthday.name,
-      disabledSettings,
+      clearedSettings,
     ).find((item) => item.categoryId === vip!.categoryId);
-    expect(disabledCard?.status).toBe("disabled");
-    expect(disabledCard?.channels).toEqual([]);
+    expect(clearedCard).toBeUndefined();
 
     await prisma.organization.delete({ where: { id: org.organization.id } });
   });

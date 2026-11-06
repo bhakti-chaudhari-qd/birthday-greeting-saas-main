@@ -193,14 +193,17 @@ export function buildAutomationCards(
         : []),
     ];
 
-    const hasSendTime = rule.sendHour !== null && rule.sendMinute !== null;
     const configuredRows = channelRows.filter(isConfiguredChannel);
-    if (!hasSendTime && configuredRows.length === 0) {
+    if (configuredRows.length === 0) {
+      // No channel has a template configured - this is either a rule that
+      // was never finished, or one every channel was cleared from (the
+      // "delete" action, see withAllChannelsCleared above). Either way
+      // there's nothing left to show as an automation card.
       continue;
     }
 
     const active = configuredRows.some(isActiveChannel);
-    const status = active ? "active" : configuredRows.length > 0 ? "paused" : "disabled";
+    const status = active ? "active" : "paused";
 
     cards.push({
       key: `${occasionId}:${rule.categoryId}`,
