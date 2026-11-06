@@ -31,6 +31,7 @@ export function ContactFieldsPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState<ContactField | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function loadFields() {
     setLoading(true);
@@ -95,6 +96,36 @@ export function ContactFieldsPageClient() {
       setError("Could not save contact field. Check your connection and try again.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function deleteField(field: ContactField) {
+    if (
+      !window.confirm(
+        `Delete the "${field.label}" field? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    setDeletingId(field.id);
+    try {
+      const response = await fetch(`/api/v1/contact-fields/${field.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        setError(body?.error?.message ?? "Could not delete contact field.");
+        return;
+      }
+      if (editing?.id === field.id) {
+        resetForm();
+      }
+      await loadFields();
+    } catch {
+      setError("Could not delete contact field. Check your connection and try again.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -216,6 +247,14 @@ export function ContactFieldsPageClient() {
                           onClick={() => void toggleField(field)}
                         >
                           {field.isActive ? "Deactivate" : "Activate"}
+                        </button>
+                        <button
+                          type="button"
+                          className={`${compactSecondaryButtonClass} text-red-600 hover:text-red-700`}
+                          onClick={() => void deleteField(field)}
+                          disabled={deletingId === field.id}
+                        >
+                          {deletingId === field.id ? "Deleting..." : "Delete"}
                         </button>
                       </div>
                     </td>
