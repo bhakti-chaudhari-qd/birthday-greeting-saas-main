@@ -21,10 +21,9 @@ type Settings = {
   defaultNumber: string | null;
   maxRecipients: number;
   sendHour: number | null;
+  sendMinute: number | null;
   defaultSendHour: number;
 };
-
-const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
 function hourLabel(hour: number): string {
   return formatAutomationSendTimeLabel(hour, 0);
@@ -36,6 +35,8 @@ type Labels = {
   enabled: string;
   sendTime: string;
   defaultTime: (time: string) => string;
+  customTime: string;
+  sendsAt: (time: string) => string;
   sendTimeNote: string;
   turnedOffByAdmin: string;
   recipients: string;
@@ -58,6 +59,8 @@ const LABELS: Record<Locale, Labels> = {
     enabled: "Send me Tomorrow's List",
     sendTime: "Send it the day before at (IST)",
     defaultTime: (time) => `Default (${time})`,
+    customTime: "Custom time",
+    sendsAt: (time) => `Sent at ${time} IST the day before.`,
     sendTimeNote:
       "Nothing is sent on days when nobody has an occasion the next day.",
     turnedOffByAdmin:
@@ -82,6 +85,8 @@ const LABELS: Record<Locale, Labels> = {
     enabled: "मुझे कल की सूची भेजें",
     sendTime: "एक दिन पहले भेजने का समय (IST)",
     defaultTime: (time) => `डिफ़ॉल्ट (${time})`,
+    customTime: "अपना समय चुनें",
+    sendsAt: (time) => `एक दिन पहले ${time} IST पर भेजी जाएगी।`,
     sendTimeNote:
       "जिस दिन अगले दिन किसी का कोई अवसर नहीं है, उस दिन कुछ नहीं भेजा जाता।",
     turnedOffByAdmin:
@@ -106,6 +111,8 @@ const LABELS: Record<Locale, Labels> = {
     enabled: "मला उद्याची यादी पाठवा",
     sendTime: "आधीच्या दिवशी पाठवण्याची वेळ (IST)",
     defaultTime: (time) => `डीफॉल्ट (${time})`,
+    customTime: "स्वतःची वेळ निवडा",
+    sendsAt: (time) => `आदल्या दिवशी ${time} IST ला पाठवली जाईल.`,
     sendTimeNote:
       "पुढील दिवशी कोणाचाही प्रसंग नसेल त्या दिवशी काहीही पाठवले जात नाही.",
     turnedOffByAdmin:
@@ -139,6 +146,7 @@ export function TomorrowListSettings() {
   const [defaultNumber, setDefaultNumber] = useState<string | null>(null);
   const [maxRecipients, setMaxRecipients] = useState(5);
   const [sendHour, setSendHour] = useState<number | null>(null);
+  const [sendMinute, setSendMinute] = useState<number | null>(null);
   const [defaultSendHour, setDefaultSendHour] = useState(20);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -151,6 +159,7 @@ export function TomorrowListSettings() {
     setDefaultNumber(settings.defaultNumber);
     setMaxRecipients(settings.maxRecipients);
     setSendHour(settings.sendHour);
+    setSendMinute(settings.sendMinute);
     setDefaultSendHour(settings.defaultSendHour);
   }
 
@@ -184,6 +193,7 @@ export function TomorrowListSettings() {
           enabled,
           recipients: recipients.map((value) => value.trim()).filter(Boolean),
           sendHour,
+          sendMinute: sendHour === null ? null : (sendMinute ?? 0),
         }),
       });
       const body = await response.json();
@@ -231,21 +241,42 @@ export function TomorrowListSettings() {
         <span className="font-medium text-stone-800">{labels.sendTime}</span>
         <select
           className={`mt-2 ${inputClass}`}
-          value={sendHour ?? ""}
-          onChange={(event) =>
-            setSendHour(
-              event.target.value === "" ? null : Number(event.target.value),
-            )
-          }
+          value={sendHour === null ? "" : "custom"}
+          onChange={(event) => {
+            if (event.target.value === "") {
+              setSendHour(null);
+              setSendMinute(null);
+            } else {
+              setSendHour(defaultSendHour);
+              setSendMinute(0);
+            }
+          }}
         >
           <option value="">{labels.defaultTime(hourLabel(defaultSendHour))}</option>
-          {HOURS.map((hour) => (
-            <option key={hour} value={hour}>
-              {hourLabel(hour)}
-            </option>
-          ))}
+          <option value="custom">{labels.customTime}</option>
         </select>
       </label>
+      {sendHour !== null ? (
+        <div className="mt-2 max-w-md">
+          <input
+            type="time"
+            step={60}
+            className={inputClass}
+            aria-label={labels.customTime}
+            value={`${String(sendHour).padStart(2, "0")}:${String(sendMinute ?? 0).padStart(2, "0")}`}
+            onChange={(event) => {
+              const [hour, minute] = event.target.value.split(":").map(Number);
+              if (Number.isInteger(hour) && Number.isInteger(minute)) {
+                setSendHour(hour);
+                setSendMinute(minute);
+              }
+            }}
+          />
+          <p className="mt-1 text-xs text-stone-600">
+            {labels.sendsAt(formatAutomationSendTimeLabel(sendHour, sendMinute ?? 0))}
+          </p>
+        </div>
+      ) : null}
       <p className="mt-2 max-w-md text-xs text-stone-500">{labels.sendTimeNote}</p>
 
       <div className="mt-4 text-sm">

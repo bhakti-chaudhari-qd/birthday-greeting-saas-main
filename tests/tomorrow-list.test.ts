@@ -6,10 +6,12 @@ import {
   TOMORROW_LIST_SAMPLE_TOKEN,
   buildTomorrowListParameters,
   createTomorrowListToken,
+  currentIstTime,
   getNextIsoDate,
   getTomorrowListView,
   hashTomorrowListToken,
   lastFourDigits,
+  ownSendTimeReached,
   tomorrowListExpiresAt,
 } from "@/lib/tomorrow-list/service";
 
@@ -104,5 +106,28 @@ describe("tomorrow list settings schemas", () => {
     });
     expect(parsed.success).toBe(true);
     expect(parsed.data).toEqual({ tomorrowListAllowedByAdmin: false });
+  });
+});
+
+describe("tomorrow list custom send time", () => {
+  it("reads the IST wall-clock hour and minute", () => {
+    // 05:52 UTC = 11:22 IST
+    expect(currentIstTime(new Date("2026-11-16T05:52:00Z"))).toEqual({
+      hour: 11,
+      minute: 22,
+    });
+  });
+
+  it("is due from the chosen minute on, and every later hour", () => {
+    expect(ownSendTimeReached({ hour: 11, minute: 22 })).toEqual([
+      { tomorrowListSendHour: { lt: 11 } },
+      {
+        tomorrowListSendHour: 11,
+        OR: [
+          { tomorrowListSendMinute: null },
+          { tomorrowListSendMinute: { lte: 22 } },
+        ],
+      },
+    ]);
   });
 });

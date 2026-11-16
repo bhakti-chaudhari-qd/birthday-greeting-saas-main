@@ -145,6 +145,9 @@ model Organization {
   /// Owner's chosen IST hour (0-23) on the day before; null uses the
   /// platform default.
   tomorrowListSendHour               Int?
+  /// Minute (0-59) of the Owner's chosen time; null means :00. Only used
+  /// when tomorrowListSendHour is set.
+  tomorrowListSendMinute             Int?
   /// Vendor who referred this org at signup (optional attribution).
   referredByVendorId                 String?
   referredAt                         DateTime?

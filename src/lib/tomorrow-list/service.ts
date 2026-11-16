@@ -258,14 +258,36 @@ export function buildTomorrowListParameters(
   return [organizationName, dateLabel, String(total)];
 }
 
-function currentIstHour(now: Date): number {
-  return Number(
-    new Intl.DateTimeFormat("en-GB", {
-      timeZone: AUTOMATION_TIMEZONE,
-      hour: "2-digit",
-      hourCycle: "h23",
-    }).format(now),
-  );
+/** Current IST wall-clock hour (0-23) and minute (0-59). */
+export function currentIstTime(now: Date): { hour: number; minute: number } {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: AUTOMATION_TIMEZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  return {
+    hour: Number(parts.find((part) => part.type === "hour")?.value),
+    minute: Number(parts.find((part) => part.type === "minute")?.value),
+  };
+}
+
+/**
+ * Prisma filter for organizations whose own send time (hour + minute,
+ * minute null meaning :00) has been reached today. Organizations on the
+ * platform default are matched separately.
+ */
+export function ownSendTimeReached(now: { hour: number; minute: number }) {
+  return [
+    { tomorrowListSendHour: { lt: now.hour } },
+    {
+      tomorrowListSendHour: now.hour,
+      OR: [
+        { tomorrowListSendMinute: null },
+        { tomorrowListSendMinute: { lte: now.minute } },
+      ],
+    },
+  ];
 }
 
 function notHandledFor(targetDate: Date) {
@@ -302,7 +324,7 @@ export async function runTomorrowLists(
     return { status: "not_configured" };
   }
 
-  const nowHour = currentIstHour(now);
+  const nowTime = currentIstTime(now);
   const forIso = getNextIsoDate(getOrganizationLocalIsoDate(AUTOMATION_TIMEZONE, now));
   const forDate = parseTargetDate(forIso).date;
 
@@ -315,8 +337,10 @@ export async function runTomorrowLists(
         notHandledFor(forDate),
         {
           OR: [
-            { tomorrowListSendHour: { lte: nowHour } },
-            ...(config.sendHour <= nowHour ? [{ tomorrowListSendHour: null }] : []),
+            ...ownSendTimeReached(nowTime),
+            ...(config.sendHour <= nowTime.hour
+              ? [{ tomorrowListSendHour: null }]
+              : []),
           ],
         },
       ],
@@ -480,6 +504,8 @@ export type TomorrowListSettings = {
   maxRecipients: number;
   /** IST hour (0-23) on the day before; null means "use defaultSendHour". */
   sendHour: number | null;
+  /** Minute (0-59) of the chosen time; null when sendHour is null. */
+  sendMinute: number | null;
   defaultSendHour: number;
 };
 
@@ -493,6 +519,7 @@ export async function getTomorrowListSettings(
       tomorrowListEnabled: true,
       tomorrowListAllowedByAdmin: true,
       tomorrowListSendHour: true,
+      tomorrowListSendMinute: true,
       tomorrowListRecipients: {
         select: { mobile: true },
         orderBy: { createdAt: "asc" },
@@ -516,6 +543,10 @@ export async function getTomorrowListSettings(
     defaultNumber: owner?.whatsappNumber ?? owner?.mobile ?? null,
     maxRecipients: TOMORROW_LIST_MAX_RECIPIENTS,
     sendHour: organization.tomorrowListSendHour,
+    sendMinute:
+      organization.tomorrowListSendHour === null
+        ? null
+        : (organization.tomorrowListSendMinute ?? 0),
     defaultSendHour: platform.sendHour,
   };
 }
@@ -525,8 +556,10 @@ export async function updateTomorrowListSettings(
   input: {
     enabled: boolean;
     recipients: string[];
-    /** Omit to keep the saved hour; null goes back to the platform default. */
+    /** Omit to keep the saved time; null goes back to the platform default. */
     sendHour?: number | null;
+    /** Minute of the chosen time (default 0); ignored when sendHour is null. */
+    sendMinute?: number | null;
   },
 ): Promise<TomorrowListSettings> {
   const recipients: string[] = [];
@@ -560,7 +593,11 @@ export async function updateTomorrowListSettings(
       data: {
         tomorrowListEnabled: input.enabled,
         ...(input.sendHour !== undefined
-          ? { tomorrowListSendHour: input.sendHour }
+          ? {
+              tomorrowListSendHour: input.sendHour,
+              tomorrowListSendMinute:
+                input.sendHour === null ? null : (input.sendMinute ?? 0),
+            }
           : {}),
       },
     }),
