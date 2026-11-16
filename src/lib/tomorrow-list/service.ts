@@ -376,8 +376,6 @@ export async function runTomorrowLists(
   });
 
   const provider = listProvider(config);
-  const target = parseTargetDate(forIso);
-  const pairs = getOccasionMatchPairs(target.month, target.day, target.year);
 
   for (const organization of organizations) {
     const claimed = await prisma.organization.updateMany({
@@ -388,72 +386,221 @@ export async function runTomorrowLists(
       continue;
     }
 
-    const owner = organization.users[0];
-    const recipients =
-      organization.tomorrowListRecipients.length > 0
-        ? organization.tomorrowListRecipients.map((recipient) => recipient.mobile)
-        : [owner?.whatsappNumber ?? owner?.mobile].filter(
-            (mobile): mobile is string => Boolean(mobile),
-          );
-
-    const total = await prisma.contactOccasionDate.count({
-      where: {
-        organizationId: organization.id,
-        OR: pairs.map((pair) => ({ month: pair.month, day: pair.day })),
-        contact: { isActive: true },
-      },
-    });
-
+    const recipients = recipientsOf(organization);
+    const total = await countListEntries(organization.id, forIso);
     if (recipients.length === 0 || total === 0) {
       result.skipped += 1;
       continue;
     }
 
-    const token = createTomorrowListToken();
-    const link = {
-      tokenHash: hashTomorrowListToken(token),
-      expiresAt: tomorrowListExpiresAt(forIso),
-    };
-    await prisma.tomorrowListLink.upsert({
-      where: {
-        organizationId_forDate: { organizationId: organization.id, forDate },
-      },
-      create: { organizationId: organization.id, forDate, ...link },
-      update: { ...link, viewCount: 0, lastViewedAt: null },
-    });
-
-    const parameterValues = buildTomorrowListParameters(
-      organization.name,
+    const results = await sendListLink({
+      provider,
+      config,
+      organization,
       forIso,
       total,
-    );
-
-    for (const recipient of recipients) {
-      try {
-        await provider.send({
-          channel: "WHATSAPP",
-          recipient,
-          templateName: config.templateName,
-          language: config.language,
-          parameterValues,
-          buttonUrlSuffix: token,
-          renderedBody: parameterValues.join(" | "),
-          idempotencyKey: `tomorrow-list:${organization.id}:${forIso}:${recipient}`,
-          attemptNumber: 1,
-        });
+      recipients,
+      idempotencyPrefix: "tomorrow-list",
+    });
+    for (const entry of results) {
+      if (entry.ok) {
         result.sent += 1;
-      } catch (error) {
+      } else {
         result.failed += 1;
         console.error("Tomorrow's List send failed", {
           organizationId: organization.id,
           forDate: forIso,
-          error: error instanceof Error ? error.message : String(error),
+          recipient: entry.mobile,
+          error: entry.error,
         });
       }
     }
   }
 
   return result;
+}
+
+type RecipientSource = {
+  tomorrowListRecipients: Array<{ mobile: string }>;
+  users: Array<{ whatsappNumber: string | null; mobile: string | null }>;
+};
+
+/** The Owner's chosen numbers, else the Owner's own WhatsApp number. */
+function recipientsOf(organization: RecipientSource): string[] {
+  const owner = organization.users[0];
+  return organization.tomorrowListRecipients.length > 0
+    ? organization.tomorrowListRecipients.map((recipient) => recipient.mobile)
+    : [owner?.whatsappNumber ?? owner?.mobile].filter(
+        (mobile): mobile is string => Boolean(mobile),
+      );
+}
+
+/** How many contact/occasion entries are on the list for `isoDate`. */
+async function countListEntries(
+  organizationId: string,
+  isoDate: string,
+): Promise<number> {
+  const target = parseTargetDate(isoDate);
+  const pairs = getOccasionMatchPairs(target.month, target.day, target.year);
+  return prisma.contactOccasionDate.count({
+    where: {
+      organizationId,
+      OR: pairs.map((pair) => ({ month: pair.month, day: pair.day })),
+      contact: { isActive: true },
+    },
+  });
+}
+
+export type TomorrowListRecipientResult = {
+  mobile: string;
+  ok: boolean;
+  /** Meta's error message when the send was refused. */
+  error: string | null;
+};
+
+/**
+ * Creates a fresh link for the day and sends it to every recipient. Each
+ * send gets its own link, so links sent earlier the same day keep working.
+ */
+async function sendListLink(input: {
+  provider: MessageProvider;
+  config: TomorrowListConfig;
+  organization: { id: string; name: string };
+  forIso: string;
+  total: number;
+  recipients: string[];
+  idempotencyPrefix: string;
+}): Promise<TomorrowListRecipientResult[]> {
+  const token = createTomorrowListToken();
+  await prisma.tomorrowListLink.create({
+    data: {
+      organizationId: input.organization.id,
+      forDate: parseTargetDate(input.forIso).date,
+      tokenHash: hashTomorrowListToken(token),
+      expiresAt: tomorrowListExpiresAt(input.forIso),
+    },
+  });
+
+  const parameterValues = buildTomorrowListParameters(
+    input.organization.name,
+    input.forIso,
+    input.total,
+  );
+
+  const results: TomorrowListRecipientResult[] = [];
+  for (const recipient of input.recipients) {
+    try {
+      await input.provider.send({
+        channel: "WHATSAPP",
+        recipient,
+        templateName: input.config.templateName,
+        language: input.config.language,
+        parameterValues,
+        buttonUrlSuffix: token,
+        renderedBody: parameterValues.join(" | "),
+        idempotencyKey: `${input.idempotencyPrefix}:${input.organization.id}:${input.forIso}:${recipient}`,
+        attemptNumber: 1,
+      });
+      results.push({ mobile: recipient, ok: true, error: null });
+    } catch (error) {
+      results.push({
+        mobile: recipient,
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  return results;
+}
+
+/** Most links (scheduled + manual) one organization can get for one day. */
+export const TOMORROW_LIST_MAX_LINKS_PER_DAY = 5;
+
+export type TomorrowListSendNowResult =
+  | {
+      status: "sent";
+      forDate: string;
+      total: number;
+      results: TomorrowListRecipientResult[];
+    }
+  | { status: "nobody"; forDate: string }
+  | { status: "not_configured" }
+  | { status: "turned_off_by_admin" }
+  | { status: "no_recipients" }
+  | { status: "limit_reached"; limit: number };
+
+/**
+ * The Owner's "Send me tomorrow's list now": sends straight away using the
+ * saved recipients, whatever the send time or the day's handled mark, and
+ * reports exactly what happened. Marks the day handled so the scheduled
+ * send does not repeat it.
+ */
+export async function sendTomorrowListNow(
+  organizationId: string,
+  now: Date = new Date(),
+): Promise<TomorrowListSendNowResult> {
+  const config = await loadTomorrowListConfig();
+  if (!config) {
+    return { status: "not_configured" };
+  }
+
+  const organization = await prisma.organization.findUniqueOrThrow({
+    where: { id: organizationId },
+    select: {
+      id: true,
+      name: true,
+      tomorrowListAllowedByAdmin: true,
+      tomorrowListRecipients: {
+        select: { mobile: true },
+        orderBy: { createdAt: "asc" },
+      },
+      users: {
+        where: { role: UserRole.ADMIN, isActive: true },
+        orderBy: { createdAt: "asc" },
+        take: 1,
+        select: { whatsappNumber: true, mobile: true },
+      },
+    },
+  });
+  if (!organization.tomorrowListAllowedByAdmin) {
+    return { status: "turned_off_by_admin" };
+  }
+
+  const recipients = recipientsOf(organization);
+  if (recipients.length === 0) {
+    return { status: "no_recipients" };
+  }
+
+  const forIso = getNextIsoDate(getOrganizationLocalIsoDate(AUTOMATION_TIMEZONE, now));
+  const forDate = parseTargetDate(forIso).date;
+  const total = await countListEntries(organizationId, forIso);
+  if (total === 0) {
+    return { status: "nobody", forDate: forIso };
+  }
+
+  const linksToday = await prisma.tomorrowListLink.count({
+    where: { organizationId, forDate },
+  });
+  if (linksToday >= TOMORROW_LIST_MAX_LINKS_PER_DAY) {
+    return { status: "limit_reached", limit: TOMORROW_LIST_MAX_LINKS_PER_DAY };
+  }
+
+  await prisma.organization.update({
+    where: { id: organizationId },
+    data: { tomorrowListLastSentFor: forDate },
+  });
+
+  const results = await sendListLink({
+    provider: listProvider(config),
+    config,
+    organization,
+    forIso,
+    total,
+    recipients,
+    idempotencyPrefix: `tomorrow-list-now:${now.getTime()}`,
+  });
+
+  return { status: "sent", forDate: forIso, total, results };
 }
 
 /**

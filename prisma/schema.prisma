@@ -243,7 +243,8 @@ model TomorrowListRecipient {
   @@unique([organizationId, mobile])
 }
 
-/// One expiring public link per organization per occasion day. Only the
+/// An expiring public link to one organization's list for one occasion day
+/// (a day can have several: the scheduled send plus any "Send now"). Only the
 /// SHA-256 of the token is stored; the raw token lives only in the WhatsApp
 /// button URL. The page stops working once expiresAt (end of forDate, IST)
 /// has passed.
@@ -259,7 +260,7 @@ model TomorrowListLink {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([organizationId, forDate])
+  @@index([organizationId, forDate])
   @@index([expiresAt])
 }
 

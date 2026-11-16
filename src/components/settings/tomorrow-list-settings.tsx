@@ -12,6 +12,7 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { formatAutomationSendTimeLabel } from "@/lib/automation/send-time";
 import type { Locale } from "@/lib/i18n/constants";
+import { formatLongDate } from "@/lib/i18n/format-date";
 import { useLocale } from "@/lib/i18n/use-locale";
 
 type Settings = {
@@ -344,6 +345,186 @@ export function TomorrowListSettings() {
       >
         {saving ? labels.saving : labels.save}
       </button>
+
+      {allowedByAdmin ? <SendNowSection /> : null}
     </Panel>
+  );
+}
+
+type SendNowResult =
+  | {
+      status: "sent";
+      forDate: string;
+      total: number;
+      results: Array<{ mobile: string; ok: boolean; error: string | null }>;
+    }
+  | { status: "nobody"; forDate: string }
+  | { status: "not_configured" }
+  | { status: "turned_off_by_admin" }
+  | { status: "no_recipients" }
+  | { status: "limit_reached"; limit: number };
+
+type SendNowLabels = {
+  title: string;
+  hint: string;
+  button: string;
+  sending: string;
+  summary: (date: string, total: number) => string;
+  accepted: (mobile: string) => string;
+  refused: (mobile: string, error: string) => string;
+  nobody: (date: string) => string;
+  notConfigured: string;
+  turnedOff: string;
+  noRecipients: string;
+  limitReached: (limit: number) => string;
+  failed: string;
+};
+
+const SEND_NOW_LABELS: Record<Locale, SendNowLabels> = {
+  en: {
+    title: "Send it now",
+    hint: "Sends tomorrow's list to the saved numbers right away and shows what happened. Save any changes above first.",
+    button: "Send me tomorrow's list now",
+    sending: "Sending…",
+    summary: (date, total) => `List for ${date}: ${total} on the list.`,
+    accepted: (mobile) =>
+      `Accepted by WhatsApp for ${mobile}. It should arrive within a minute.`,
+    refused: (mobile, error) => `Not sent to ${mobile}. WhatsApp said: ${error}`,
+    nobody: (date) =>
+      `Nobody has an occasion on ${date}, so there is nothing to send.`,
+    notConfigured:
+      "Tomorrow's List has not been switched on by the platform team yet.",
+    turnedOff:
+      "Tomorrow's List has been turned off for your account by the platform team.",
+    noRecipients:
+      "There is no number to send it to. Add a number above and save.",
+    limitReached: (limit) =>
+      `Tomorrow's list has already been sent ${limit} times today. Try again tomorrow.`,
+    failed: "Could not send the list. Try again.",
+  },
+  hi: {
+    title: "अभी भेजें",
+    hint: "सेव किए गए नंबरों पर कल की सूची तुरंत भेजता है और बताता है कि क्या हुआ। पहले ऊपर के बदलाव सेव करें।",
+    button: "मुझे कल की सूची अभी भेजें",
+    sending: "भेजा जा रहा है…",
+    summary: (date, total) => `${date} की सूची: ${total} लोग।`,
+    accepted: (mobile) =>
+      `WhatsApp ने ${mobile} के लिए स्वीकार किया। एक मिनट में पहुंच जानी चाहिए।`,
+    refused: (mobile, error) =>
+      `${mobile} पर नहीं भेजी गई। WhatsApp का जवाब: ${error}`,
+    nobody: (date) => `${date} को किसी का कोई अवसर नहीं है, इसलिए भेजने को कुछ नहीं है।`,
+    notConfigured: "प्लेटफ़ॉर्म टीम ने अभी कल की सूची चालू नहीं की है।",
+    turnedOff: "प्लेटफ़ॉर्म टीम ने आपके अकाउंट के लिए कल की सूची बंद कर दी है।",
+    noRecipients: "भेजने के लिए कोई नंबर नहीं है। ऊपर नंबर जोड़कर सेव करें।",
+    limitReached: (limit) =>
+      `कल की सूची आज पहले ही ${limit} बार भेजी जा चुकी है। कल फिर कोशिश करें।`,
+    failed: "सूची नहीं भेजी जा सकी। फिर से कोशिश करें।",
+  },
+  mr: {
+    title: "आत्ता पाठवा",
+    hint: "सेव्ह केलेल्या नंबरवर उद्याची यादी लगेच पाठवते आणि काय झाले ते दाखवते. आधी वरचे बदल सेव्ह करा.",
+    button: "मला उद्याची यादी आत्ता पाठवा",
+    sending: "पाठवत आहे…",
+    summary: (date, total) => `${date} ची यादी: ${total} व्यक्ती.`,
+    accepted: (mobile) =>
+      `WhatsApp ने ${mobile} साठी स्वीकारले. एका मिनिटात पोहोचायला हवी.`,
+    refused: (mobile, error) =>
+      `${mobile} वर पाठवली गेली नाही. WhatsApp चे उत्तर: ${error}`,
+    nobody: (date) => `${date} रोजी कोणाचाही प्रसंग नाही, त्यामुळे पाठवण्यासारखे काही नाही.`,
+    notConfigured: "प्लॅटफॉर्म टीमने अजून उद्याची यादी सुरू केलेली नाही.",
+    turnedOff: "प्लॅटफॉर्म टीमने तुमच्या खात्यासाठी उद्याची यादी बंद केली आहे.",
+    noRecipients: "पाठवण्यासाठी कोणताही नंबर नाही. वर नंबर जोडा आणि सेव्ह करा.",
+    limitReached: (limit) =>
+      `उद्याची यादी आज आधीच ${limit} वेळा पाठवली आहे. उद्या पुन्हा प्रयत्न करा.`,
+    failed: "यादी पाठवता आली नाही. पुन्हा प्रयत्न करा.",
+  },
+};
+
+/**
+ * "Send me tomorrow's list now": sends straight away to the saved numbers
+ * and shows the outcome per number, so the Owner never has to wonder
+ * whether the scheduled send went out.
+ */
+function SendNowSection() {
+  const locale = useLocale();
+  const labels = SEND_NOW_LABELS[locale];
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<SendNowResult | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  async function handleSendNow() {
+    setSending(true);
+    setResult(null);
+    setFailed(false);
+    try {
+      const response = await fetch("/api/v1/settings/tomorrow-list/send-now", {
+        method: "POST",
+      });
+      if (!response.ok) {
+        setFailed(true);
+        return;
+      }
+      const body = await response.json();
+      setResult(body.data as SendNowResult);
+    } catch {
+      setFailed(true);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function renderResult(value: SendNowResult) {
+    switch (value.status) {
+      case "sent":
+        return (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-stone-700">
+              {labels.summary(formatLongDate(value.forDate, locale), value.total)}
+            </p>
+            {value.results.map((entry) => (
+              <InlineAlert key={entry.mobile} tone={entry.ok ? "success" : "error"}>
+                {entry.ok
+                  ? labels.accepted(entry.mobile)
+                  : labels.refused(entry.mobile, entry.error ?? "")}
+              </InlineAlert>
+            ))}
+          </div>
+        );
+      case "nobody":
+        return (
+          <InlineAlert tone="info">
+            {labels.nobody(formatLongDate(value.forDate, locale))}
+          </InlineAlert>
+        );
+      case "not_configured":
+        return <InlineAlert tone="info">{labels.notConfigured}</InlineAlert>;
+      case "turned_off_by_admin":
+        return <InlineAlert tone="info">{labels.turnedOff}</InlineAlert>;
+      case "no_recipients":
+        return <InlineAlert tone="error">{labels.noRecipients}</InlineAlert>;
+      case "limit_reached":
+        return <InlineAlert tone="info">{labels.limitReached(value.limit)}</InlineAlert>;
+    }
+  }
+
+  return (
+    <div className="mt-6 border-t border-stone-200 pt-4">
+      <h3 className="text-sm font-semibold text-stone-900">{labels.title}</h3>
+      <p className="mt-1 max-w-md text-xs text-stone-500">{labels.hint}</p>
+      <button
+        type="button"
+        className={`mt-3 ${secondaryButtonClass}`}
+        onClick={() => void handleSendNow()}
+        disabled={sending}
+      >
+        {sending ? labels.sending : labels.button}
+      </button>
+      {result ? <div className="mt-3 max-w-xl">{renderResult(result)}</div> : null}
+      {failed ? (
+        <div className="mt-3 max-w-xl">
+          <InlineAlert tone="error">{labels.failed}</InlineAlert>
+        </div>
+      ) : null}
+    </div>
   );
 }
