@@ -48,6 +48,16 @@ export const whatsappChannelConfigWriteSchema = z
     accessToken: z.string().trim().min(1).max(2000).optional(),
     /** Meta Cloud API - WhatsApp Business phone number ID. */
     phoneNumberId: z.string().trim().min(1).max(200).optional(),
+    /**
+     * Meta Cloud API - WhatsApp Business Account ID, needed to submit
+     * templates for approval from the app. Empty string removes it; omit
+     * to keep the saved one.
+     */
+    businessAccountId: z
+      .string()
+      .trim()
+      .regex(/^(\d{5,30})?$/, "WhatsApp Business Account ID must be digits only")
+      .optional(),
     /** Meta Cloud API version, e.g. v21.0. Defaults when omitted. */
     apiVersion: z
       .string()

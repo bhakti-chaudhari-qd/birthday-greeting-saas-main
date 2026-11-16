@@ -575,6 +575,16 @@ model MessageTemplate {
   whatsappTemplateName   String?
   whatsappLanguage       String?
   whatsappParameterOrder String[]     @default([])
+  /// Meta approval of this WhatsApp template when submitted from the app
+  /// (or checked by its template ID): APPROVED, PENDING, REJECTED, PAUSED,
+  /// DISABLED. Null = never submitted or checked from the app.
+  whatsappApprovalStatus String?
+  /// Category Meta assigned (UTILITY / MARKETING / AUTHENTICATION), which can
+  /// differ from the one requested.
+  whatsappApprovalCategory String?
+  whatsappRejectedReason String?
+  whatsappSubmittedAt    DateTime?
+  whatsappStatusCheckedAt DateTime?
   whatsappMediaAssetId   String?
   /// CALL templates only: the recorded message played to the contact.
   voiceRecordingId       String?

@@ -212,6 +212,21 @@ function resolveSettingsForWrite(
       );
     }
 
+    let existingBusinessAccountId: string | undefined;
+    if (existing?.provider === ChannelProvider.META && existing.settings) {
+      try {
+        existingBusinessAccountId = whatsappMetaSettingsSchema.parse(
+          existing.settings,
+        ).businessAccountId;
+      } catch {
+        existingBusinessAccountId = undefined;
+      }
+    }
+    const businessAccountId =
+      input.businessAccountId === undefined
+        ? existingBusinessAccountId
+        : input.businessAccountId.trim() || undefined;
+
     let existingMetaMedia:
       | {
           mediaBase64: string;
@@ -265,6 +280,7 @@ function resolveSettingsForWrite(
 
     return whatsappMetaSettingsSchema.parse({
       phoneNumberId: input.phoneNumberId.trim(),
+      ...(businessAccountId ? { businessAccountId } : {}),
       ...(input.apiVersion?.trim()
         ? { apiVersion: input.apiVersion.trim() }
         : {}),
@@ -501,6 +517,9 @@ export async function updateWhatsAppChannelMedia(
 
     nextSettings = whatsappMetaSettingsSchema.parse({
       phoneNumberId: settings.phoneNumberId,
+      ...(settings.businessAccountId
+        ? { businessAccountId: settings.businessAccountId }
+        : {}),
       ...(settings.apiVersion ? { apiVersion: settings.apiVersion } : {}),
       ...storedMedia,
     });

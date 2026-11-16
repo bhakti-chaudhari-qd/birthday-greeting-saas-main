@@ -145,6 +145,8 @@ export const whatsappMetaSettingsSchema = z
   .object({
     /** WhatsApp Business phone number ID, e.g. 1320947411098948 */
     phoneNumberId: z.string().trim().min(1),
+    /** WhatsApp Business Account ID - only needed to submit templates to Meta. */
+    businessAccountId: z.string().trim().regex(/^\d{5,30}$/).optional(),
     /** e.g. v21.0 - defaults to WHATSAPP_META_DEFAULT_API_VERSION when omitted. */
     apiVersion: z
       .string()

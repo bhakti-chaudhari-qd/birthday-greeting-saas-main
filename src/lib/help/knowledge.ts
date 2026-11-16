@@ -110,12 +110,53 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     leadInHi: "WhatsApp भेजना कॉन्फ़िगर करने के लिए:",
     leadInMr: "WhatsApp पाठवणे कॉन्फिगर करण्यासाठी:",
     answer:
-      "If Settings → Channels → WhatsApp shows \"Using the platform WhatsApp service\", WhatsApp already works with text-only approved templates.\nTo send from your own number:\n1. Open Settings → Channels → WhatsApp and choose a gateway.\n2. Meta Cloud API: enter the Phone number ID and a permanent access token from your Meta app. Koverage: enter your Vendor UID and API token. Custom HTTP: enter your provider's URL and credentials.\n3. Tick Active and Save.\n4. Under Settings → Manage Templates, create a WhatsApp template whose approved name and language exactly match a template approved on that WhatsApp account.\nYour own gateway needs an ACTIVE paid plan or platform approval. Owners only.",
+      "If Settings → Channels → WhatsApp shows \"Using the platform WhatsApp service\", WhatsApp already works with text-only approved templates.\nTo send from your own number, connect Meta (WhatsApp Cloud API) - the default, and the only option that lets you get templates approved from this app:\n1. business.facebook.com: set up your business (verification recommended).\n2. developers.facebook.com → My Apps → Create app (Business) → add WhatsApp.\n3. WhatsApp → API Setup: add and verify your number; copy the Phone number ID and the WhatsApp Business Account ID.\n4. WhatsApp Manager: add a payment method (without it Meta accepts messages but does not deliver them).\n5. business.facebook.com → Settings → System users → Generate new token for your app with whatsapp_business_messaging and whatsapp_business_management, expiry Never.\n6. Settings → Channels → WhatsApp: paste the Phone number ID, WhatsApp Business Account ID and token, tick Active and Save. The same steps are shown on that page.\nThen get your templates approved from Manage Templates (ask \"How do I get a WhatsApp template approved?\"). Koverage and Custom HTTP keep working for clients already on them but are not offered for new setups. Your own gateway needs an ACTIVE paid plan or platform approval. Owners only.",
     answerHi:
-      "अगर Settings → Channels → WhatsApp पर \"Using the platform WhatsApp service\" दिखता है, तो WhatsApp पहले से केवल टेक्स्ट वाले approved टेम्पलेट के साथ चालू है।\nअपने नंबर से भेजने के लिए:\n1. Settings → Channels → WhatsApp खोलें और गेटवे चुनें।\n2. Meta Cloud API: अपने Meta app से Phone number ID और permanent access token भरें। Koverage: अपना Vendor UID और API token भरें। Custom HTTP: अपने प्रोवाइडर का URL और credentials भरें।\n3. Active टिक करके Save करें।\n4. Settings → Manage Templates में ऐसा WhatsApp टेम्पलेट बनाएँ जिसका approved नाम और भाषा उस WhatsApp अकाउंट पर approved टेम्पलेट से बिल्कुल मेल खाए।\nअपने गेटवे के लिए ACTIVE पेड प्लान या प्लेटफ़ॉर्म की मंज़ूरी चाहिए। केवल Owners।",
+      "अगर Settings → Channels → WhatsApp पर \"Using the platform WhatsApp service\" दिखता है, तो WhatsApp पहले से केवल टेक्स्ट वाले approved टेम्पलेट के साथ चालू है।\nअपने नंबर से भेजने के लिए Meta (WhatsApp Cloud API) जोड़ें - यही डिफ़ॉल्ट है, और सिर्फ़ इसी से आप इस ऐप से टेम्पलेट अप्रूव करवा सकते हैं:\n1. business.facebook.com: अपना बिज़नेस सेट करें (वेरिफ़िकेशन की सलाह है)।\n2. developers.facebook.com → My Apps → Create app (Business) → WhatsApp जोड़ें।\n3. WhatsApp → API Setup: अपना नंबर जोड़कर वेरिफ़ाई करें; Phone number ID और WhatsApp Business Account ID कॉपी करें।\n4. WhatsApp Manager: पेमेंट मेथड जोड़ें (इसके बिना Meta मेसेज स्वीकार करता है पर डिलीवर नहीं करता)।\n5. business.facebook.com → Settings → System users → अपने ऐप के लिए Generate new token, whatsapp_business_messaging और whatsapp_business_management के साथ, expiry Never।\n6. Settings → Channels → WhatsApp: Phone number ID, WhatsApp Business Account ID और token पेस्ट करें, Active टिक करके Save करें। यही स्टेप्स उस पेज पर भी हैं।\nफिर Manage Templates से टेम्पलेट अप्रूव करवाएँ (पूछें \"WhatsApp टेम्पलेट अप्रूव कैसे करवाएँ?\")। Koverage और Custom HTTP पुराने क्लाइंट के लिए चलते रहेंगे, पर नए सेटअप के लिए उपलब्ध नहीं हैं। अपने गेटवे के लिए ACTIVE पेड प्लान या प्लेटफ़ॉर्म की मंज़ूरी चाहिए। केवल Owners।",
     answerMr:
-      "Settings → Channels → WhatsApp वर \"Using the platform WhatsApp service\" दिसत असेल, तर WhatsApp आधीच फक्त टेक्स्ट असलेल्या approved टेम्पलेटसह चालू आहे.\nतुमच्या नंबरवरून पाठवण्यासाठी:\n1. Settings → Channels → WhatsApp उघडा आणि गेटवे निवडा.\n2. Meta Cloud API: तुमच्या Meta app मधून Phone number ID आणि permanent access token भरा. Koverage: तुमचा Vendor UID आणि API token भरा. Custom HTTP: तुमच्या प्रोव्हायडरचा URL आणि credentials भरा.\n3. Active टिक करून Save करा.\n4. Settings → Manage Templates मध्ये असा WhatsApp टेम्पलेट तयार करा ज्याचे approved नाव आणि भाषा त्या WhatsApp अकाउंटवरील approved टेम्पलेटशी अगदी जुळते.\nस्वतःच्या गेटवेसाठी ACTIVE पेड प्लान किंवा प्लॅटफॉर्मची मंजुरी लागते. फक्त Owners.",
+      "Settings → Channels → WhatsApp वर \"Using the platform WhatsApp service\" दिसत असेल, तर WhatsApp आधीच फक्त टेक्स्ट असलेल्या approved टेम्पलेटसह चालू आहे.\nतुमच्या नंबरवरून पाठवण्यासाठी Meta (WhatsApp Cloud API) जोडा - हाच डीफॉल्ट आहे, आणि फक्त यानेच तुम्ही या अ‍ॅपमधून टेम्पलेट मंजूर करून घेऊ शकता:\n1. business.facebook.com: तुमचा बिझनेस सेट करा (व्हेरिफिकेशनची शिफारस आहे).\n2. developers.facebook.com → My Apps → Create app (Business) → WhatsApp जोडा.\n3. WhatsApp → API Setup: तुमचा नंबर जोडून व्हेरिफाय करा; Phone number ID आणि WhatsApp Business Account ID कॉपी करा.\n4. WhatsApp Manager: पेमेंट मेथड जोडा (त्याशिवाय Meta मेसेज स्वीकारते पण पोहोचवत नाही).\n5. business.facebook.com → Settings → System users → तुमच्या अ‍ॅपसाठी Generate new token, whatsapp_business_messaging आणि whatsapp_business_management सह, expiry Never.\n6. Settings → Channels → WhatsApp: Phone number ID, WhatsApp Business Account ID आणि token पेस्ट करा, Active टिक करून Save करा. याच पायऱ्या त्या पेजवरही आहेत.\nमग Manage Templates मधून टेम्पलेट मंजूर करून घ्या (विचारा \"WhatsApp टेम्पलेट मंजूर कसे करायचे?\"). Koverage आणि Custom HTTP जुन्या क्लायंटसाठी चालू राहतील, पण नवीन सेटअपसाठी उपलब्ध नाहीत. स्वतःच्या गेटवेसाठी ACTIVE पेड प्लान किंवा प्लॅटफॉर्मची मंजुरी लागते. फक्त Owners.",
     hrefs: [
+      {
+        label: "Channels (WhatsApp)",
+        href: "/dashboard/settings/channels?tab=whatsapp",
+      },
+    ],
+  },
+  {
+    id: "whatsapp-template-approval",
+    title: "How do I get a WhatsApp template approved?",
+    suggest: false,
+    keywords: [
+      "template approval",
+      "approve template",
+      "template approved",
+      "get template approved",
+      "submit template",
+      "submit to meta",
+      "meta approval",
+      "whatsapp approval",
+      "template status",
+      "template rejected",
+      "rejected template",
+      "template pending",
+      "whatsapp business account id",
+      "waba",
+      "टेम्पलेट अप्रूव",
+      "अप्रूवल",
+      "टेम्पलेट मंजूर",
+      "मंजुरी",
+    ],
+    leadIn: "To get a WhatsApp template approved by Meta from this app:",
+    leadInHi: "इस ऐप से Meta से WhatsApp टेम्पलेट अप्रूव करवाने के लिए:",
+    leadInMr: "या अ‍ॅपमधून Meta कडून WhatsApp टेम्पलेट मंजूर करून घेण्यासाठी:",
+    answer:
+      "You need your own Meta WhatsApp connection with the WhatsApp Business Account ID (Settings → Channels → WhatsApp - ask \"How do I configure WhatsApp sending?\").\n1. Open Settings → Manage Templates → WhatsApp and create or open a template.\n2. Write the message with placeholders like {{name}}. Meta's rules: each placeholder only once, never as the very first or last word, and no two placeholders side by side. Example: \"Happy birthday, {{name}}! Wishing you a wonderful year.\"\n3. Set the WhatsApp template name (lowercase letters, numbers, underscores, e.g. birthday_wish) and the language, then Save.\n4. Open the template again. In the Meta approval box choose a category - Marketing for birthday/anniversary greetings (Meta moves greetings to Marketing even if you pick Utility) - and click \"Submit to Meta for approval\".\n5. After a few minutes click \"Check status\". Approved = ready; greetings with it will be delivered. Rejected = read Meta's reason, edit the text, Save and click \"Submit again\".\nIf you change the text of an approved template, it shows \"Changed since submitting\" - submit again before relying on it. Templates with an image or video can't be submitted from the app yet: create those in WhatsApp Manager and type the approved name. The Manage Templates list shows each template's approval status. Owners only.",
+    answerHi:
+      "इसके लिए WhatsApp Business Account ID के साथ आपका अपना Meta WhatsApp कनेक्शन चाहिए (Settings → Channels → WhatsApp - पूछें \"WhatsApp भेजना कैसे सेट करें?\")।\n1. Settings → Manage Templates → WhatsApp खोलें और टेम्पलेट बनाएँ या खोलें।\n2. {{name}} जैसे प्लेसहोल्डर के साथ मेसेज लिखें। Meta के नियम: हर प्लेसहोल्डर सिर्फ़ एक बार, कभी सबसे पहला या सबसे आख़िरी शब्द नहीं, और दो प्लेसहोल्डर साथ-साथ नहीं। उदाहरण: \"Happy birthday, {{name}}! Wishing you a wonderful year.\"\n3. WhatsApp टेम्पलेट का नाम (छोटे अक्षर, नंबर, अंडरस्कोर, जैसे birthday_wish) और भाषा भरें, फिर Save करें।\n4. टेम्पलेट दोबारा खोलें। Meta अप्रूवल बॉक्स में कैटेगरी चुनें - जन्मदिन/एनिवर्सरी शुभकामनाओं के लिए Marketing (Utility चुनने पर भी Meta इन्हें Marketing कर देता है) - और \"Meta को अप्रूवल के लिए भेजें\" दबाएँ।\n5. कुछ मिनट बाद \"स्टेटस देखें\" दबाएँ। अप्रूव्ड = तैयार; इस टेम्पलेट वाली शुभकामनाएँ डिलीवर होंगी। रिजेक्टेड = Meta का कारण पढ़ें, टेक्स्ट बदलें, Save करें और \"फिर से भेजें\" दबाएँ।\nअगर आप अप्रूव्ड टेम्पलेट का टेक्स्ट बदलते हैं, तो \"भेजने के बाद बदला गया\" दिखेगा - इस्तेमाल से पहले फिर से भेजें। इमेज या वीडियो वाले टेम्पलेट अभी ऐप से नहीं भेजे जा सकते: उन्हें WhatsApp Manager में बनाएँ और अप्रूव्ड नाम लिखें। Manage Templates सूची में हर टेम्पलेट का अप्रूवल स्टेटस दिखता है। केवल Owners।",
+    answerMr:
+      "यासाठी WhatsApp Business Account ID सह तुमचे स्वतःचे Meta WhatsApp कनेक्शन लागते (Settings → Channels → WhatsApp - विचारा \"WhatsApp पाठवणे कसे सेट करायचे?\").\n1. Settings → Manage Templates → WhatsApp उघडा आणि टेम्पलेट तयार करा किंवा उघडा.\n2. {{name}} सारख्या प्लेसहोल्डरसह संदेश लिहा. Meta चे नियम: प्रत्येक प्लेसहोल्डर फक्त एकदा, कधीही अगदी पहिला किंवा शेवटचा शब्द नाही, आणि दोन प्लेसहोल्डर शेजारी नाहीत. उदाहरण: \"Happy birthday, {{name}}! Wishing you a wonderful year.\"\n3. WhatsApp टेम्पलेटचे नाव (लहान अक्षरे, अंक, अंडरस्कोर, उदा. birthday_wish) आणि भाषा भरा, मग Save करा.\n4. टेम्पलेट पुन्हा उघडा. Meta मंजुरी बॉक्समध्ये श्रेणी निवडा - वाढदिवस/ॲनिव्हर्सरी शुभेच्छांसाठी Marketing (Utility निवडले तरी Meta त्या Marketing करते) - आणि \"Meta कडे मंजुरीसाठी पाठवा\" दाबा.\n5. काही मिनिटांनी \"स्थिती तपासा\" दाबा. मंजूर = तयार; या टेम्पलेटच्या शुभेच्छा पोहोचतील. नाकारले = Meta चे कारण वाचा, मजकूर बदला, Save करा आणि \"पुन्हा पाठवा\" दाबा.\nमंजूर टेम्पलेटचा मजकूर बदलल्यास \"पाठवल्यानंतर बदलले\" दिसेल - वापरण्याआधी पुन्हा पाठवा. इमेज किंवा व्हिडिओ असलेले टेम्पलेट अजून अ‍ॅपमधून पाठवता येत नाहीत: ते WhatsApp Manager मध्ये तयार करा आणि मंजूर नाव लिहा. Manage Templates यादीत प्रत्येक टेम्पलेटची मंजुरी स्थिती दिसते. फक्त Owners.",
+    hrefs: [
+      { label: "Manage Templates", href: "/dashboard/templates?channel=WHATSAPP" },
       {
         label: "Channels (WhatsApp)",
         href: "/dashboard/settings/channels?tab=whatsapp",
@@ -336,11 +377,11 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     leadInHi: "ग्रीटिंग टेम्पलेट बनाने के लिए:",
     leadInMr: "ग्रीटिंग टेम्पलेट तयार करण्यासाठी:",
     answer:
-      "Open Settings → Manage Templates and create a template for WhatsApp, Email or SMS. Use {{name}} so each recipient gets their own name. For WhatsApp, also enter the approved template name and language exactly as approved on your WhatsApp account. For SMS, enter the DLT-approved template ID and text from your provider.",
+      "Open Settings → Manage Templates and create a template for WhatsApp, Email or SMS. Use {{name}} so each recipient gets their own name. For WhatsApp, also enter the template name and language exactly as approved on your WhatsApp account - or, with your own Meta connection, save it and click \"Submit to Meta for approval\" on the template to get it approved from here. For SMS, enter the DLT-approved template ID and text from your provider.",
     answerHi:
-      "Settings → Manage Templates खोलें और WhatsApp, Email या SMS के लिए टेम्पलेट बनाएँ। {{name}} इस्तेमाल करें ताकि हर प्राप्तकर्ता का नाम आए। WhatsApp के लिए approved टेम्पलेट नाम और भाषा ठीक वैसी भरें जैसी आपके WhatsApp अकाउंट पर approved है। SMS के लिए अपने प्रोवाइडर का DLT-approved टेम्पलेट ID और टेक्स्ट भरें।",
+      "Settings → Manage Templates खोलें और WhatsApp, Email या SMS के लिए टेम्पलेट बनाएँ। {{name}} इस्तेमाल करें ताकि हर प्राप्तकर्ता का नाम आए। WhatsApp के लिए approved टेम्पलेट नाम और भाषा ठीक वैसी भरें जैसी आपके WhatsApp अकाउंट पर approved है - या अपने Meta कनेक्शन के साथ, सेव करके टेम्पलेट पर \"Meta को अप्रूवल के लिए भेजें\" दबाएँ और यहीं से अप्रूव करवाएँ। SMS के लिए अपने प्रोवाइडर का DLT-approved टेम्पलेट ID और टेक्स्ट भरें।",
     answerMr:
-      "Settings → Manage Templates उघडा आणि WhatsApp, Email किंवा SMS साठी टेम्पलेट तयार करा. {{name}} वापरा जेणेकरून प्रत्येक प्राप्तकर्त्याचे नाव येईल. WhatsApp साठी approved टेम्पलेटचे नाव आणि भाषा तुमच्या WhatsApp अकाउंटवर approved आहे तशीच भरा. SMS साठी तुमच्या प्रोव्हायडरचा DLT-approved टेम्पलेट ID आणि टेक्स्ट भरा.",
+      "Settings → Manage Templates उघडा आणि WhatsApp, Email किंवा SMS साठी टेम्पलेट तयार करा. {{name}} वापरा जेणेकरून प्रत्येक प्राप्तकर्त्याचे नाव येईल. WhatsApp साठी approved टेम्पलेटचे नाव आणि भाषा तुमच्या WhatsApp अकाउंटवर approved आहे तशीच भरा - किंवा तुमच्या Meta कनेक्शनसह, सेव्ह करून टेम्पलेटवर \"Meta कडे मंजुरीसाठी पाठवा\" दाबा आणि इथूनच मंजूर करून घ्या. SMS साठी तुमच्या प्रोव्हायडरचा DLT-approved टेम्पलेट ID आणि टेक्स्ट भरा.",
     hrefs: [
       { label: "Manage Templates", href: "/dashboard/templates" },
       { label: "Channels", href: "/dashboard/settings/channels" },

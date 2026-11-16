@@ -171,7 +171,7 @@ const TEMPLATES_DICT: Record<Locale, TemplatesDict> = {
       subjectPlaceholder: "Happy Birthday {{name}}!",
       approvedWhatsappTemplateName: "Approved WhatsApp Template Name",
       approvedWhatsappTemplateNameHint:
-        'The exact name registered with your WhatsApp provider (letters, numbers, and underscores only) - this is separate from the "Template Name" field above, which is only this app\'s internal label for the template.',
+        'The exact name of the template in WhatsApp (lowercase letters, numbers and underscores, e.g. birthday_wish). Separate from "Template Name" above, which is only this app\'s label. Using your own Meta connection? Pick a new name, save, then open the template again and click "Submit to Meta for approval".',
       whatsappTemplateNamePattern: "Letters, numbers, and underscores only",
       whatsappTemplateId: "Template ID",
       language: "Language",
@@ -294,7 +294,7 @@ const TEMPLATES_DICT: Record<Locale, TemplatesDict> = {
       subjectPlaceholder: "हैप्पी बर्थडे {{name}}!",
       approvedWhatsappTemplateName: "अप्रूव्ड WhatsApp टेम्पलेट का नाम",
       approvedWhatsappTemplateNameHint:
-        'आपके WhatsApp प्रोवाइडर के पास रजिस्टर्ड सटीक नाम (केवल अक्षर, नंबर और अंडरस्कोर) - यह ऊपर दिए "Template Name" फ़ील्ड से अलग है, जो सिर्फ़ इस ऐप में टेम्पलेट का इंटरनल लेबल है।',
+        'WhatsApp में टेम्पलेट का सटीक नाम (छोटे अक्षर, नंबर और अंडरस्कोर, जैसे birthday_wish)। यह ऊपर दिए "Template Name" से अलग है, जो सिर्फ़ इस ऐप का लेबल है। अपना Meta कनेक्शन इस्तेमाल कर रहे हैं? नया नाम चुनें, सेव करें, फिर टेम्पलेट दोबारा खोलकर "Meta को अप्रूवल के लिए भेजें" दबाएं।',
       whatsappTemplateNamePattern: "केवल अक्षर, नंबर और अंडरस्कोर",
       whatsappTemplateId: "टेम्पलेट ID",
       language: "भाषा",
@@ -416,7 +416,7 @@ const TEMPLATES_DICT: Record<Locale, TemplatesDict> = {
       subjectPlaceholder: "वाढदिवसाच्या हार्दिक शुभेच्छा {{name}}!",
       approvedWhatsappTemplateName: "मंजूर WhatsApp टेम्पलेटचे नाव",
       approvedWhatsappTemplateNameHint:
-        'तुमच्या WhatsApp प्रोव्हायडरकडे नोंदवलेले अचूक नाव (फक्त अक्षरे, अंक आणि अंडरस्कोर) - हे वरील "Template Name" फील्डपेक्षा वेगळे आहे, जे फक्त या अ‍ॅपमधील टेम्पलेटचे इंटर्नल लेबल आहे.',
+        'WhatsApp मधील टेम्पलेटचे अचूक नाव (लहान अक्षरे, अंक आणि अंडरस्कोर, उदा. birthday_wish). हे वरील "Template Name" पेक्षा वेगळे आहे, जे फक्त या अ‍ॅपचे लेबल आहे. तुमचे स्वतःचे Meta कनेक्शन वापरत आहात? नवीन नाव निवडा, सेव्ह करा, मग टेम्पलेट पुन्हा उघडून "Meta कडे मंजुरीसाठी पाठवा" दाबा.',
       whatsappTemplateNamePattern: "फक्त अक्षरे, अंक आणि अंडरस्कोर",
       whatsappTemplateId: "टेम्पलेट ID",
       language: "भाषा",

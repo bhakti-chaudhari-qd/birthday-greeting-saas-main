@@ -17,6 +17,7 @@ import {
   inputClass,
   secondaryButtonClass,
 } from "@/components/ui/page";
+import type { Locale } from "@/lib/i18n/constants";
 import { getTemplatesDict } from "@/lib/i18n/dictionaries/templates";
 import { translateOccasionName } from "@/lib/i18n/occasion-labels";
 import { useLocale } from "@/lib/i18n/use-locale";
@@ -37,6 +38,44 @@ type Template = {
   dltTemplateId: string | null;
   whatsappProviderTemplateId: string | null;
   whatsappLanguage: string | null;
+  /** Meta approval status when submitted or checked from the app. */
+  whatsappApprovalStatus: string | null;
+};
+
+const APPROVAL_BADGE_STYLES: Record<string, string> = {
+  APPROVED: "bg-emerald-100 text-emerald-800",
+  PENDING: "bg-amber-100 text-amber-800",
+  EDITED: "bg-amber-100 text-amber-800",
+  REJECTED: "bg-red-100 text-red-800",
+  PAUSED: "bg-red-100 text-red-800",
+  DISABLED: "bg-red-100 text-red-800",
+};
+
+const APPROVAL_BADGE_LABELS: Record<Locale, Record<string, string>> = {
+  en: {
+    APPROVED: "Approved",
+    PENDING: "In review",
+    EDITED: "Resubmit",
+    REJECTED: "Rejected",
+    PAUSED: "Paused",
+    DISABLED: "Disabled",
+  },
+  hi: {
+    APPROVED: "अप्रूव्ड",
+    PENDING: "रिव्यू में",
+    EDITED: "फिर से भेजें",
+    REJECTED: "रिजेक्टेड",
+    PAUSED: "रोका गया",
+    DISABLED: "बंद",
+  },
+  mr: {
+    APPROVED: "मंजूर",
+    PENDING: "तपासणीत",
+    EDITED: "पुन्हा पाठवा",
+    REJECTED: "नाकारले",
+    PAUSED: "थांबवले",
+    DISABLED: "बंद",
+  },
 };
 
 type TemplatesResponse = {
@@ -314,6 +353,17 @@ export function TemplatesPageClient({ canManage }: { canManage: boolean }) {
                       <tr key={template.id} className="border-b border-stone-100 last:border-0">
                         <td className="px-4 py-3 font-medium text-stone-900">
                           {template.name}
+                          {channel === "WHATSAPP" && template.whatsappApprovalStatus ? (
+                            <span
+                              className={`ml-2 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                APPROVAL_BADGE_STYLES[template.whatsappApprovalStatus] ??
+                                "bg-stone-200 text-stone-700"
+                              }`}
+                            >
+                              {APPROVAL_BADGE_LABELS[locale][template.whatsappApprovalStatus] ??
+                                template.whatsappApprovalStatus}
+                            </span>
+                          ) : null}
                         </td>
                         {channel === "WHATSAPP" ? (
                           <td className="px-4 py-3 text-stone-600">

@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { MaskedPasswordField } from "@/components/settings/masked-password-field";
+import {
+  WHATSAPP_META_GUIDE_LABELS,
+  WhatsAppMetaGuide,
+} from "@/components/settings/whatsapp-meta-guide";
 import { InlineAlert } from "@/components/ui/feedback";
 import {
   Panel,
@@ -29,6 +33,7 @@ type WhatsAppChannelConfigView = {
   sendPath?: string;
   tlsInsecure?: boolean;
   phoneNumberId?: string;
+  businessAccountId?: string;
   apiVersion?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -52,13 +57,15 @@ type FormState = {
   tlsInsecure: boolean;
   accessToken: string;
   phoneNumberId: string;
+  businessAccountId: string;
   apiVersion: string;
   vendorUid: string;
   apiToken: string;
 };
 
+/** Meta (WhatsApp Cloud API) is the default for every new setup. */
 const emptyForm: FormState = {
-  provider: "CUSTOM_HTTP",
+  provider: "META",
   isActive: true,
   authMode: "password",
   username: "",
@@ -69,6 +76,7 @@ const emptyForm: FormState = {
   tlsInsecure: false,
   accessToken: "",
   phoneNumberId: "",
+  businessAccountId: "",
   apiVersion: "",
   vendorUid: "",
   apiToken: "",
@@ -109,7 +117,8 @@ function withDemoCustomHttpDefaults(form: FormState): FormState {
 }
 
 export function WhatsAppChannelSettings() {
-  const channelDict = getChannelSettingsDict(useLocale());
+  const locale = useLocale();
+  const channelDict = getChannelSettingsDict(locale);
   const dict = channelDict.whatsapp;
   const common = channelDict.common;
   const [config, setConfig] = useState<WhatsAppChannelConfigView | null>(null);
@@ -140,12 +149,13 @@ export function WhatsAppChannelSettings() {
         setConfig(data);
         setForm(
           withDemoCustomHttpDefaults({
-            provider:
-              data.provider === "META"
-                ? "META"
-                : savedAsKoverage
-                  ? "KOVERAGE"
-                  : "CUSTOM_HTTP",
+            // Keep an existing Koverage / Custom HTTP setup editable;
+            // anything else (including no setup yet) starts on Meta.
+            provider: savedAsKoverage
+              ? "KOVERAGE"
+              : data.provider === "CUSTOM_HTTP"
+                ? "CUSTOM_HTTP"
+                : "META",
             isActive: data.configured ? data.isActive : true,
             authMode:
               data.apiKeyConfigured && !savedAsKoverage ? "apiKey" : "password",
@@ -157,6 +167,7 @@ export function WhatsAppChannelSettings() {
             tlsInsecure: data.tlsInsecure === true,
             accessToken: "",
             phoneNumberId: data.phoneNumberId ?? "",
+            businessAccountId: data.businessAccountId ?? "",
             apiVersion: data.apiVersion ?? "",
             vendorUid: savedAsKoverage
               ? koverageVendorUidFromSendPath(data.sendPath)
@@ -213,6 +224,8 @@ export function WhatsAppChannelSettings() {
 
     if (form.provider === "META") {
       payload.phoneNumberId = form.phoneNumberId.trim();
+      // Always sent so clearing the field removes it.
+      payload.businessAccountId = form.businessAccountId.trim();
       if (form.apiVersion.trim()) {
         payload.apiVersion = form.apiVersion.trim();
       }
@@ -266,6 +279,16 @@ export function WhatsAppChannelSettings() {
   const accessTokenConfigured = Boolean(
     isMeta && config?.provider === "META" && config.accessTokenConfigured,
   );
+  // Koverage and Custom HTTP are only offered to clients already on them.
+  const savedLegacyProvider: WhatsAppProvider | null = configuredAsKoverage
+    ? "KOVERAGE"
+    : config?.provider === "CUSTOM_HTTP"
+      ? "CUSTOM_HTTP"
+      : null;
+  const providerOptions: WhatsAppProvider[] = savedLegacyProvider
+    ? ["META", savedLegacyProvider]
+    : ["META"];
+  const guide = WHATSAPP_META_GUIDE_LABELS[locale];
 
   return (
     <div className="flex flex-col gap-4">
@@ -305,17 +328,21 @@ export function WhatsAppChannelSettings() {
                     }))
                   }
                 >
-                  <option value="CUSTOM_HTTP">
-                    {getCustomerWhatsAppProviderLabel("CUSTOM_HTTP")}
-                  </option>
-                  <option value="META">
-                    {getCustomerWhatsAppProviderLabel("META")}
-                  </option>
-                  <option value="KOVERAGE">
-                    {getCustomerWhatsAppProviderLabel("KOVERAGE")}
-                  </option>
+                  {providerOptions.map((provider) => (
+                    <option key={provider} value={provider}>
+                      {getCustomerWhatsAppProviderLabel(provider)}
+                    </option>
+                  ))}
                 </select>
               </label>
+
+              {!isMeta ? (
+                <InlineAlert tone="info">{guide.legacyNote}</InlineAlert>
+              ) : null}
+
+              {isMeta ? (
+                <WhatsAppMetaGuide defaultOpen={!config?.configured} />
+              ) : null}
 
               {isMeta ? (
                 <>
@@ -338,6 +365,28 @@ export function WhatsAppChannelSettings() {
                     />
                     <span className="mt-0.5 block text-xs text-stone-500">
                       {dict.phoneNumberIdHint}
+                    </span>
+                  </label>
+
+                  <label className="block text-sm">
+                    <span className="font-medium text-stone-800">
+                      {guide.businessAccountId}
+                    </span>
+                    <input
+                      className={`${inputClass} mt-1`}
+                      value={form.businessAccountId}
+                      placeholder="102290129340398"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          businessAccountId: event.target.value,
+                        }))
+                      }
+                    />
+                    <span className="mt-0.5 block text-xs text-stone-500">
+                      {guide.businessAccountIdHint}
                     </span>
                   </label>
 

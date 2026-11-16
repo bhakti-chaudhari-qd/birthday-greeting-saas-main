@@ -2,11 +2,11 @@ import { z } from "zod";
 
 import { decryptCredentials } from "@/lib/crypto/credentials";
 import { prisma } from "@/lib/db";
+import { MetaGraphError, metaGraphRequest } from "@/lib/messaging/meta-graph";
 
 import { TOMORROW_LIST_SAMPLE_TOKEN } from "./service";
 
 const CONFIG_ID = "default";
-const META_REQUEST_TIMEOUT_MS = 15_000;
 
 export const DEFAULT_TOMORROW_LIST_TEMPLATE_NAME = "tomorrow_list";
 export const DEFAULT_TOMORROW_LIST_TEMPLATE_BODY =
@@ -126,40 +126,14 @@ async function metaFetch(
   accessToken: string,
   init: { method: "GET" | "POST"; body?: unknown },
 ): Promise<Record<string, unknown>> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), META_REQUEST_TIMEOUT_MS);
-  let response: Response;
   try {
-    response = await fetch(url, {
-      method: init.method,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        ...(init.body ? { "Content-Type": "application/json" } : {}),
-      },
-      body: init.body ? JSON.stringify(init.body) : undefined,
-      signal: controller.signal,
-    });
+    return await metaGraphRequest(url, accessToken, init);
   } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new TomorrowListTemplateError("Meta did not respond in time. Try again.");
+    if (error instanceof MetaGraphError) {
+      throw new TomorrowListTemplateError(error.message);
     }
-    throw new TomorrowListTemplateError("Could not reach Meta. Try again.");
-  } finally {
-    clearTimeout(timeout);
+    throw error;
   }
-
-  const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-  if (!response.ok) {
-    const error = json.error as
-      | { message?: string; error_user_msg?: string; error_user_title?: string }
-      | undefined;
-    throw new TomorrowListTemplateError(
-      error?.error_user_msg ??
-        error?.message ??
-        `Meta returned an error (HTTP ${response.status})`,
-    );
-  }
-  return json;
 }
 
 /**

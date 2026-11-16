@@ -46,6 +46,8 @@ export function serializeTemplate(template: TemplateWithCategory) {
     whatsappProviderTemplateId: template.whatsappProviderTemplateId,
     whatsappLanguage: template.whatsappLanguage,
     whatsappParameterOrder: template.whatsappParameterOrder,
+    whatsappApprovalStatus: template.whatsappApprovalStatus,
+    whatsappApprovalCategory: template.whatsappApprovalCategory,
     whatsappMediaAssetId: template.whatsappMediaAssetId,
     whatsappMediaContentType,
     whatsappMediaKind,

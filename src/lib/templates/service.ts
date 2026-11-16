@@ -723,10 +723,35 @@ export async function updateTemplate(
     whatsappParameterOrder = [];
   }
 
+  // Meta approval belongs to one name + language. A different one (or a
+  // different channel) starts over; edited text keeps the Meta template
+  // but marks it EDITED so it is resubmitted - in place - before relying
+  // on it. A rejected/paused template stays as it is until resubmitted.
+  const approvalIdentityChanged =
+    nextChannel !== Channel.WHATSAPP ||
+    whatsappTemplateName !== existing.whatsappTemplateName ||
+    whatsappLanguage !== existing.whatsappLanguage ||
+    whatsappProviderTemplateId !== existing.whatsappProviderTemplateId;
+  const approvalData = approvalIdentityChanged
+    ? {
+        whatsappApprovalStatus: null,
+        whatsappApprovalCategory: null,
+        whatsappRejectedReason: null,
+        whatsappSubmittedAt: null,
+        whatsappStatusCheckedAt: null,
+      }
+    : nextBody !== existing.body &&
+        existing.whatsappApprovalStatus &&
+        existing.whatsappApprovalStatus !== "REJECTED" &&
+        existing.whatsappApprovalStatus !== "PAUSED"
+      ? { whatsappApprovalStatus: "EDITED" }
+      : {};
+
   try {
     return await prisma.messageTemplate.update({
       where: { id: templateId },
       data: {
+        ...approvalData,
         ...(mapped.name !== undefined ? { name: mapped.name } : {}),
         ...(input.occasionId !== undefined
           ? { occasionId: nextOccasionId }

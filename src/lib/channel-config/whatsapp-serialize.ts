@@ -32,6 +32,8 @@ export type SafeWhatsAppChannelConfigView = {
   mediaContentType?: string;
   /** Meta Cloud API - WhatsApp Business phone number ID (not a secret). */
   phoneNumberId?: string;
+  /** Meta Cloud API - WhatsApp Business Account ID, for template submission. */
+  businessAccountId?: string;
   /** Meta Cloud API version, e.g. v21.0. */
   apiVersion?: string;
   /** True when a Meta Cloud API access token is stored. Never exposes the token itself. */
@@ -90,6 +92,7 @@ function safeSettingsFromConfig(config: ChannelConfig): {
   mediaFilename?: string;
   mediaContentType?: string;
   phoneNumberId?: string;
+  businessAccountId?: string;
   apiVersion?: string;
 } {
   if (config.provider === ChannelProvider.META) {
@@ -99,6 +102,9 @@ function safeSettingsFromConfig(config: ChannelConfig): {
       return {
         mediaConfigured,
         phoneNumberId: settings.phoneNumberId,
+        ...(settings.businessAccountId
+          ? { businessAccountId: settings.businessAccountId }
+          : {}),
         ...(settings.apiVersion ? { apiVersion: settings.apiVersion } : {}),
         ...(mediaConfigured && settings.mediaFilename
           ? { mediaFilename: settings.mediaFilename }
@@ -202,6 +208,9 @@ export function serializeWhatsAppChannelConfig(
       ? { mediaContentType: settings.mediaContentType }
       : {}),
     ...(settings.phoneNumberId ? { phoneNumberId: settings.phoneNumberId } : {}),
+    ...(settings.businessAccountId
+      ? { businessAccountId: settings.businessAccountId }
+      : {}),
     ...(settings.apiVersion ? { apiVersion: settings.apiVersion } : {}),
     createdAt: config.createdAt.toISOString(),
     updatedAt: config.updatedAt.toISOString(),

@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { TemplateForm, type TemplateFormChannel } from "@/components/templates/template-form";
+import { WhatsAppApprovalPanel } from "@/components/templates/whatsapp-approval-panel";
 import { PageHeader, PageShell, Panel } from "@/components/ui/page";
 import { getTemplatesDict } from "@/lib/i18n/dictionaries/templates";
 import { useLocale } from "@/lib/i18n/use-locale";
@@ -60,6 +61,7 @@ export function EditTemplatePageClient({
           initialValues={initialValues}
         />
       </Panel>
+      {channel === "WHATSAPP" ? <WhatsAppApprovalPanel templateId={templateId} /> : null}
     </PageShell>
   );
 }
