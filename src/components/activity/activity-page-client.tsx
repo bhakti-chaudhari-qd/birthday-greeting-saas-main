@@ -686,7 +686,7 @@ status === "all" ? (
                 <summary className={`${secondaryButtonClass} cursor-pointer list-none`}>
                   {dict.header.exportCsv}
                 </summary>
-                <div className="absolute right-0 z-10 mt-1 flex w-56 flex-col rounded-lg border border-stone-200 bg-white py-1 shadow-lg">
+                <div className="absolute left-0 z-10 mt-1 flex w-56 max-w-[calc(100vw-2rem)] sm:left-auto sm:right-0 flex-col rounded-lg border border-stone-200 bg-white py-1 shadow-lg">
                   {(
                     [
                       ["sent", dict.header.exportSubmitted],

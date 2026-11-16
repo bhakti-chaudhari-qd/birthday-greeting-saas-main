@@ -646,7 +646,7 @@ export function AppShell({
           </div>
         </header>
 
-        <main id="main-content" className="min-w-0 flex-1">
+        <main id="main-content" className="min-w-0 flex-1 pb-24 sm:pb-28">
           {children}
         </main>
       </div>
