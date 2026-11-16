@@ -1,22 +1,6 @@
-import { requirePlatformAdmin } from "@/lib/auth/platform-admin-guard";
-import { TomorrowListConfigPanel } from "@/components/admin/tomorrow-list-config-panel";
-import { PageHeader, PageShell } from "@/components/ui/page";
-import { getPlatformTomorrowListSettings } from "@/lib/tomorrow-list/platform-config";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default async function AdminTomorrowListPage() {
-  await requirePlatformAdmin();
-
-  const settings = await getPlatformTomorrowListSettings();
-
-  return (
-    <PageShell>
-      <PageHeader
-        title="Tomorrow's List"
-        description="The WhatsApp template and default send time for every client's day-before list link."
-      />
-      <TomorrowListConfigPanel initial={settings} />
-    </PageShell>
-  );
+/** Tomorrow's List settings now live on the Daily Summary page. */
+export default function AdminTomorrowListPage() {
+  redirect("/admin/settings/daily-summary#tomorrow-list");
 }

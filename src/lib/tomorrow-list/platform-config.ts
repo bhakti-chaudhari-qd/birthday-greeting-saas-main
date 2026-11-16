@@ -29,6 +29,8 @@ export type PlatformTomorrowListSettings = {
   templateName: string;
   language: string;
   sendHour: number;
+  /** Saved after a template is submitted to Meta from the admin page. */
+  whatsappBusinessAccountId: string;
 };
 
 export class PlatformTomorrowListConfigError extends Error {
@@ -85,6 +87,7 @@ export async function getPlatformTomorrowListSettings(): Promise<PlatformTomorro
       tomorrowListTemplateName: true,
       tomorrowListLanguage: true,
       tomorrowListSendHour: true,
+      whatsappBusinessAccountId: true,
     },
   });
 
@@ -94,6 +97,7 @@ export async function getPlatformTomorrowListSettings(): Promise<PlatformTomorro
     templateName: row?.tomorrowListTemplateName ?? "",
     language: row?.tomorrowListLanguage ?? "en",
     sendHour: row?.tomorrowListSendHour ?? DEFAULT_TOMORROW_LIST_SEND_HOUR,
+    whatsappBusinessAccountId: row?.whatsappBusinessAccountId ?? "",
   };
 }
 
@@ -111,7 +115,7 @@ export async function updatePlatformTomorrowListSettings(
   });
   if (updated.count === 0) {
     throw new PlatformTomorrowListConfigError(
-      "Save the Meta account under Settings > Daily Summary first",
+      "Save the Meta account in the Daily Summary section first",
     );
   }
 

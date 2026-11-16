@@ -45,8 +45,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/admin/organizations": "Clients",
       "/admin/vendors": "Vendors",
       "/admin/settings/plan-catalogue": "Plan Catalogue",
-      "/admin/settings/daily-summary": "Daily Summary",
-      "/admin/settings/tomorrow-list": "Tomorrow's List",
+      "/admin/settings/daily-summary": "Daily Summary & Tomorrow's List",
     },
     navGroupLabelsByEnglishLabel: {
       Settings: "Settings",
@@ -85,8 +84,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/admin/organizations": "क्लायंट",
       "/admin/vendors": "वेंडर",
       "/admin/settings/plan-catalogue": "प्लान कैटलॉग",
-      "/admin/settings/daily-summary": "रोज़ का सारांश",
-      "/admin/settings/tomorrow-list": "कल की सूची",
+      "/admin/settings/daily-summary": "रोज़ का सारांश और कल की सूची",
     },
     navGroupLabelsByEnglishLabel: {
       Settings: "सेटिंग्स",
@@ -125,8 +123,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/admin/organizations": "क्लायंट",
       "/admin/vendors": "व्हेंडर",
       "/admin/settings/plan-catalogue": "प्लॅन कॅटलॉग",
-      "/admin/settings/daily-summary": "रोजचा सारांश",
-      "/admin/settings/tomorrow-list": "उद्याची यादी",
+      "/admin/settings/daily-summary": "रोजचा सारांश आणि उद्याची यादी",
     },
     navGroupLabelsByEnglishLabel: {
       Settings: "सेटिंग्ज",

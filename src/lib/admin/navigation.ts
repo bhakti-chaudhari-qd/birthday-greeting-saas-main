@@ -9,8 +9,10 @@ export const ADMIN_NAV: readonly DashboardNavItem[] = [
     label: "Settings",
     children: [
       { label: "Plan Catalogue", href: "/admin/settings/plan-catalogue" },
-      { label: "Daily Summary", href: "/admin/settings/daily-summary" },
-      { label: "Tomorrow's List", href: "/admin/settings/tomorrow-list" },
+      {
+        label: "Daily Summary & Tomorrow's List",
+        href: "/admin/settings/daily-summary",
+      },
     ],
   },
 ] as const;

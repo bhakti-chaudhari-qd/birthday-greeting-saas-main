@@ -208,6 +208,9 @@ model PlatformDailySummaryConfig {
   tomorrowListTemplateName String?
   tomorrowListLanguage     String  @default("en")
   tomorrowListSendHour     Int     @default(20)
+  /// WhatsApp Business Account ID of the Meta account above. Only needed
+  /// to submit Tomorrow's List templates to Meta and check their approval.
+  whatsappBusinessAccountId String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 }
