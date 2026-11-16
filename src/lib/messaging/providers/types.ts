@@ -14,6 +14,11 @@ export type WhatsAppMessageSendRequest = {
   language: string;
   parameterValues: string[];
   renderedBody: string;
+  /**
+   * Dynamic suffix for the template's first URL button (button index 0), for
+   * templates whose button URL ends in {{1}}.
+   */
+  buttonUrlSuffix?: string;
   media?: {
     bytes: Buffer;
     filename: string;

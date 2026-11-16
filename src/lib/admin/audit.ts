@@ -44,6 +44,7 @@ const ALLOWED_VALUE_KEYS = new Set([
   "isActive",
   "liveChannelsApproved",
   "dailySummaryAllowedByAdmin",
+  "tomorrowListAllowedByAdmin",
   "timezone",
   "plan",
   "subscriptionStatus",
@@ -91,6 +92,7 @@ export type PlatformAdminAuditValues = Partial<{
   isActive: boolean;
   liveChannelsApproved: boolean;
   dailySummaryAllowedByAdmin: boolean;
+  tomorrowListAllowedByAdmin: boolean;
   timezone: string;
   plan: string | null;
   subscriptionStatus: string | null;

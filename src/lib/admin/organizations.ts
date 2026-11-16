@@ -24,6 +24,8 @@ export type PlatformOrganizationSummary = {
   isActive: boolean;
   /** Platform Admin switch for this client's daily WhatsApp summary. */
   dailySummaryAllowedByAdmin: boolean;
+  /** Platform Admin switch for this client's day-before Tomorrow's List. */
+  tomorrowListAllowedByAdmin: boolean;
   timezone: string;
   createdAt: string;
   userCount: number;
@@ -263,6 +265,7 @@ async function loadOrganizationsForPlatformAdmin(
       slug: organization.slug,
       isActive: organization.isActive,
       dailySummaryAllowedByAdmin: organization.dailySummaryAllowedByAdmin,
+      tomorrowListAllowedByAdmin: organization.tomorrowListAllowedByAdmin,
       timezone: organization.timezone,
       createdAt: organization.createdAt.toISOString(),
       userCount: organization._count.users,

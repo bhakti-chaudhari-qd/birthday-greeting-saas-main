@@ -43,6 +43,8 @@ export type AdminClientDetailDict = {
     clientActive: string;
     dailySummaryActive: string;
     dailySummaryActiveHint: string;
+    tomorrowListActive: string;
+    tomorrowListActiveHint: string;
     timezone: string;
     saving: string;
     saveOpsSettings: string;
@@ -354,6 +356,9 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
       dailySummaryActive: "Daily summary active",
       dailySummaryActiveHint:
         "When off, this client gets no daily WhatsApp summary and their Owner cannot turn it back on.",
+      tomorrowListActive: "Tomorrow's List active",
+      tomorrowListActiveHint:
+        "When off, this client gets no day-before WhatsApp link to tomorrow's list and their Owner cannot turn it back on.",
       timezone: "Timezone",
       saving: "Saving…",
       saveOpsSettings: "Save ops settings",
@@ -683,6 +688,9 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
       dailySummaryActive: "रोज़ का सारांश एक्टिव",
       dailySummaryActiveHint:
         "बंद होने पर इस क्लायंट को रोज़ का WhatsApp सारांश नहीं जाएगा और उनका Owner इसे फिर से चालू नहीं कर सकेगा।",
+      tomorrowListActive: "कल की सूची एक्टिव",
+      tomorrowListActiveHint:
+        "बंद होने पर इस क्लायंट को एक दिन पहले कल की सूची का WhatsApp लिंक नहीं जाएगा और उनका Owner इसे फिर से चालू नहीं कर सकेगा।",
       timezone: "टाइमज़ोन",
       saving: "सेव हो रहा है…",
       saveOpsSettings: "ऑप्स सेटिंग्स सेव करें",
@@ -1009,6 +1017,9 @@ const ADMIN_CLIENT_DETAIL_DICT: Record<Locale, AdminClientDetailDict> = {
       dailySummaryActive: "रोजचा सारांश अ‍ॅक्टिव्ह",
       dailySummaryActiveHint:
         "बंद असताना या क्लायंटला रोजचा WhatsApp सारांश जाणार नाही आणि त्यांचा Owner तो पुन्हा सुरू करू शकणार नाही.",
+      tomorrowListActive: "उद्याची यादी अ‍ॅक्टिव्ह",
+      tomorrowListActiveHint:
+        "बंद असताना या क्लायंटला आदल्या दिवशी उद्याच्या यादीची WhatsApp लिंक जाणार नाही आणि त्यांचा Owner ती पुन्हा सुरू करू शकणार नाही.",
       timezone: "टाइमझोन",
       saving: "सेव्ह होत आहे…",
       saveOpsSettings: "ऑप्स सेटिंग्ज सेव्ह करा",

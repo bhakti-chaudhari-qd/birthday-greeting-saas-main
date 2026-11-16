@@ -9,6 +9,7 @@ import {
 import { withCronTickLock } from "@/lib/automation/tick-lock";
 import { runContactImportWorker } from "@/lib/contacts/import-worker";
 import { runDailySummaries } from "@/lib/daily-summary/service";
+import { runTomorrowLists } from "@/lib/tomorrow-list/service";
 import { drainMessageWorker } from "@/lib/queue/worker";
 import { expireOverduePaidSubscriptions } from "@/lib/billing/apply-plan";
 
@@ -76,7 +77,18 @@ export async function POST(request: Request) {
         runDailySummaries(),
       );
 
-      return { occasionSteps, contactImport, drain, billingExpiry, dailySummary };
+      const tomorrowList = await runStep("tomorrow-list", () =>
+        runTomorrowLists(),
+      );
+
+      return {
+        occasionSteps,
+        contactImport,
+        drain,
+        billingExpiry,
+        dailySummary,
+        tomorrowList,
+      };
     });
 
     if (!tick.acquired) {
@@ -85,8 +97,14 @@ export async function POST(request: Request) {
       });
     }
 
-    const { occasionSteps, contactImport, drain, billingExpiry, dailySummary } =
-      tick.value;
+    const {
+      occasionSteps,
+      contactImport,
+      drain,
+      billingExpiry,
+      dailySummary,
+      tomorrowList,
+    } = tick.value;
 
     const steps = {
       occasions: occasionSteps,
@@ -94,13 +112,15 @@ export async function POST(request: Request) {
       drain,
       billingExpiry,
       dailySummary,
+      tomorrowList,
     };
     const failed =
       Object.values(occasionSteps).some((step) => !step.ok) ||
       !contactImport.ok ||
       !drain.ok ||
       !billingExpiry.ok ||
-      !dailySummary.ok;
+      !dailySummary.ok ||
+      !tomorrowList.ok;
 
     return NextResponse.json(
       { data: { steps } },

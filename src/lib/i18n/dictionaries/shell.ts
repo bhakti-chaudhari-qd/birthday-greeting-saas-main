@@ -34,6 +34,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/dashboard/activity": "Activity",
       "/dashboard/settings/channels": "Channels",
       "/dashboard/settings/daily-summary": "Daily Summary",
+      "/dashboard/settings/tomorrow-list": "Tomorrow's List",
       "/dashboard/templates": "Manage Templates",
       "/dashboard/settings/occasions": "Occasion Management",
       "/dashboard/settings/contact-fields": "Contact Fields",
@@ -45,6 +46,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/admin/vendors": "Vendors",
       "/admin/settings/plan-catalogue": "Plan Catalogue",
       "/admin/settings/daily-summary": "Daily Summary",
+      "/admin/settings/tomorrow-list": "Tomorrow's List",
     },
     navGroupLabelsByEnglishLabel: {
       Settings: "Settings",
@@ -72,6 +74,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/dashboard/activity": "एक्टिविटी",
       "/dashboard/settings/channels": "चैनल",
       "/dashboard/settings/daily-summary": "रोज़ का सारांश",
+      "/dashboard/settings/tomorrow-list": "कल की सूची",
       "/dashboard/templates": "टेम्पलेट",
       "/dashboard/settings/occasions": "अवसर प्रबंधन",
       "/dashboard/settings/contact-fields": "कॉन्टैक्ट फ़ील्ड",
@@ -83,6 +86,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/admin/vendors": "वेंडर",
       "/admin/settings/plan-catalogue": "प्लान कैटलॉग",
       "/admin/settings/daily-summary": "रोज़ का सारांश",
+      "/admin/settings/tomorrow-list": "कल की सूची",
     },
     navGroupLabelsByEnglishLabel: {
       Settings: "सेटिंग्स",
@@ -110,6 +114,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/dashboard/activity": "अ‍ॅक्टिव्हिटी",
       "/dashboard/settings/channels": "चॅनेल्स",
       "/dashboard/settings/daily-summary": "रोजचा सारांश",
+      "/dashboard/settings/tomorrow-list": "उद्याची यादी",
       "/dashboard/templates": "टेम्पलेट",
       "/dashboard/settings/occasions": "प्रसंग व्यवस्थापन",
       "/dashboard/settings/contact-fields": "कॉन्टॅक्ट फील्ड्स",
@@ -121,6 +126,7 @@ const SHELL_DICT: Record<Locale, ShellDict> = {
       "/admin/vendors": "व्हेंडर",
       "/admin/settings/plan-catalogue": "प्लॅन कॅटलॉग",
       "/admin/settings/daily-summary": "रोजचा सारांश",
+      "/admin/settings/tomorrow-list": "उद्याची यादी",
     },
     navGroupLabelsByEnglishLabel: {
       Settings: "सेटिंग्ज",

@@ -25,6 +25,9 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
   const [dailySummaryAllowedByAdmin, setDailySummaryAllowedByAdmin] = useState(
     organization.dailySummaryAllowedByAdmin,
   );
+  const [tomorrowListAllowedByAdmin, setTomorrowListAllowedByAdmin] = useState(
+    organization.tomorrowListAllowedByAdmin,
+  );
   const [timezone, setTimezone] = useState(organization.timezone);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +57,7 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
           body: JSON.stringify({
             isActive,
             dailySummaryAllowedByAdmin,
+            tomorrowListAllowedByAdmin,
             timezone,
           }),
         },
@@ -94,6 +98,21 @@ export function OrganizationOpsForm({ organization }: OrganizationOpsFormProps) 
           <span className="font-medium">{dict.dailySummaryActive}</span>
           <span className="mt-0.5 block text-xs text-stone-500">
             {dict.dailySummaryActiveHint}
+          </span>
+        </span>
+      </label>
+
+      <label className="flex items-start gap-2 text-sm text-stone-800">
+        <input
+          type="checkbox"
+          className="mt-0.5"
+          checked={tomorrowListAllowedByAdmin}
+          onChange={(event) => setTomorrowListAllowedByAdmin(event.target.checked)}
+        />
+        <span>
+          <span className="font-medium">{dict.tomorrowListActive}</span>
+          <span className="mt-0.5 block text-xs text-stone-500">
+            {dict.tomorrowListActiveHint}
           </span>
         </span>
       </label>

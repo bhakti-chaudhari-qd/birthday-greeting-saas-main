@@ -141,6 +141,7 @@ export const updatePlatformOrganizationSchema = z
   .object({
     isActive: z.boolean().optional(),
     dailySummaryAllowedByAdmin: z.boolean().optional(),
+    tomorrowListAllowedByAdmin: z.boolean().optional(),
     timezone: z.string().trim().min(1).max(64).optional(),
   })
   .refine(
@@ -356,6 +357,11 @@ export async function updateOrganizationForPlatformAdmin(
       existing.dailySummaryAllowedByAdmin,
       input.dailySummaryAllowedByAdmin,
     );
+    recordChange(
+      "tomorrowListAllowedByAdmin",
+      existing.tomorrowListAllowedByAdmin,
+      input.tomorrowListAllowedByAdmin,
+    );
     recordChange("timezone", existing.timezone, input.timezone);
 
     const organizationChanged = changedFields.some((field) =>
@@ -363,6 +369,7 @@ export async function updateOrganizationForPlatformAdmin(
         "isActive",
         "timezone",
         "dailySummaryAllowedByAdmin",
+        "tomorrowListAllowedByAdmin",
       ].includes(field),
     );
     if (organizationChanged) {
@@ -375,6 +382,9 @@ export async function updateOrganizationForPlatformAdmin(
           ...(after.timezone !== undefined ? { timezone: after.timezone } : {}),
           ...(after.dailySummaryAllowedByAdmin !== undefined
             ? { dailySummaryAllowedByAdmin: after.dailySummaryAllowedByAdmin }
+            : {}),
+          ...(after.tomorrowListAllowedByAdmin !== undefined
+            ? { tomorrowListAllowedByAdmin: after.tomorrowListAllowedByAdmin }
             : {}),
         },
       });

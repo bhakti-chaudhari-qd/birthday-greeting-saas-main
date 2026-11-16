@@ -199,6 +199,15 @@ export function createMetaWhatsAppProvider(
         });
       }
 
+      if (request.buttonUrlSuffix) {
+        components.push({
+          type: "button",
+          sub_type: "url",
+          index: "0",
+          parameters: [{ type: "text", text: request.buttonUrlSuffix }],
+        });
+      }
+
       const url = `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`;
       const controller = new AbortController();
       const timeout = setTimeout(

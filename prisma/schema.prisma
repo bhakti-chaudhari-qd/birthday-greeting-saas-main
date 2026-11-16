@@ -134,6 +134,17 @@ model Organization {
   /// Owner's chosen IST hour (0-23) for the summary; null uses the platform
   /// default. From 6 PM on it covers that same day, otherwise the day before.
   dailySummarySendHour               Int?
+  /// Owner can turn the day-before "Tomorrow's List" WhatsApp link off.
+  tomorrowListEnabled                Boolean  @default(true)
+  /// Platform Admin switch for this org's Tomorrow's List. When false no
+  /// link is sent whatever the Owner chose, and the Owner cannot turn it on.
+  tomorrowListAllowedByAdmin         Boolean  @default(true)
+  /// Last occasion day (IST) a Tomorrow's List was handled for - sent, or
+  /// skipped because nobody has an occasion that day. Guards against resends.
+  tomorrowListLastSentFor            DateTime? @db.Date
+  /// Owner's chosen IST hour (0-23) on the day before; null uses the
+  /// platform default.
+  tomorrowListSendHour               Int?
   /// Vendor who referred this org at signup (optional attribution).
   referredByVendorId                 String?
   referredAt                         DateTime?
@@ -142,6 +153,8 @@ model Organization {
 
   users                       User[]
   dailySummaryRecipients      DailySummaryRecipient[]
+  tomorrowListRecipients      TomorrowListRecipient[]
+  tomorrowListLinks           TomorrowListLink[]
   sessions                    Session[]
   contacts                    Contact[]
   contactFieldDefinitions     ContactFieldDefinition[]
@@ -185,6 +198,13 @@ model PlatformDailySummaryConfig {
   language             String   @default("en")
   /// Hour of day (IST, 0-23) from which the previous day's summary goes out.
   sendHour             Int      @default(9)
+  /// Tomorrow's List: master switch, approved template (body: org name,
+  /// date, count; one URL button whose suffix is the link token) and the
+  /// default hour on the day before. Sent from the same Meta account.
+  tomorrowListEnabled      Boolean @default(false)
+  tomorrowListTemplateName String?
+  tomorrowListLanguage     String  @default("en")
+  tomorrowListSendHour     Int     @default(20)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 }
@@ -201,6 +221,40 @@ model DailySummaryRecipient {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, mobile])
+}
+
+/// Numbers the Owner chose to receive Tomorrow's List on. With no rows, it
+/// goes to the Owner's own WhatsApp number.
+model TomorrowListRecipient {
+  id             String   @id @default(cuid())
+  organizationId String
+  /// 10-digit Indian mobile.
+  mobile         String
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, mobile])
+}
+
+/// One expiring public link per organization per occasion day. Only the
+/// SHA-256 of the token is stored; the raw token lives only in the WhatsApp
+/// button URL. The page stops working once expiresAt (end of forDate, IST)
+/// has passed.
+model TomorrowListLink {
+  id             String    @id @default(cuid())
+  organizationId String
+  tokenHash      String    @unique
+  forDate        DateTime  @db.Date
+  expiresAt      DateTime
+  viewCount      Int       @default(0)
+  lastViewedAt   DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, forDate])
+  @@index([expiresAt])
 }
 
 model User {

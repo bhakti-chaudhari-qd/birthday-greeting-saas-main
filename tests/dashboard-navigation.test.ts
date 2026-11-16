@@ -24,6 +24,7 @@ describe("dashboard navigation mapping", () => {
       "/dashboard/activity",
       "/dashboard/settings/channels",
       "/dashboard/settings/daily-summary",
+      "/dashboard/settings/tomorrow-list",
       "/dashboard/templates",
       "/dashboard/settings/occasions",
       "/dashboard/settings/contact-fields",
@@ -129,6 +130,7 @@ describe("dashboard navigation mapping", () => {
     expect(settings!.children!.map((child) => child.label)).toEqual([
       "Channels",
       "Daily Summary",
+      "Tomorrow's List",
       "Manage Templates",
       "Occasion Management",
       "Contact Fields",
