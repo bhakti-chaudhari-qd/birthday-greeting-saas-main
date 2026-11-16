@@ -736,6 +736,12 @@ export type TomorrowListSettings = {
   defaultSendHour: number;
   /** Outcome of the latest scheduled send, if any. */
   lastScheduled: TomorrowListLastResult | null;
+  /**
+   * Tomorrow's day (YYYY-MM-DD) when it is already marked handled but no
+   * result was recorded for it (handled before results were kept), so the
+   * page can explain why the scheduled send will not go out.
+   */
+  handledWithoutResultFor: string | null;
 };
 
 export async function getTomorrowListSettings(
@@ -750,6 +756,7 @@ export async function getTomorrowListSettings(
       tomorrowListSendHour: true,
       tomorrowListSendMinute: true,
       tomorrowListLastResult: true,
+      tomorrowListLastSentFor: true,
       tomorrowListRecipients: {
         select: { mobile: true },
         orderBy: { createdAt: "asc" },
@@ -763,8 +770,16 @@ export async function getTomorrowListSettings(
     },
   });
   const owner = organization.users[0];
+  const lastScheduled =
+    (organization.tomorrowListLastResult as TomorrowListLastResult | null) ?? null;
+  const tomorrowIso = getNextIsoDate(getOrganizationLocalIsoDate(AUTOMATION_TIMEZONE));
 
   return {
+    handledWithoutResultFor:
+      isHandledFor(organization.tomorrowListLastSentFor, tomorrowIso) &&
+      lastScheduled?.forDate !== tomorrowIso
+        ? tomorrowIso
+        : null,
     enabled: organization.tomorrowListEnabled,
     allowedByAdmin: organization.tomorrowListAllowedByAdmin,
     recipients: organization.tomorrowListRecipients.map(
@@ -778,8 +793,7 @@ export async function getTomorrowListSettings(
         ? null
         : (organization.tomorrowListSendMinute ?? 0),
     defaultSendHour: platform.sendHour,
-    lastScheduled:
-      (organization.tomorrowListLastResult as TomorrowListLastResult | null) ?? null,
+    lastScheduled,
   };
 }
 
@@ -817,21 +831,34 @@ export async function updateTomorrowListSettings(
 
   const current = await prisma.organization.findUniqueOrThrow({
     where: { id: organizationId },
-    select: { tomorrowListSendHour: true, tomorrowListSendMinute: true },
+    select: {
+      tomorrowListSendHour: true,
+      tomorrowListSendMinute: true,
+      tomorrowListLastSentFor: true,
+      tomorrowListLastResult: true,
+    },
   });
   const nextMinute =
     input.sendHour === null || input.sendHour === undefined
       ? null
       : (input.sendMinute ?? 0);
-  // A new send time re-arms today's scheduled send if it has not been
-  // accepted yet (the handled mark is left alone, so a delivered list is
-  // never sent twice).
+  // A new send time re-arms tomorrow's scheduled send unless WhatsApp has
+  // already accepted it, so a delivered list is never sent twice but a
+  // failed (or unrecorded) one goes out at the new time.
   const timeChanged =
     input.sendHour !== undefined &&
     (input.sendHour !== current.tomorrowListSendHour ||
       nextMinute !== (current.tomorrowListSendHour === null
         ? null
         : (current.tomorrowListSendMinute ?? 0)));
+  const tomorrowIso = getNextIsoDate(getOrganizationLocalIsoDate(AUTOMATION_TIMEZONE));
+  const rearmTomorrow =
+    timeChanged &&
+    isHandledFor(current.tomorrowListLastSentFor, tomorrowIso) &&
+    !wasAcceptedFor(
+      current.tomorrowListLastResult as TomorrowListLastResult | null,
+      tomorrowIso,
+    );
 
   await prisma.$transaction([
     prisma.tomorrowListRecipient.deleteMany({ where: { organizationId } }),
@@ -848,9 +875,26 @@ export async function updateTomorrowListSettings(
         ...(timeChanged
           ? { tomorrowListAttempts: 0, tomorrowListAttemptsFor: null }
           : {}),
+        ...(rearmTomorrow ? { tomorrowListLastSentFor: null } : {}),
       },
     }),
   ]);
 
   return getTomorrowListSettings(organizationId);
+}
+
+/** True when `lastSentFor` (a @db.Date) is the given ISO day. */
+function isHandledFor(lastSentFor: Date | null, isoDate: string): boolean {
+  return lastSentFor?.toISOString().slice(0, 10) === isoDate;
+}
+
+/** True when the recorded scheduled send for `isoDate` was accepted by WhatsApp. */
+function wasAcceptedFor(
+  lastResult: TomorrowListLastResult | null,
+  isoDate: string,
+): boolean {
+  return (
+    lastResult?.forDate === isoDate &&
+    (lastResult.status === "sent" || lastResult.status === "partly_sent")
+  );
 }

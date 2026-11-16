@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   loadConfig: vi.fn(),
@@ -305,5 +305,80 @@ describe("updateTomorrowListSettings re-arms the scheduled send", () => {
     });
 
     expect(savedData()).not.toHaveProperty("tomorrowListAttempts");
+  });
+
+  describe("tomorrow already marked handled", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(NOW); // 16 Nov -> tomorrow is 17 Nov
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const changeTime = () =>
+      updateTomorrowListSettings("org1", {
+        enabled: true,
+        recipients: [],
+        sendHour: 13,
+        sendMinute: 5,
+      });
+
+    it("re-arms a day marked handled with no recorded result", async () => {
+      mocks.findOrg
+        .mockResolvedValueOnce({
+          tomorrowListSendHour: 13,
+          tomorrowListSendMinute: 0,
+          tomorrowListLastSentFor: DAY,
+          tomorrowListLastResult: null,
+        })
+        .mockResolvedValueOnce(settingsRow);
+
+      await changeTime();
+
+      expect(savedData()).toMatchObject({ tomorrowListLastSentFor: null });
+    });
+
+    it("re-arms a day whose scheduled send was refused", async () => {
+      mocks.findOrg
+        .mockResolvedValueOnce({
+          tomorrowListSendHour: 13,
+          tomorrowListSendMinute: 0,
+          tomorrowListLastSentFor: DAY,
+          tomorrowListLastResult: { forDate: "2026-11-17", status: "failed" },
+        })
+        .mockResolvedValueOnce(settingsRow);
+
+      await changeTime();
+
+      expect(savedData()).toMatchObject({ tomorrowListLastSentFor: null });
+    });
+
+    it("never re-arms a day WhatsApp already accepted", async () => {
+      mocks.findOrg
+        .mockResolvedValueOnce({
+          tomorrowListSendHour: 13,
+          tomorrowListSendMinute: 0,
+          tomorrowListLastSentFor: DAY,
+          tomorrowListLastResult: { forDate: "2026-11-17", status: "sent" },
+        })
+        .mockResolvedValueOnce(settingsRow);
+
+      await changeTime();
+
+      expect(savedData()).not.toHaveProperty("tomorrowListLastSentFor");
+    });
+
+    it("tells the page when tomorrow is handled with no recorded result", async () => {
+      mocks.findOrg.mockResolvedValueOnce({
+        ...settingsRow,
+        tomorrowListLastSentFor: DAY,
+      });
+
+      const { getTomorrowListSettings } = await import("@/lib/tomorrow-list/service");
+      const settings = await getTomorrowListSettings("org1");
+
+      expect(settings.handledWithoutResultFor).toBe("2026-11-17");
+    });
   });
 });

@@ -25,6 +25,7 @@ type Settings = {
   sendMinute: number | null;
   defaultSendHour: number;
   lastScheduled: LastScheduled | null;
+  handledWithoutResultFor: string | null;
 };
 
 type LastScheduled = {
@@ -61,6 +62,7 @@ type Labels = {
   saving: string;
   saved: string;
   failedToSave: string;
+  handledEarlier: (date: string) => string;
 };
 
 const LABELS: Record<Locale, Labels> = {
@@ -89,6 +91,8 @@ const LABELS: Record<Locale, Labels> = {
     saving: "Saving…",
     saved: "Tomorrow's List settings saved",
     failedToSave: "Could not save these settings.",
+    handledEarlier: (date) =>
+      `The list for ${date} was already marked as sent earlier today, so it will not go out again at the scheduled time. To send it again, change the send time and save, or use Send now.`,
   },
   hi: {
     title: "WhatsApp पर कल की सूची",
@@ -115,6 +119,8 @@ const LABELS: Record<Locale, Labels> = {
     saving: "सेव हो रहा है…",
     saved: "कल की सूची की सेटिंग सेव हो गई",
     failedToSave: "ये सेटिंग सेव नहीं हो सकीं।",
+    handledEarlier: (date) =>
+      `${date} की सूची आज पहले ही भेजी गई के रूप में दर्ज है, इसलिए शेड्यूल किए गए समय पर फिर से नहीं जाएगी। फिर से भेजने के लिए भेजने का समय बदलकर सेव करें, या अभी भेजें इस्तेमाल करें।`,
   },
   mr: {
     title: "WhatsApp वर उद्याची यादी",
@@ -141,6 +147,8 @@ const LABELS: Record<Locale, Labels> = {
     saving: "सेव्ह होत आहे…",
     saved: "उद्याच्या यादीची सेटिंग सेव्ह झाली",
     failedToSave: "या सेटिंग सेव्ह होऊ शकल्या नाहीत.",
+    handledEarlier: (date) =>
+      `${date} ची यादी आज आधीच पाठवली म्हणून नोंदवली आहे, त्यामुळे ठरलेल्या वेळी पुन्हा जाणार नाही. पुन्हा पाठवण्यासाठी पाठवण्याची वेळ बदलून सेव्ह करा, किंवा आत्ता पाठवा वापरा.`,
   },
 };
 
@@ -150,7 +158,8 @@ const LABELS: Record<Locale, Labels> = {
  * Owner's own WhatsApp number.
  */
 export function TomorrowListSettings() {
-  const labels = LABELS[useLocale()];
+  const locale = useLocale();
+  const labels = LABELS[locale];
   const { showToast } = useToast();
   const [enabled, setEnabled] = useState(true);
   const [allowedByAdmin, setAllowedByAdmin] = useState(true);
@@ -161,6 +170,9 @@ export function TomorrowListSettings() {
   const [sendMinute, setSendMinute] = useState<number | null>(null);
   const [defaultSendHour, setDefaultSendHour] = useState(20);
   const [lastScheduled, setLastScheduled] = useState<LastScheduled | null>(null);
+  const [handledWithoutResultFor, setHandledWithoutResultFor] = useState<
+    string | null
+  >(null);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -175,6 +187,7 @@ export function TomorrowListSettings() {
     setSendMinute(settings.sendMinute);
     setDefaultSendHour(settings.defaultSendHour);
     setLastScheduled(settings.lastScheduled);
+    setHandledWithoutResultFor(settings.handledWithoutResultFor);
   }
 
   useEffect(() => {
@@ -242,6 +255,13 @@ export function TomorrowListSettings() {
       ) : null}
 
       {lastScheduled ? <LastScheduledSend value={lastScheduled} /> : null}
+      {handledWithoutResultFor ? (
+        <div className="mt-4 max-w-xl">
+          <InlineAlert tone="info">
+            {labels.handledEarlier(formatLongDate(handledWithoutResultFor, locale))}
+          </InlineAlert>
+        </div>
+      ) : null}
 
       <label className="mt-4 flex items-center gap-2 text-sm">
         <input
