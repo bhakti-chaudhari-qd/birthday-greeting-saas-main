@@ -299,6 +299,44 @@ function notHandledFor(targetDate: Date) {
   };
 }
 
+/** Scheduled attempts per day before giving up on a refused send. */
+export const TOMORROW_LIST_MAX_ATTEMPTS = 3;
+
+/** Organizations that still have a scheduled attempt left for `targetDate`. */
+function attemptsLeftFor(targetDate: Date) {
+  return {
+    OR: [
+      { tomorrowListAttemptsFor: null },
+      { tomorrowListAttemptsFor: { not: targetDate } },
+      { tomorrowListAttempts: { lt: TOMORROW_LIST_MAX_ATTEMPTS } },
+    ],
+  };
+}
+
+/** What the Owner's settings page shows about the latest scheduled send. */
+export type TomorrowListLastResult = {
+  /** When the attempt ran (ISO instant). */
+  at: string;
+  /** The occasion day the list was for (YYYY-MM-DD). */
+  forDate: string;
+  status: "sent" | "partly_sent" | "failed" | "nobody" | "no_recipients";
+  /** 1-based attempt number for this day, and the cap. */
+  attempt: number;
+  maxAttempts: number;
+  total: number;
+  results: TomorrowListRecipientResult[];
+};
+
+export function summarizeScheduledSend(
+  results: TomorrowListRecipientResult[],
+): "sent" | "partly_sent" | "failed" {
+  const accepted = results.filter((entry) => entry.ok).length;
+  if (accepted === results.length) {
+    return "sent";
+  }
+  return accepted > 0 ? "partly_sent" : "failed";
+}
+
 export type TomorrowListRunResult =
   | { status: "not_configured" }
   | {
@@ -310,11 +348,14 @@ export type TomorrowListRunResult =
     };
 
 /**
- * On the day before, once each organization's send hour (the Owner's
+ * On the day before, once each organization's send time (the Owner's
  * choice, else the platform default) has passed, sends a WhatsApp link to
- * the next day's list. Days with nobody on the list are marked handled but
- * not sent. Safe to call every minute: an organization is claimed for the
- * day before anything is sent, so overlapping ticks cannot send it twice.
+ * the next day's list. The day is marked handled only when Meta accepts the
+ * send for at least one number, or when there is nothing to send; a refused
+ * send is retried on the following ticks, up to TOMORROW_LIST_MAX_ATTEMPTS.
+ * Each attempt is claimed with a compare-and-set on the attempt counter, so
+ * overlapping ticks cannot make the same attempt twice. The outcome is saved
+ * for the Owner's settings page.
  */
 export async function runTomorrowLists(
   now: Date = new Date(),
@@ -335,6 +376,7 @@ export async function runTomorrowLists(
       tomorrowListAllowedByAdmin: true,
       AND: [
         notHandledFor(forDate),
+        attemptsLeftFor(forDate),
         {
           OR: [
             ...ownSendTimeReached(nowTime),
@@ -348,6 +390,8 @@ export async function runTomorrowLists(
     select: {
       id: true,
       name: true,
+      tomorrowListAttempts: true,
+      tomorrowListAttemptsFor: true,
       tomorrowListRecipients: { select: { mobile: true } },
       users: {
         where: { role: UserRole.ADMIN, isActive: true },
@@ -378,18 +422,55 @@ export async function runTomorrowLists(
   const provider = listProvider(config);
 
   for (const organization of organizations) {
+    const sameDay =
+      organization.tomorrowListAttemptsFor?.getTime() === forDate.getTime();
+    const attempt = sameDay ? organization.tomorrowListAttempts + 1 : 1;
+
+    // Claim this attempt: only succeeds if nobody else moved the counter.
     const claimed = await prisma.organization.updateMany({
-      where: { id: organization.id, ...notHandledFor(forDate) },
-      data: { tomorrowListLastSentFor: forDate },
+      where: {
+        id: organization.id,
+        ...notHandledFor(forDate),
+        tomorrowListAttemptsFor: organization.tomorrowListAttemptsFor,
+        tomorrowListAttempts: organization.tomorrowListAttempts,
+      },
+      data: { tomorrowListAttemptsFor: forDate, tomorrowListAttempts: attempt },
     });
     if (claimed.count === 0) {
       continue;
     }
 
+    const record = async (
+      outcome: Omit<TomorrowListLastResult, "at" | "forDate" | "attempt" | "maxAttempts">,
+      handled: boolean,
+    ) => {
+      const lastResult: TomorrowListLastResult = {
+        at: now.toISOString(),
+        forDate: forIso,
+        attempt,
+        maxAttempts: TOMORROW_LIST_MAX_ATTEMPTS,
+        ...outcome,
+      };
+      await prisma.organization.update({
+        where: { id: organization.id },
+        data: {
+          tomorrowListLastResult: lastResult,
+          ...(handled ? { tomorrowListLastSentFor: forDate } : {}),
+        },
+      });
+    };
+
     const recipients = recipientsOf(organization);
-    const total = await countListEntries(organization.id, forIso);
-    if (recipients.length === 0 || total === 0) {
+    if (recipients.length === 0) {
       result.skipped += 1;
+      await record({ status: "no_recipients", total: 0, results: [] }, true);
+      continue;
+    }
+
+    const total = await countListEntries(organization.id, forIso);
+    if (total === 0) {
+      result.skipped += 1;
+      await record({ status: "nobody", total: 0, results: [] }, true);
       continue;
     }
 
@@ -400,8 +481,11 @@ export async function runTomorrowLists(
       forIso,
       total,
       recipients,
-      idempotencyPrefix: "tomorrow-list",
+      idempotencyPrefix: `tomorrow-list:${attempt}`,
     });
+    const status = summarizeScheduledSend(results);
+    await record({ status, total, results }, status !== "failed");
+
     for (const entry of results) {
       if (entry.ok) {
         result.sent += 1;
@@ -410,6 +494,7 @@ export async function runTomorrowLists(
         console.error("Tomorrow's List send failed", {
           organizationId: organization.id,
           forDate: forIso,
+          attempt,
           recipient: entry.mobile,
           error: entry.error,
         });
@@ -532,8 +617,8 @@ export type TomorrowListSendNowResult =
 /**
  * The Owner's "Send me tomorrow's list now": sends straight away using the
  * saved recipients, whatever the send time or the day's handled mark, and
- * reports exactly what happened. Marks the day handled so the scheduled
- * send does not repeat it.
+ * reports exactly what happened. Independent of the scheduled send, which
+ * still goes out at the usual time.
  */
 export async function sendTomorrowListNow(
   organizationId: string,
@@ -584,11 +669,6 @@ export async function sendTomorrowListNow(
   if (linksToday >= TOMORROW_LIST_MAX_LINKS_PER_DAY) {
     return { status: "limit_reached", limit: TOMORROW_LIST_MAX_LINKS_PER_DAY };
   }
-
-  await prisma.organization.update({
-    where: { id: organizationId },
-    data: { tomorrowListLastSentFor: forDate },
-  });
 
   const results = await sendListLink({
     provider: listProvider(config),
@@ -654,6 +734,8 @@ export type TomorrowListSettings = {
   /** Minute (0-59) of the chosen time; null when sendHour is null. */
   sendMinute: number | null;
   defaultSendHour: number;
+  /** Outcome of the latest scheduled send, if any. */
+  lastScheduled: TomorrowListLastResult | null;
 };
 
 export async function getTomorrowListSettings(
@@ -667,6 +749,7 @@ export async function getTomorrowListSettings(
       tomorrowListAllowedByAdmin: true,
       tomorrowListSendHour: true,
       tomorrowListSendMinute: true,
+      tomorrowListLastResult: true,
       tomorrowListRecipients: {
         select: { mobile: true },
         orderBy: { createdAt: "asc" },
@@ -695,6 +778,8 @@ export async function getTomorrowListSettings(
         ? null
         : (organization.tomorrowListSendMinute ?? 0),
     defaultSendHour: platform.sendHour,
+    lastScheduled:
+      (organization.tomorrowListLastResult as TomorrowListLastResult | null) ?? null,
   };
 }
 
@@ -730,6 +815,24 @@ export async function updateTomorrowListSettings(
     );
   }
 
+  const current = await prisma.organization.findUniqueOrThrow({
+    where: { id: organizationId },
+    select: { tomorrowListSendHour: true, tomorrowListSendMinute: true },
+  });
+  const nextMinute =
+    input.sendHour === null || input.sendHour === undefined
+      ? null
+      : (input.sendMinute ?? 0);
+  // A new send time re-arms today's scheduled send if it has not been
+  // accepted yet (the handled mark is left alone, so a delivered list is
+  // never sent twice).
+  const timeChanged =
+    input.sendHour !== undefined &&
+    (input.sendHour !== current.tomorrowListSendHour ||
+      nextMinute !== (current.tomorrowListSendHour === null
+        ? null
+        : (current.tomorrowListSendMinute ?? 0)));
+
   await prisma.$transaction([
     prisma.tomorrowListRecipient.deleteMany({ where: { organizationId } }),
     prisma.tomorrowListRecipient.createMany({
@@ -740,11 +843,10 @@ export async function updateTomorrowListSettings(
       data: {
         tomorrowListEnabled: input.enabled,
         ...(input.sendHour !== undefined
-          ? {
-              tomorrowListSendHour: input.sendHour,
-              tomorrowListSendMinute:
-                input.sendHour === null ? null : (input.sendMinute ?? 0),
-            }
+          ? { tomorrowListSendHour: input.sendHour, tomorrowListSendMinute: nextMinute }
+          : {}),
+        ...(timeChanged
+          ? { tomorrowListAttempts: 0, tomorrowListAttemptsFor: null }
           : {}),
       },
     }),

@@ -24,6 +24,17 @@ type Settings = {
   sendHour: number | null;
   sendMinute: number | null;
   defaultSendHour: number;
+  lastScheduled: LastScheduled | null;
+};
+
+type LastScheduled = {
+  at: string;
+  forDate: string;
+  status: "sent" | "partly_sent" | "failed" | "nobody" | "no_recipients";
+  attempt: number;
+  maxAttempts: number;
+  total: number;
+  results: Array<{ mobile: string; ok: boolean; error: string | null }>;
 };
 
 function hourLabel(hour: number): string {
@@ -149,6 +160,7 @@ export function TomorrowListSettings() {
   const [sendHour, setSendHour] = useState<number | null>(null);
   const [sendMinute, setSendMinute] = useState<number | null>(null);
   const [defaultSendHour, setDefaultSendHour] = useState(20);
+  const [lastScheduled, setLastScheduled] = useState<LastScheduled | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -162,6 +174,7 @@ export function TomorrowListSettings() {
     setSendHour(settings.sendHour);
     setSendMinute(settings.sendMinute);
     setDefaultSendHour(settings.defaultSendHour);
+    setLastScheduled(settings.lastScheduled);
   }
 
   useEffect(() => {
@@ -227,6 +240,8 @@ export function TomorrowListSettings() {
           <InlineAlert tone="info">{labels.turnedOffByAdmin}</InlineAlert>
         </div>
       ) : null}
+
+      {lastScheduled ? <LastScheduledSend value={lastScheduled} /> : null}
 
       <label className="mt-4 flex items-center gap-2 text-sm">
         <input
@@ -351,6 +366,135 @@ export function TomorrowListSettings() {
   );
 }
 
+type LastScheduledLabels = {
+  title: string;
+  ranAt: (when: string, forDate: string) => string;
+  sent: string;
+  partlySent: string;
+  failed: (attempt: number, max: number) => string;
+  willRetry: string;
+  noMoreRetries: string;
+  nobody: string;
+  noRecipients: string;
+  numberOk: (mobile: string) => string;
+  numberFailed: (mobile: string, error: string) => string;
+};
+
+const LAST_SCHEDULED_LABELS: Record<Locale, LastScheduledLabels> = {
+  en: {
+    title: "Last scheduled send",
+    ranAt: (when, forDate) => `${when} · list for ${forDate}`,
+    sent: "Accepted by WhatsApp.",
+    partlySent: "Accepted for some numbers only.",
+    failed: (attempt, max) => `Refused by WhatsApp (attempt ${attempt} of ${max}).`,
+    willRetry: "It will be tried again automatically in a minute.",
+    noMoreRetries:
+      "No more automatic attempts for this day. Fix the problem, then use Send now or change the send time.",
+    nobody: "Nobody had an occasion that day, so nothing was sent.",
+    noRecipients: "There was no number to send it to.",
+    numberOk: (mobile) => `${mobile}: accepted`,
+    numberFailed: (mobile, error) => `${mobile}: ${error}`,
+  },
+  hi: {
+    title: "पिछली शेड्यूल्ड भेजी गई सूची",
+    ranAt: (when, forDate) => `${when} · ${forDate} की सूची`,
+    sent: "WhatsApp ने स्वीकार किया।",
+    partlySent: "केवल कुछ नंबरों के लिए स्वीकार किया गया।",
+    failed: (attempt, max) => `WhatsApp ने अस्वीकार किया (प्रयास ${attempt} / ${max})।`,
+    willRetry: "एक मिनट में अपने आप फिर से कोशिश की जाएगी।",
+    noMoreRetries:
+      "इस दिन के लिए अब अपने आप कोशिश नहीं होगी। समस्या ठीक करें, फिर अभी भेजें इस्तेमाल करें या भेजने का समय बदलें।",
+    nobody: "उस दिन किसी का कोई अवसर नहीं था, इसलिए कुछ नहीं भेजा गया।",
+    noRecipients: "भेजने के लिए कोई नंबर नहीं था।",
+    numberOk: (mobile) => `${mobile}: स्वीकार किया गया`,
+    numberFailed: (mobile, error) => `${mobile}: ${error}`,
+  },
+  mr: {
+    title: "शेवटची शेड्यूल केलेली यादी",
+    ranAt: (when, forDate) => `${when} · ${forDate} ची यादी`,
+    sent: "WhatsApp ने स्वीकारले.",
+    partlySent: "फक्त काही नंबरसाठी स्वीकारले.",
+    failed: (attempt, max) => `WhatsApp ने नाकारले (प्रयत्न ${attempt} / ${max}).`,
+    willRetry: "एका मिनिटात आपोआप पुन्हा प्रयत्न केला जाईल.",
+    noMoreRetries:
+      "या दिवसासाठी आता आपोआप प्रयत्न होणार नाही. समस्या दुरुस्त करा, मग आत्ता पाठवा वापरा किंवा पाठवण्याची वेळ बदला.",
+    nobody: "त्या दिवशी कोणाचाही प्रसंग नव्हता, त्यामुळे काहीही पाठवले नाही.",
+    noRecipients: "पाठवण्यासाठी कोणताही नंबर नव्हता.",
+    numberOk: (mobile) => `${mobile}: स्वीकारले`,
+    numberFailed: (mobile, error) => `${mobile}: ${error}`,
+  },
+};
+
+const INTL_LOCALE: Record<Locale, string> = {
+  en: "en-IN",
+  hi: "hi-IN-u-nu-latn",
+  mr: "mr-IN-u-nu-latn",
+};
+
+/** The latest scheduled send's outcome, so the Owner never has to guess. */
+function LastScheduledSend({ value }: { value: LastScheduled }) {
+  const locale = useLocale();
+  const labels = LAST_SCHEDULED_LABELS[locale];
+  const when = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    timeZone: "Asia/Kolkata",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value.at));
+
+  let tone: "success" | "error" | "info" = "info";
+  let headline = "";
+  switch (value.status) {
+    case "sent":
+      tone = "success";
+      headline = labels.sent;
+      break;
+    case "partly_sent":
+      tone = "error";
+      headline = labels.partlySent;
+      break;
+    case "failed":
+      tone = "error";
+      headline = `${labels.failed(value.attempt, value.maxAttempts)} ${
+        value.attempt < value.maxAttempts ? labels.willRetry : labels.noMoreRetries
+      }`;
+      break;
+    case "nobody":
+      headline = labels.nobody;
+      break;
+    case "no_recipients":
+      tone = "error";
+      headline = labels.noRecipients;
+      break;
+  }
+
+  return (
+    <div className="mt-4 max-w-xl">
+      <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
+        {labels.title}
+      </p>
+      <p className="mt-1 text-xs text-stone-500">
+        {labels.ranAt(when, formatLongDate(value.forDate, locale))}
+      </p>
+      <div className="mt-2">
+        <InlineAlert tone={tone}>
+          <span className="block">{headline}</span>
+          {value.results.length > 1 || value.status !== "sent"
+            ? value.results.map((entry) => (
+                <span key={entry.mobile} className="mt-1 block text-xs">
+                  {entry.ok
+                    ? labels.numberOk(entry.mobile)
+                    : labels.numberFailed(entry.mobile, entry.error ?? "")}
+                </span>
+              ))
+            : null}
+        </InlineAlert>
+      </div>
+    </div>
+  );
+}
+
 type SendNowResult =
   | {
       status: "sent";
@@ -383,7 +527,7 @@ type SendNowLabels = {
 const SEND_NOW_LABELS: Record<Locale, SendNowLabels> = {
   en: {
     title: "Send it now",
-    hint: "Sends tomorrow's list to the saved numbers right away and shows what happened. Save any changes above first.",
+    hint: "Sends tomorrow's list to the saved numbers right away and shows what happened. The scheduled send still goes out at your usual time. Save any changes above first.",
     button: "Send me tomorrow's list now",
     sending: "Sending…",
     summary: (date, total) => `List for ${date}: ${total} on the list.`,

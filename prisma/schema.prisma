@@ -148,6 +148,13 @@ model Organization {
   /// Minute (0-59) of the Owner's chosen time; null means :00. Only used
   /// when tomorrowListSendHour is set.
   tomorrowListSendMinute             Int?
+  /// Scheduled attempts made for tomorrowListAttemptsFor that Meta refused.
+  /// The day is only marked handled (tomorrowListLastSentFor) once a send is
+  /// accepted or there is nothing to send; failures are retried up to a cap.
+  tomorrowListAttempts               Int      @default(0)
+  tomorrowListAttemptsFor            DateTime? @db.Date
+  /// Outcome of the latest scheduled send, shown on the Owner's settings page.
+  tomorrowListLastResult             Json?
   /// Vendor who referred this org at signup (optional attribution).
   referredByVendorId                 String?
   referredAt                         DateTime?
