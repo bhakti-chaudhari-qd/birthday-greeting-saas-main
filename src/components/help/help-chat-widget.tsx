@@ -324,14 +324,21 @@ export function HelpChatWidget() {
         type="button"
         aria-expanded={open}
         aria-controls={panelId}
+        aria-label={open ? dict.toggleClose : dict.toggleOpen}
         onClick={() => setOpen((value) => !value)}
         className={[
           "pointer-events-auto shadow-lg shadow-stone-900/15",
           open ? secondaryButtonClass : primaryButtonClass,
-          "px-4",
+          // Phones: compact round icon so it doesn't cover page actions.
+          "h-12 w-12 !px-0 sm:h-auto sm:w-auto sm:!px-4",
         ].join(" ")}
       >
-        {open ? dict.toggleClose : dict.toggleOpen}
+        <span aria-hidden="true" className="text-xl font-semibold leading-none sm:hidden">
+          {open ? "×" : "?"}
+        </span>
+        <span className="hidden sm:inline">
+          {open ? dict.toggleClose : dict.toggleOpen}
+        </span>
       </button>
     </div>
   );
